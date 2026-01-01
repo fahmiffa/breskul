@@ -1,0 +1,11 @@
+services:
+  app:
+    build : .
+    container_name: elmu
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+    ports:
+      - "80:80"
+    command: php -S 0.0.0.0:80 -t public
+
