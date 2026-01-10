@@ -14,4 +14,9 @@ class Teach extends Model
     {
         return $this->gender == 1 ? "laki-laki" : "Perempuan";
     }
+
+    public function apps()
+    {
+        return $this->hasOne(App::class, 'id', 'app');
+    }
 }

@@ -20,4 +20,9 @@ class Present extends Model
     {
         return $this->belongsTo(Students::class, 'student_id');
     }
+
+    public function guru()
+    {
+        return $this->belongsTo(Teach::class, 'teacher_id');
+    }
 }

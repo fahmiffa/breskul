@@ -27,6 +27,7 @@ Route::prefix('dashboard')->middleware('auth')->name('dashboard.')->group(functi
     Route::get('setting', [Home::class, 'setting'])->name('setting');
     Route::post('/pass', [Home::class, 'pass'])->name('pass');
     Route::resource('pengumuman', AnnoucementController::class);
+    Route::resource('ekstrakurikuler', App\Http\Controllers\StudentExtracurricularController::class);
 
     Route::get('job-progress/{jobId}', function ($jobId) {
         $progress = Cache::get("job-progress-{$jobId}", 0);
@@ -47,6 +48,8 @@ Route::prefix('dashboard')->middleware('auth')->name('dashboard.')->group(functi
         Route::resource('pembayaran', App\Http\Controllers\PaymentController::class);
         Route::resource('mapel', App\Http\Controllers\MapelController::class);
         Route::resource('jadwal', App\Http\Controllers\MapelDayController::class);
+        Route::resource('absensi', App\Http\Controllers\AttendanceConfigController::class);
+        Route::resource('ekstrakurikuler', App\Http\Controllers\ExtracurricularController::class);
         Route::middleware(['isRole'])->group(function () {
             Route::resource('app', App\Http\Controllers\AppController::class);
             Route::resource('api', App\Http\Controllers\ApiKeyController::class);

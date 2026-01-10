@@ -41,5 +41,20 @@
         </span> Absensi
     </li>
 </a>
+<a href="{{ route('dashboard.ekstrakurikuler.index') }}">
+    <li
+        class="flex items-center px-4 py-3 border-b border-green-300 hover:bg-green-100 {{ Route::is('dashboard.ekstrakurikuler.*') ? 'bg-green-100' : null }}">
+        <span class="text-green-500 mr-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="lucide lucide-users-round-icon lucide-users-round">
+                <path d="M18 20a6 6 0 0 0-12 0" />
+                <circle cx="12" cy="10" r="4" />
+                <circle cx="6" cy="10" r="1" />
+                <circle cx="18" cy="10" r="1" />
+            </svg>
+        </span> Ekstrakurikuler
+    </li>
+</a>
 
 

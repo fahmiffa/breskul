@@ -4,9 +4,18 @@ namespace App\Http\Controllers;
 use App\Jobs\ProcessFcm;
 use App\Models\Annoucement;
 use App\Models\ApiKey;
+use App\Models\Bill;
+use App\Services\BillingCodeService;
+use App\Services\QrisLogic;
+use App\Models\Extracurricular;
 use App\Models\Head;
+use App\Models\Mapel;
+use App\Models\MapelDay;
+use App\Models\MapelTime;
 use App\Models\Present;
+use App\Models\StudentExtracurricular;
 use App\Models\Students;
+use App\Models\AttendanceConfig;
 use App\Models\User;
 use App\Rules\NumberWa;
 use App\Services\Firebase\FirebaseMessage;
@@ -20,6 +29,8 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use Carbon\Carbon;
+
 
 class ApiController extends Controller
 {
@@ -107,14 +118,25 @@ class ApiController extends Controller
 
     public function absensi()
     {
-        $id    = JWTAuth::user()->id;
-        $items = Present::whereHas('murid', function ($q) use ($id) {
-            $q->where('user', $id);
-        })
-            ->latest()
+        $user = Auth::user();
+        $id = $user->id;
+
+        if ($user->role == 2) {
+            $items = Present::whereHas('murid', function ($q) use ($id) {
+                $q->where('user', $id);
+            });
+        } else {
+            $teacherId = $user->teacherData->id ?? null;
+            $items = Present::where('teacher_id', $teacherId);
+        }
+
+        $items = $items->latest()
             ->get()
             ->map(function ($q) {
-                return ["waktu" => $q->time];
+                return [
+                    "waktu" => $q->time,
+                    "status" => $q->status,
+                ];
             });
 
         return response()->json([
@@ -155,8 +177,15 @@ class ApiController extends Controller
 
     public function pengumuman($id = null)
     {
-        $user  = JWTAuth::user()->id;
-        $app   = Students::where('user', $user)->first()->app;
+        $user  = JWTAuth::user();
+        if($user->role == 2)
+        {
+            $app   = $user->studentData->app;
+        }
+        else
+        {
+            $app   = $user->teacherData->app;
+        }
         $items = Annoucement::query()
             ->when($id, function ($query) use ($id) {
                 return $query->where('id', $id);
@@ -256,7 +285,7 @@ class ApiController extends Controller
 
         $user = \App\Models\User::where('email', $login)
             ->orWhere('username', $login)
-            ->where('role', 2)
+            ->whereIn('role', [2, 3])
             ->first();
 
         if (! $user) {
@@ -321,50 +350,242 @@ class ApiController extends Controller
      */
     public function data()
     {
+
         $user = Auth::user();
 
-        return response()->json([
-            'success' => true,
-            'data'    => [
-                'user' => [
-                    'id'     => $user->id,
-                    'name'   => $user->name,
-                    'email'  => $user->email,
-                    'role'   => $user->roles,
-                    'status' => $user->state,
-                    'induk'  => $user->data->nis,
-                    'app'    => $user->data->apps->name,
+        if (Auth::user()->role == 2) 
+        {
+            return response()->json([
+                'success' => true,
+                'data'    => [
+                    'user' => [
+                        'id'     => $user->id,
+                        'name'   => $user->name,
+                        'role'   => $user->role,
+                        'status' => $user->status,
+                        'image'  => $user->image ? asset('storage/' . $user->image) : null,
+                        'induk'  => $user->studentData->nis,
+                        'app'    => $user->studentData->apps->name,
+                    ],
                 ],
-            ],
+            ]);
+
+        }
+        else
+        {
+            return response()->json([
+                'success' => true,
+                'data'    => [
+                    'user' => [
+                        'id'     => $user->id,
+                        'name'   => $user->teacherData?->name ?? $user->name,
+                        'role'   => $user->role,
+                        'status' => $user->status,
+                        'image'  => $user->image ? asset('storage/' . $user->image) : null,
+                        'app'    => $user->teacherData?->apps?->name ?? $user->app?->name ?? '-',
+                    ],
+                ],
+            ]);
+        }
+
+    }
+
+    public function uploadImage(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'errors' => $validator->errors(),
+            ], 400);
+        }
+
+        try {
+            $user = Auth::user();
+            
+            // Delete old image if exists
+            if ($user->image && \Storage::disk('public')->exists($user->image)) {
+                \Storage::disk('public')->delete($user->image);
+            }
+
+            $path = $request->file('image')->store('profiles', 'public');
+            
+            $user->image = $path;
+            $user->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Foto profil berhasil diperbarui',
+                'image'   => asset('storage/' . $path),
+            ]);
+
+        } catch (\Throwable $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     public function jadwal()
     {
-        $user = Auth::user()->data->id;
-        $head = Head::where('status', 0)
-            ->where('student_id', $user)
-            ->with('kelas.jadwal.time.mapel')
+        if (Auth::user()->role == 2) {
+            $user = Auth::user()->data->id;
+
+            $head = Head::where('status', 1)
+                ->where('student_id', $user)
+                ->with(['kelas.jadwal.time.mapel','kelas.jadwal.time.mapelteach'])
+                ->first();
+
+            $data = $head ?  $head->kelas->jadwal->map(function ($q) {
+                    return [
+                        'hari'  => $q->hari,
+                        'waktu' => $q->time->map(function ($val) {
+                            return [
+                                'start' => date("H:i", strtotime($val->start)),
+                                'end'   => date("H:i", strtotime($val->end)),
+                                'mapel' => $val->mapel->name,
+                                'guru' => $val->mapelteach->name,
+                            ];
+                        }),
+                    ];
+                }) : null;
+
+            return response()->json([
+                'success' => true,
+                'data'    => $data,
+            ]);
+
+        } else if (Auth::user()->role == 3) {
+            $user   = Auth::user()->data->id;
+            $jadwal = MapelTime::where('teacher_id', $user)
+                ->with(['mapel', 'mapelday.kelas'])
+                ->get()
+                ->groupBy('mapelday.class_id')
+                ->map(function ($times) {
+                    $first = $times->first();
+                    return [
+                        'kelas'  => $first->mapelday->kelas->name ?? null,
+                        'jadwal' => $times->groupBy('mapelday.day')->map(function ($group) {
+                            $f = $group->first();
+                            return [
+                                'hari'  => $f->mapelday->hari,
+                                'waktu' => $group->map(function ($val) {
+                                    return [
+                                        'start' => date("H:i", strtotime($val->start)),
+                                        'end'   => date("H:i", strtotime($val->end)),
+                                        'mapel' => $val->mapel->name ?? null,
+                                    ];
+                                }),
+                            ];
+                        })->values(),
+                    ];
+                })->values();
+
+            return response()->json([
+                'success' => true,
+                'data'    => $jadwal,
+            ]);
+        }
+    }
+
+    public function ekstra()
+    {
+        $role = Auth::user()->role;
+        $id   = Auth::user()->data->id;
+
+        if ($role == 2) {
+            $items = StudentExtracurricular::where('student_id', $id)
+                ->with('extracurricular.guru')
+                ->get()
+                ->map(function ($q) {
+                    return [
+                        'nama'  => $q->extracurricular->nama ?? null,
+                        'guru'  => $q->extracurricular->guru->name ?? null,
+                        'waktu' => $q->extracurricular->waktu ?? null,
+                    ];
+                });
+        } else if ($role == 3) {
+            $items = Extracurricular::where('guru_id', $id)
+                ->get()
+                ->map(function ($q) {
+                    return [
+                        'nama'  => $q->nama,
+                        'waktu' => $q->waktu,
+                    ];
+                });
+        } else {
+            $items = [];
+        }
+
+        return response()->json([
+            'success' => true,
+            'data'    => $items,
+        ]);
+    }
+
+    /**
+     * Register a student for an extracurricular activity.
+     */
+    public function daftarEkstra(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'extracurricular_id' => 'required|exists:extracurriculars,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'errors' => $validator->errors(),
+            ], 400);
+        }
+
+        $user = Auth::user();
+
+        if ($user->role != 2) { // Only students (role 2) can register for extracurriculars
+            return response()->json(['error' => 'Unauthorized. Only students can register for extracurriculars.'], 403);
+        }
+
+        $student   = $user->data;
+        $studentId = $student->id;
+
+        // Check if the student is already registered for this extracurricular
+        $existingRegistration = StudentExtracurricular::where('student_id', $studentId)
+            ->where('extracurricular_id', $request->extracurricular_id)
+            ->first();
+
+        if ($existingRegistration) {
+            return response()->json(['error' => 'Anda sudah terdaftar di ekstrakurikuler ini.'], 409);
+        }
+
+        // Create the registration
+        $registration = StudentExtracurricular::create([
+            'student_id'         => $studentId,
+            'extracurricular_id' => $request->extracurricular_id,
+            'app'                => $student->app, // Penting untuk multi-tenancy
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Berhasil mendaftar ekstrakurikuler.',
+            'data'    => $registration,
+        ], 201);
+    }
+
+    public function ekstrakurikuler()
+    {
+        $items = Extracurricular::with('guru')
             ->get()
-            ->map(function ($item) {
-
+            ->map(function ($q) {
                 return [
-                    'kelas'  => $item->kelas->name,
-                    'jadwal' => $item->kelas->jadwal->map(function ($q) {
-                        return [
-                            'hari' => $q->hari, 'waktu' => $q->time->map(function($val){
-                                return ['start'=>date("H:i",strtotime($val->start)), 'end'=>date("H:i",strtotime($val->end)), 'mapel'=>$val->mapel->name];
-                            }),
-
-                        ];
-                    }),
+                    'id'    => $q->id,
+                    'nama'  => $q->nama,
+                    'guru'  => $q->guru->name ?? null,
+                    'waktu' => $q->waktu,
                 ];
-
             });
 
         return response()->json([
             'success' => true,
-            'data'    => $head,
+            'data'    => $items,
         ]);
     }
 
@@ -411,4 +632,257 @@ class ApiController extends Controller
         ]);
     }
 
+    public function getAbsensiConfig()
+    {
+        $user = Auth::user();
+        if ($user->role == 2) {
+            $app = $user->studentData->app;
+        } else {
+            $app = $user->teacherData->app;
+        }
+
+        $items = AttendanceConfig::where('app', $app)
+            ->where('role', $user->role)
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data'    => $items,
+        ]);
+    }
+
+    public function submitAbsensi(Request $request)
+    {
+        $user = Auth::user();
+        $app = null;
+        $studentId = null;
+        $teacherId = null;
+
+        if ($user->role == 2) {
+            $app = $user->studentData->app;
+            $studentId = $user->studentData->id;
+        } else {
+            $app = $user->teacherData->app;
+            $teacherId = $user->teacherData->id;
+        }
+
+        $config = AttendanceConfig::where('app', $app)
+            ->where('role', $user->role)
+            ->first();
+
+        if (!$config) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Jadwal absensi tidak ditemukan untuk hari ini.',
+            ], 400);
+        }
+
+        $type = null;
+        $now = now();
+
+        if ($now->between(
+            Carbon::createFromTimeString($config->clock_in_start),
+            Carbon::createFromTimeString($config->clock_in_end)
+        )) {
+            $type = 'masuk';
+        } elseif ($now->between(
+            Carbon::createFromTimeString($config->clock_out_start),
+            Carbon::createFromTimeString($config->clock_out_end)
+        )) {
+            $type = 'pulang';
+        }
+
+        if (!$type) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Sekarang bukan waktu absensi.',
+            ], 400);
+        }
+
+        // Check if already absensi today for this type
+        $exists = Present::where('app', $app)
+            ->when($user->role == 2, function($q) use ($studentId) {
+                return $q->where('student_id', $studentId);
+            }, function($q) use ($teacherId) {
+                return $q->where('teacher_id', $teacherId);
+            })
+            ->whereDate('waktu', $now->toDateString())
+            ->where('status', $type) 
+            ->exists();
+
+        if ($exists) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda sudah absensi ' . $type . ' hari ini.',
+            ], 400);
+        }
+
+        $pres = new Present;
+        if ($user->role == 2) {
+            $pres->student_id = $studentId;
+        } else {
+            $pres->teacher_id = $teacherId;
+        }
+        $pres->app = $app;
+        $pres->waktu = $now;
+        $pres->status = $type;
+        $pres->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Absensi ' . $type . ' berhasil.',
+            'data' => [
+                'type' => $type,
+                'waktu' => $pres->time
+            ]
+        ]);
+    }
+
+    public function generateBillQris(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'bill_id' => 'required|exists:bills,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'errors' => $validator->errors(),
+            ], 400);
+        }
+
+        try {
+            $bill = Bill::with('payment')->find($request->bill_id);
+
+            // Cek jika status sudah dibayar
+            if ($bill->status == 1) {
+                return response()->json(['error' => 'Tagihan sudah dibayar.'], 400);
+            }
+
+            // Cek apakah sudah ada QRIS yang aktif/belum expired
+            if (!empty($bill->unique_code) && !empty($bill->qris_data)) {
+                // Periksa apakah created_at code unik masih valid UNTUK HARI INI (Logic billing date)
+                // Namun simplenya, kita cek expired_at yang kita simpan
+                $now = now();
+                $expiredAt = $bill->qris_expired_at ? \Carbon\Carbon::parse($bill->qris_expired_at) : null;
+                
+                if ($expiredAt && $now->lt($expiredAt)) {
+                     // Reuse Existing
+                     $qrisString = $bill->qris_data;
+                     $uniqueCode = $bill->unique_code;
+                     $nominal = $bill->payment->nominal;
+                     $totalAmount = $nominal + intval($uniqueCode);
+                     // Generate Image URL (or store it, but dynamic is fine)
+                     $qrImageUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' . urlencode($qrisString);
+
+                     return response()->json([
+                        'success' => true,
+                        'data' => [
+                            'qris_string' => $qrisString,
+                            'qr_image_url' => $qrImageUrl,
+                            'amount_base' => $nominal,
+                            'unique_code' => $uniqueCode,
+                            'total_amount' => $totalAmount,
+                            'expired_at' => $expiredAt->toIso8601String(),
+                            'reset_at' => '22:00',
+                            'is_existing' => true 
+                        ]
+                    ]);
+                }
+            }
+
+            // Generate NEW Unique Code
+            $service = new BillingCodeService();
+            $uniqueCode = $service->generateUniqueCode($bill->id);
+
+            $nominal = $bill->payment->nominal;
+            $totalAmount = $nominal + intval($uniqueCode);
+
+            // Static QRIS String (Sample from User)
+            $staticQris = '00020101021126610016ID.CO.SHOPEE.WWW01189360091800225241880208225241880303UMI51440014ID.CO.QRIS.WWW0215ID10254564824430303UMI5204594253033605802ID5904Qlab6006BREBES61055222262070703A01630446EC';
+
+            // Generate Dynamic QRIS
+            $qrisString = QrisLogic::generateDynamicQris($staticQris, $totalAmount);
+
+            // Generate QR Image URL
+            $qrImageUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' . urlencode($qrisString);
+
+            // Expiration (Now + 24 Hours)
+            $expiredAt = now()->addDay();
+
+            // Simpan ke Bill
+            $bill->unique_code = $uniqueCode;
+            $bill->qris_data = $qrisString;
+            $bill->qris_expired_at = $expiredAt;
+            $bill->save();
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'qris_string' => $qrisString,
+                    'qr_image_url' => $qrImageUrl, 
+                    'amount_base' => $nominal,
+                    'unique_code' => $uniqueCode,
+                    'total_amount' => $totalAmount,
+                    'expired_at' => $expiredAt->toIso8601String(),
+                    'reset_at' => '22:00',
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function paySimulation(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'bill_id' => 'required|exists:bills,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'errors' => $validator->errors(),
+            ], 400);
+        }
+
+        try {
+            // Load relasi sampai ke User
+            $bill = Bill::with(['head.murid.users', 'payment'])->find($request->bill_id);
+
+            if ($bill->status == 1) {
+                return response()->json(['message' => 'Tagihan sudah lunas sebelumnya.'], 200);
+            }
+
+            // Update Status menjadi Lunas (1)
+            $bill->status = 1;
+            $bill->save();
+
+            // Kirim Notif ke User
+            // Path: Bill -> Head -> Murid (Students) -> User
+            if ($bill->head && $bill->head->murid && $bill->head->murid->users) {
+                $user = $bill->head->murid->users;
+                
+                // Topic convention: user_{id}
+                $topic = 'user_' . $user->id; 
+                $title = 'Pembayaran Berhasil';
+                $nominal = number_format($bill->payment->nominal ?? 0, 0, ',', '.');
+                $body = "Pembayaran tagihan " . $bill->name . " sebesar Rp " . $nominal . " telah lunas.";
+                
+                // Kirim ke topic personal (jika di-subscribe app)
+                FirebaseMessage::sendTopicBroadcast($topic, $title, $body);
+                
+                // Kirim ke topic umum untuk test
+                FirebaseMessage::sendTopicBroadcast('news', $title, $body);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Simulasi pembayaran berhasil.',
+                'data' => $bill
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
 }

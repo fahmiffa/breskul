@@ -39,7 +39,6 @@
                         <th class="px-4 py-2">
                             Opsi
                         </th>
-                        <th class="px-4 py-2">No</th>
                         <th @click="sortBy('nis')" class="cursor-pointer px-4 py-2">NIS</th>
                         <th @click="sortBy('name')" class="cursor-pointer px-4 py-2">Nama</th>
                         <th @click="sortBy('kelas')" class="cursor-pointer px-4 py-2">Kelas</th>
@@ -53,7 +52,6 @@
                                 <input type="checkbox" :checked="selectedItems.includes(row.head)"
                                     @change="toggleItem(row.head, $event)" :value="row.head" class="rounded">
                             </td>
-                            <td class="px-4 py-2" x-text="((currentPage - 1) * perPage) + index + 1"></td>
                             <td class="px-4 py-2" x-text="row.nis"></td>
                             <td class="px-4 py-2" x-text="row.name"></td>
                             <td class="px-4 py-2" x-text="row.kelas"></td>

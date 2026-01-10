@@ -63,6 +63,7 @@ function userName($name)
         $name = substr($name, 0, 5);
     }
 
+    return $name;
     // Tambahkan angka acak 5 digit
     $randomNumber = str_pad(strval(random_int(0, 999)), 3, '0', STR_PAD_LEFT);
 

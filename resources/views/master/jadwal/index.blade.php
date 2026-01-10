@@ -70,8 +70,9 @@
                                     <template x-for="(timeSlot, tIndex) in daySchedule.time" :key="tIndex">
                                         <div class="flex flex-col text-xs bg-white p-2 rounded-lg border border-gray-100 shadow-sm relative group/item hover:border-green-200 transition-colors">
                                             <span class="font-bold text-gray-800 line-clamp-3" :title="timeSlot.mapel.name" x-text="timeSlot.mapel.name"></span>
-                                            <div class="flex items-center gap-1 text-gray-500 mt-1 font-medium">
+                                            <div class="flex items-center gap-1 text-gray-500 mt-1 font-medium flex-wrap">
                                                 <span x-text="timeSlot.start.slice(0,5) + ' - ' + timeSlot.end.slice(0,5)"></span>
+                                                <span class="text-green-600" x-show="timeSlot.mapelteach" x-text="'('+timeSlot.mapelteach.name+')'"></span>
                                             </div>
                                         </div>
                                     </template>

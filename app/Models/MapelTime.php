@@ -12,4 +12,14 @@ class MapelTime extends Model
     {
         return $this->belongsTo(Mapel::class, 'mapel_id');
     }
+
+    public function mapelday()
+    {
+        return $this->belongsTo(MapelDay::class, 'mapelday_id');
+    }
+
+    public function mapelteach()
+    {
+        return $this->belongsTo(Teach::class, 'teacher_id');
+    }
 }

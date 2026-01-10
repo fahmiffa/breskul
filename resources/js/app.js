@@ -77,7 +77,8 @@ import {
     generateImport,
     trixEditor,
     generateStudentsImport,
-    jadwalForm
+    jadwalForm,
+    extraForm
 } from "./custom.js";
 
 window.Alpine = Alpine;
@@ -92,4 +93,5 @@ Alpine.data('generateImport', generateImport);
 Alpine.data('trixEditor', trixEditor);
 Alpine.data('generateStudentsImport', generateStudentsImport);
 Alpine.data('jadwalForm', jadwalForm);
+Alpine.data('extraForm', extraForm);
 Alpine.start();

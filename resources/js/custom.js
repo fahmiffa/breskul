@@ -384,6 +384,22 @@ export const dataTable = (data) => {
                     this.error = err.message || "Gagal menambahkan kelas.";
                 });
         },
+        formatIndo(waktu) {
+            if (!waktu) return '-';
+            const date = new Date(waktu);
+            if (isNaN(date.getTime())) return waktu;
+            const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+            
+            const dayName = days[date.getDay()];
+            const day = date.getDate();
+            const monthName = months[date.getMonth()];
+            const year = date.getFullYear();
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            
+            return `${dayName}, ${day} ${monthName} ${year} Jam ${hours}:${minutes}`;
+        },
     };
 };
 
@@ -879,5 +895,36 @@ export function generateStudentsImport() {
                     });
             }, 1000);
         },
+    };
+}
+
+export function extraForm(students = [], extras = []) {
+    return {
+        searchStudent: '',
+        selectedStudents: [],
+        students: students,
+        extras: extras,
+        showDropdown: false,
+
+        get filteredStudents() {
+            let search = this.searchStudent.toLowerCase();
+            return this.students.filter(s => {
+                const isSelected = this.selectedStudents.some(sel => sel.id === s.id);
+                if (isSelected) return false;
+                if (search === '') return true;
+                return s.name.toLowerCase().includes(search) ||
+                       s.nis.toLowerCase().includes(search);
+            });
+        },
+
+        selectStudent(student) {
+            this.selectedStudents.push(student);
+            this.searchStudent = '';
+            this.showDropdown = false;
+        },
+
+        removeStudent(id) {
+            this.selectedStudents = this.selectedStudents.filter(s => s.id !== id);
+        }
     };
 }

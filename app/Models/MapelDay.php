@@ -14,6 +14,11 @@ class MapelDay extends Model
         return $this->hasMany(MapelTime::class, 'mapelday_id', 'id');
     }
 
+    public function kelas()
+    {
+        return $this->belongsTo(Classes::class, 'class_id');
+    }
+
     public function gethariAttribute()
     {
         return convertHari($this->day);

@@ -1,0 +1,466 @@
+{
+	"info": {
+		"_postman_id": "b3e0e0e0-e0e0-4e0e-8e0e-0e0e0e0e0e0e",
+		"name": "Breskul API",
+		"description": "Collection for Breskul Project API (ApiController)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Public / Auth",
+			"item": [
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"login\": \"admin\",\n    \"password\": \"password\",\n    \"fcm\": \"optional_fcm_token\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/fire/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"fire",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh Token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/fire/refresh",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"fire",
+								"refresh"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Forget Password",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"hp\": \"081234567890\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/fire/forget",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"fire",
+								"forget"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Topics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/fire/topic",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"fire",
+								"topic"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Send FCM",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Judul Notifikasi\",\n    \"content\": \"Isi notifikasi\",\n    \"topic\": \"testing\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/fire/fcm",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"fire",
+								"fcm"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Private (User)",
+			"item": [
+				{
+					"name": "Get User Data",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/data",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"data"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Change Password (Upass)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"old\": \"old_password\",\n    \"new\": \"new_password\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/pass",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"pass"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Absensi History",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/absensi",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"absensi"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Jadwal (Schedule)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/jadwal",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"jadwal"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Bills",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/bill",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"bill"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Announcements (List)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/pengumuman",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"pengumuman"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Announcement (Detail)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/pengumuman/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"pengumuman",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "My Extracurriculars",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/ekstra",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ekstra"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "All Extracurriculars List",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/ekstrakurikuler",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ekstrakurikuler"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Register Extracurricular",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"extracurricular_id\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/ekstra/daftar",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ekstra",
+								"daftar"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Generate Bill QRIS",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"bill_id\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/bill/generate",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"bill",
+								"generate"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Simulate Bill Pay",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"bill_id\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/bill/pay-simulation",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"bill",
+								"pay-simulation"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{token}}",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Devices / IoT",
+			"item": [
+				{
+					"name": "RFID Push",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Device-ID",
+								"value": "DEVICE123",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"uid\": \"CARD-UID-12345\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/push",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"push"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000/api",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

@@ -21,7 +21,7 @@ class MapelDayController extends Controller
                 $query->where('app', auth()->user()->app->id);
             })
             ->has('jadwal')
-            ->with('jadwal.time.mapel')
+            ->with(['jadwal.time.mapel', 'jadwal.time.mapelteach'])
             ->get();
         $title = "Master Jadwal";
         return view('master.jadwal.index', compact('items', 'title'));

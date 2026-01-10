@@ -96,8 +96,9 @@ class AnnoucementController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Annoucement $annoucement)
+    public function destroy(Annoucement $pengumuman)
     {
-        //
+        $pengumuman->delete();
+        return back()->with('success', 'Pengumuman berhasil dihapus.');
     }
 }
