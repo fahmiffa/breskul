@@ -6,21 +6,18 @@ use App\Models\DailyUniqueCode;
 use App\Models\Bill;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 use Exception;
 
 class BillingCodeService
 {
     /**
-     * Determine the billing date based on 10 PM cutoff.
+     * Determine the billing date.
+     * With 00:00 reset, the billing date is simply Today.
      */
     public function getBillingDate()
     {
-        $now = now();
-        // Reset at 10 PM (22:00)
-        if ($now->hour >= 11.27) {
-            return $now->copy()->addDay()->toDateString();
-        }
-        return $now->toDateString();
+        return now()->toDateString();
     }
 
     /**
@@ -31,29 +28,26 @@ class BillingCodeService
         $today = $this->getBillingDate();
 
         // Cek apakah sudah ada kode untuk hari ini
+        // Menggunakan lockForUpdate untuk mencegah race condition saat pembuatan pool
         if (DailyUniqueCode::where('date', $today)->count() === 0) {
-            
-            // 1. CLEANSING BILL: Reset unique code di tabel Bill untuk tagihan yang belum lunas
-            Bill::where('status', 0)
-                ->whereNotNull('unique_code')
-                ->update([
-                    'unique_code' => null,
-                    'qris_data' => null,
-                    'qris_expired_at' => null
-                ]);
-
-            // 2. Buat Pool Baru
-            $codes = [];
-            for ($i = 0; $i < 1000; $i++) {
-                $codes[] = [
-                    'code' => str_pad((string) $i, 3, '0', STR_PAD_LEFT),
-                    'date' => $today,
-                    'is_used' => false,
-                ];
-            }
-
-            // Masukkan 1000 kode baru sekaligus
-            DailyUniqueCode::insert($codes);
+             DB::transaction(function () use ($today) {
+                // Double check inside transaction
+                if (DailyUniqueCode::where('date', $today)->count() === 0) {
+                    $codes = [];
+                    // Generate codes 001 to 999 (avoid 000 if preferred, or include it)
+                    // Request asked for 3 digits, usually 1-999 or 0-999.
+                    for ($i = 1; $i < 1000; $i++) {
+                        $codes[] = [
+                            'code' => str_pad((string) $i, 3, '0', STR_PAD_LEFT),
+                            'date' => $today,
+                            'is_used' => false,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ];
+                    }
+                    DailyUniqueCode::insert($codes);
+                }
+             });
         }
     }
 
@@ -72,27 +66,37 @@ class BillingCodeService
             
             // 1. Cari satu kode yang BELUM DIGUNAKAN secara acak.
             //    FOR UPDATE: Mengunci baris ini agar Request lain tidak bisa membacanya 
-            //    sebelum transaksi ini selesai. (Mencegah Race Condition/Duplikasi)
+            //    sebelum transaksi ini selesai.
             $record = DailyUniqueCode::where('date', $today)
                                      ->where('is_used', false)
-                                     ->inRandomOrder() // Syarat 1: Kode Unik Acak
+                                     ->inRandomOrder()
                                      ->lockForUpdate()
                                      ->first();
 
             if ($record) {
                 // 2. Tandai sebagai sudah digunakan.
                 $record->is_used = true;
-                $record->bill_id = $billId; // Simpan Relasi
+                $record->bill_id = $billId;
                 $record->save();
+                
                 $code = $record->code;
-            } else {
-                // Jika tidak ada, pool habis (akan ditangani di luar transaction)
+
+                // 3. Update Bill dengan kode unik dan waktu expiry
+                // Expired jam 23:00 hari ini
+                $expiredAt = Carbon::now()->setTime(23, 0, 0);
+                
+                Bill::where('id', $billId)->update([
+                    'unique_code' => $record->code,
+                    'qris_expired_at' => $expiredAt,
+                    // qris_data updated outside this or passed in?
+                    // Usually controller updates qris_data after getting code. 
+                ]);
             }
         });
 
         if (is_null($code)) {
             Log::critical('Pool kode unik database habis!', ['date' => $today]);
-            throw new Exception('Batas 1000 kode unik harian telah tercapai (Database).');
+            throw new Exception('Quota kode unik harian (999) telah habis. Silahkan coba besok.');
         }
 
         return $code;
