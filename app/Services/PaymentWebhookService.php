@@ -69,11 +69,9 @@ class PaymentWebhookService
 
             $message = [
                 "message" => [
-                    "token" => $user->fcm,
-                    "notification" => [
-                        "title" => $title,
-                        "body" => $body,
-                    ],
+                    "topic" => $topic,
+                    "title" => $title,
+                    "body" => $body,
                 ],
             ];
             ProcessFcm::dispatch($message);
