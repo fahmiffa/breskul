@@ -68,11 +68,9 @@ class PaymentWebhookService
             $body = "Pembayaran " . $bill->payment->name . " sebesar Rp " . $nominal . " telah lunas.";
 
             $message = [
-                "message" => [
                     "topic" => $topic,
                     "title" => $title,
                     "body" => $body,
-                ],
             ];
             ProcessFcm::dispatch($message);
         }
