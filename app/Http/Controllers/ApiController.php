@@ -223,14 +223,10 @@ class ApiController extends Controller
 
                 if ($be->users->fcm) {
                     $message = [
-                        "message" => [
-                            "token"        => $be->users->fcm,
-                            "notification" => [
-                                "title" => "Absensi",
-                                "body"  => "Anda berhasil absensi " . $pres->time,
-                            ],
-                        ],
-                    ];
+                            "topic"  => "user_".$be->users->id,
+                            "title" => "Absensi",
+                            "body"  => "Anda berhasil absensi " . $pres->time,
+                            ];
                     ProcessFcm::dispatch($message);
                 }
 
