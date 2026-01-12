@@ -19,6 +19,7 @@ use App\Models\AttendanceConfig;
 use App\Models\User;
 use App\Rules\NumberWa;
 use App\Services\Firebase\FirebaseMessage;
+use App\Services\PaymentWebhookService;
 use DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -262,6 +263,12 @@ class ApiController extends Controller
                 'msg'     => 'Perangkat error',
             ], 400);
         }
+    }
+
+    public function paymentWebhook(Request $request, PaymentWebhookService $service)
+    {
+        $service->handle($request->all());
+        return response()->json(['success' => true], 200);
     }
 
     /**
