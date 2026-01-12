@@ -76,6 +76,7 @@ class PaymentWebhookService
                     ],
                 ],
             ];
+            ProcessFcm::dispatch($message);
             
             FirebaseMessage::sendTopicBroadcast($topic, $title, $body);
                 
