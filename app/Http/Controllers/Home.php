@@ -167,35 +167,18 @@ class Home extends Controller
                     ->first();
 
                 if (! $head) {
-
                     $bill = new Bill;
                     $bill->payment_id = $request->class_id;
                     $bill->head_id    = $studentId;
                     $bill->save();
-
                     $numb++;
 
-                    // 🔥 AMBIL TOKEN STRING (BUKAN optional)
-                    $fcm = $bill->head->murid->users->fcm ?? null;
-
-                    if (! empty($fcm)) {
-
-                        $message = [
-                            'message' => [
-                                'token' => $fcm, // STRING
-                                'notification' => [
-                                    'title' => 'Pembayaran',
-                                    'body'  => 'Anda mempunyai pembayaran ' . $bill->payment->name,
-                                ],
-                            ],
-                        ];
-
-                        ProcessFcm::dispatch($message);
-                    } else {
-                        Log::warning('FCM token kosong', [
-                            'student_id' => $studentId,
-                        ]);
-                    }
+                    $message = [
+                                'topic' => 'user_' . $bill->head->murid->users->id,
+                                'title' => 'Pembayaran',
+                                'body'  => 'Anda mempunyai pembayaran ' . $bill->payment->name,
+                                ];
+                    ProcessFcm::dispatch($message);
                 }
             }
 
