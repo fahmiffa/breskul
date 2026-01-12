@@ -7,4 +7,4 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-\Illuminate\Support\Facades\Schedule::command('billing:reset')->dailyAt('00:00');
+\Illuminate\Support\Facades\Schedule::command('billing:reset')->dailyAt('23:30');

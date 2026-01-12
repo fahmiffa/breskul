@@ -72,11 +72,11 @@ Route::post('/payment', function (Request $request) {
 Route::prefix('fire')->group(function () {
     Route::post('/refresh', [ApiController::class, 'refresh']);
     Route::post('/login', [ApiController::class, 'login']);
-    Route::get('/topic', [ApiController::class, 'topic']);
     Route::post('/fcm', [ApiController::class, 'fcm']);
     Route::post('/forget', [ApiController::class, 'forget']);
-});
-Route::middleware('jwt')->group(function () {
+    });
+    Route::middleware('jwt')->group(function () {
+    Route::get('/topic', [ApiController::class, 'topic']);
     Route::post('/pass', [ApiController::class, 'upass']);
     Route::post('/pay', [Home::class, 'midtransPay']);
     Route::get('/absensi', [ApiController::class, 'absensi']);

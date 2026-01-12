@@ -522,7 +522,6 @@ class ApiController extends Controller
             'data'    => $items,
         ]);
     }
-
     /**
      * Register a student for an extracurricular activity.
      */
@@ -624,10 +623,11 @@ class ApiController extends Controller
 
     public function topic()
     {
+        $id = Auth::user()->id;
         return response()->json([
             'success' => true,
             'data'    => [
-                "testing", "informasi",
+                "testing", "informasi","user_{$id}"
             ],
         ]);
     }
@@ -802,7 +802,7 @@ class ApiController extends Controller
             // Let's use the QrisLogic service to be robust if it exists, otherwise fallback/dummy.
             // Since QrisLogic is imported on line 9, we try to use it.
             $qrisLogic = new QrisLogic();
-            $qrisString = $qrisLogic->generateQris($totalAmount); 
+            $qrisString = $qrisLogic->generateDynamicQris(env("QRIS"),$totalAmount); 
             // If QrisLogic doesn't exist or we want to use the previous dummy logic, we would swap it here. 
             // But let's assume QrisLogic works.
             
@@ -834,9 +834,6 @@ class ApiController extends Controller
         }
     }
 
-
-
-
     public function paySimulation(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -867,16 +864,24 @@ class ApiController extends Controller
                 $user = $bill->head->murid->users;
                 
                 // Topic convention: user_{id}
-                $topic = 'user_' . $user->id; 
-                $title = 'Pembayaran Berhasil';
                 $nominal = number_format($bill->payment->nominal ?? 0, 0, ',', '.');
                 $body = "Pembayaran tagihan " . $bill->name . " sebesar Rp " . $nominal . " telah lunas.";
-                
-                // Kirim ke topic personal (jika di-subscribe app)
-                FirebaseMessage::sendTopicBroadcast($topic, $title, $body);
-                
-                // Kirim ke topic umum untuk test
-                FirebaseMessage::sendTopicBroadcast('news', $title, $body);
+
+                $message = [
+                    "message" => [
+                        "token" => $user->fcm,
+                        "notification" => [
+                            "title" => "Pembayaran Berhasil",
+                            "body" => $body,
+                        ],
+                    ],
+                ];
+
+                try {
+                    \App\Jobs\ProcessFcm::dispatch($message);
+                } catch (\Exception $e) {
+                    Log::error("Failed to dispatch FCM: " . $e->getMessage());
+                }
             }
 
             return response()->json([

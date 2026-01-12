@@ -156,47 +156,75 @@ class Home extends Controller
     public function assignPay(Request $request)
     {
         DB::beginTransaction();
-        try {
 
+        try {
             $numb = 0;
+
             foreach ($request->student_ids as $studentId) {
-                $head = Bill::where('head_id', $studentId)->where('payment_id', $request->class_id)->first();
+
+                $head = Bill::where('head_id', $studentId)
+                    ->where('payment_id', $request->class_id)
+                    ->first();
+
                 if (! $head) {
-                    $bill             = new Bill;
+
+                    $bill = new Bill;
                     $bill->payment_id = $request->class_id;
                     $bill->head_id    = $studentId;
                     $bill->save();
-                    $numb += 1;
 
-                    $fcm = optional($bill->head->murid->users->fcm);
-                    if($fcm)
-                    {
-                           $message = [
-                                "message" => [
-                                    "token"        => $fcm,
-                                    "notification" => [
-                                        "title" => "Pembayaran",
-                                        "body"  => "Anda mempunyai pembayaran " . $bill->payment->name,
-                                    ],
+                    $numb++;
+
+                    // 🔥 AMBIL TOKEN STRING (BUKAN optional)
+                    $fcm = $bill->head->murid->users->fcm ?? null;
+
+                    if (! empty($fcm)) {
+
+                        $message = [
+                            'message' => [
+                                'token' => $fcm, // STRING
+                                'notification' => [
+                                    'title' => 'Pembayaran',
+                                    'body'  => 'Anda mempunyai pembayaran ' . $bill->payment->name,
                                 ],
-                            ];
-                            ProcessFcm::dispatch($message);
+                            ],
+                        ];
+
+                        ProcessFcm::dispatch($message);
+                    } else {
+                        Log::warning('FCM token kosong', [
+                            'student_id' => $studentId,
+                        ]);
                     }
                 }
             }
 
+            DB::commit();
+
             if ($numb > 0) {
-                DB::commit();
-                return response()->json(['message' => 'Pembayaran berhasil ditambahkan untuk ' . $numb . ' murid']);
-            } else {
-                return response()->json(['message' => 'Pembayaran tidak valid'], 400);
+                return response()->json([
+                    'message' => "Pembayaran berhasil ditambahkan untuk {$numb} murid"
+                ]);
             }
 
+            return response()->json([
+                'message' => 'Pembayaran tidak valid'
+            ], 400);
+
         } catch (\Throwable $e) {
-            DB::rollback();
-            return response()->json(['message' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
+            DB::rollBack();
+
+            Log::error('assignPay error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'message' => 'Terjadi kesalahan'
+            ], 500);
         }
     }
+
 
     public function setting()
     {

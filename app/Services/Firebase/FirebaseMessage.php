@@ -3,7 +3,7 @@ namespace App\Services\Firebase;
 
 use Google_Client;
 use Illuminate\Support\Facades\Http;
-
+use Illuminate\Support\Facades\Log;
 class FirebaseMessage
 {
     public static function sendFCMMessage($message)
@@ -46,11 +46,16 @@ class FirebaseMessage
             ->post($url, $message);
 
         if ($response->successful()) {
+            Log::info('ok');
             return response()->json([
                 'message'  => 'Pesan berhasil dikirim',
                 'response' => $response->json(),
             ]);
         } else {
+           Log::error('FCM HTTP Error', [
+                    'status' => $response->status(),
+                    'body'   => $response->body(),
+                ]);
             return response()->json([
                 'message'  => 'Gagal mengirim pesan',
                 'status'   => $response->status(),
@@ -97,12 +102,14 @@ class FirebaseMessage
 
         // Hasil respons
         if ($response->successful()) {
+             Log::info('ok');
             return [
                 'success'  => true,
                 'message'  => 'Broadcast berhasil dikirim ke topic: ' . $topic,
                 'response' => $response->json(),
             ];
         } else {
+             Log::error('err');
             return [
                 'success' => false,
                 'message' => 'Gagal mengirim broadcast',

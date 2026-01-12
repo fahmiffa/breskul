@@ -57,8 +57,8 @@ class BillingCodeService
      */
     public function generateUniqueCode($billId): string
     {
-        $this->ensurePoolIsReady();
-        $today = $this->getBillingDate();
+        // $this->ensurePoolIsReady();
+        $today = now()->toDateString();
         $code = null;
 
         // Mulai Transaksi Database (Kritis untuk Syarat 3: Tidak Duplikasi)
@@ -96,7 +96,7 @@ class BillingCodeService
 
         if (is_null($code)) {
             Log::critical('Pool kode unik database habis!', ['date' => $today]);
-            throw new Exception('Quota kode unik harian (999) telah habis. Silahkan coba besok.');
+            throw new Exception('Quota kode pembayaran sudah habis');
         }
 
         return $code;

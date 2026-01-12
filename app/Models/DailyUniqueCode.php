@@ -7,4 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 class DailyUniqueCode extends Model
 {
     public $timestamps = false;
+
+    public function bill()
+    {
+        return $this->belongsTo(Bill::class, 'bill_id');
+    }
+
 }
