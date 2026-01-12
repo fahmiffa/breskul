@@ -522,6 +522,7 @@ class ApiController extends Controller
             'data'    => $items,
         ]);
     }
+
     /**
      * Register a student for an extracurricular activity.
      */
@@ -859,29 +860,27 @@ class ApiController extends Controller
             $bill->save();
 
             // Kirim Notif ke User
-            // Path: Bill -> Head -> Murid (Students) -> User
             if ($bill->head && $bill->head->murid && $bill->head->murid->users) {
                 $user = $bill->head->murid->users;
                 
                 // Topic convention: user_{id}
+                $topic = 'user_' . $user->id; 
+                $title = 'Pembayaran Berhasil';
                 $nominal = number_format($bill->payment->nominal ?? 0, 0, ',', '.');
-                $body = "Pembayaran tagihan " . $bill->name . " sebesar Rp " . $nominal . " telah lunas.";
+                $body = "Pembayaran " . $bill->payment->name . " sebesar Rp " . $nominal . " telah lunas.";
 
                 $message = [
                     "message" => [
                         "token" => $user->fcm,
                         "notification" => [
-                            "title" => "Pembayaran Berhasil",
+                            "title" => $title,
                             "body" => $body,
                         ],
                     ],
                 ];
-
-                try {
-                    \App\Jobs\ProcessFcm::dispatch($message);
-                } catch (\Exception $e) {
-                    Log::error("Failed to dispatch FCM: " . $e->getMessage());
-                }
+                
+                FirebaseMessage::sendTopicBroadcast($topic, $title, $body);
+                
             }
 
             return response()->json([
