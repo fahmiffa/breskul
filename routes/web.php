@@ -37,6 +37,8 @@ Route::prefix('dashboard')->middleware('auth')->name('dashboard.')->group(functi
     Route::prefix('master')->name('master.')->group(function () {
         Route::resource('kelas', App\Http\Controllers\ClassesController::class);
         Route::get('/akun', [Home::class, 'akun'])->name('akun.index');
+        Route::post('/akun/password', [Home::class, 'updateAccountPassword'])->name('akun.password');
+        Route::post('/akun/status', [Home::class, 'updateAccountStatus'])->name('akun.status');
         Route::resource('murid', App\Http\Controllers\StudentsController::class);
         Route::post('uuid/{rfid}', [App\Http\Controllers\StudentsController::class, 'storeRfid'])->name('rfid');
         Route::post('import', [App\Http\Controllers\StudentsController::class, 'import'])->name('import');

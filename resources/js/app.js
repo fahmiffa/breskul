@@ -78,6 +78,7 @@ import {
     jadwalForm,
     extraForm,
     verificationPayment,
+    accountManagement,
 } from "./custom.js";
 
 window.Alpine = Alpine;
@@ -94,4 +95,5 @@ Alpine.data("generateStudentsImport", generateStudentsImport);
 Alpine.data("jadwalForm", jadwalForm);
 Alpine.data("extraForm", extraForm);
 Alpine.data("verificationPayment", verificationPayment);
+Alpine.data("accountManagement", accountManagement);
 Alpine.start();

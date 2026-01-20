@@ -1006,3 +1006,112 @@ export function verificationPayment(data) {
         },
     };
 }
+
+export function accountManagement(data) {
+    return {
+        ...dataTable(data),
+        passwordModalOpen: false,
+        selectedUserId: null,
+        selectedUserName: "",
+        newPassword: "",
+        isLoading: false,
+
+        openPasswordModal(row) {
+            this.selectedUserId = row.id;
+            this.selectedUserName = row.data ? row.data.name : row.name;
+            this.newPassword = "";
+            this.passwordModalOpen = true;
+        },
+
+        closePasswordModal() {
+            this.passwordModalOpen = false;
+            this.selectedUserId = null;
+            this.newPassword = "";
+        },
+
+        async updatePassword() {
+            if (this.newPassword.length < 6) {
+                alert("Password minimal 6 karakter");
+                return;
+            }
+
+            this.isLoading = true;
+            try {
+                const token = document
+                    .querySelector('meta[name="csrf-token"]')
+                    .getAttribute("content");
+                const response = await fetch(
+                    "/dashboard/master/akun/password",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRF-TOKEN": token,
+                        },
+                        body: JSON.stringify({
+                            id: this.selectedUserId,
+                            password: this.newPassword,
+                        }),
+                    },
+                );
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(result.message);
+                    this.closePasswordModal();
+                } else {
+                    alert(result.message || "Gagal memperbarui password");
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Terjadi kesalahan koneksi");
+            } finally {
+                this.isLoading = false;
+            }
+        },
+
+        async updateStatus(row) {
+            const newStatus = row.status == 1 ? 0 : 1;
+            const confirmMessage =
+                newStatus == 1 ? "Aktifkan akun ini?" : "Nonaktifkan akun ini?";
+
+            if (!confirm(confirmMessage)) return;
+
+            try {
+                const token = document
+                    .querySelector('meta[name="csrf-token"]')
+                    .getAttribute("content");
+                const response = await fetch("/dashboard/master/akun/status", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": token,
+                    },
+                    body: JSON.stringify({
+                        id: row.id,
+                        status: newStatus,
+                    }),
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    // Update local data
+                    const index = this.rows.findIndex((r) => r.id === row.id);
+                    if (index !== -1) {
+                        this.rows[index].status = newStatus;
+                        this.rows[index].state =
+                            newStatus == 1 ? "Aktif" : "Tidak Aktif";
+                    }
+                    alert(result.message);
+                } else {
+                    alert(result.message || "Gagal memperbarui status");
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Terjadi kesalahan koneksi");
+            }
+        },
+    };
+}

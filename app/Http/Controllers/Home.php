@@ -377,4 +377,61 @@ class Home extends Controller
 
         return back()->with('success', 'Password berhasil diperbarui.');
     }
+    public function updateAccountPassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'id'       => 'required|exists:users,id',
+            'password' => 'required|min:6',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validasi gagal',
+                'errors'  => $validator->errors()
+            ], 400);
+        }
+
+        try {
+            $user           = User::find($request->id);
+            $user->password = Hash::make($request->password);
+            $user->save();
+
+            return response()->json([
+                'message' => 'Password berhasil diperbarui',
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function updateAccountStatus(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'id'     => 'required|exists:users,id',
+            'status' => 'required|in:0,1',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validasi gagal',
+                'errors'  => $validator->errors()
+            ], 400);
+        }
+
+        try {
+            $user         = User::find($request->id);
+            $user->status = $request->status;
+            $user->save();
+
+            return response()->json([
+                'message' => 'Status berhasil diperbarui',
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
