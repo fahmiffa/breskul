@@ -94,8 +94,10 @@ class PaymentController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Payment $payment)
+    public function destroy(Payment $pembayaran)
     {
-        //
+        Bill::where('payment_id',$pembayaran->id)->delete();
+        $pembayaran->delete();
+        return back()->with('success', 'Data berhasil di hapus');
     }
 }

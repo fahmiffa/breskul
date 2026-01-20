@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use App\Models\Extracurricular;
 use App\Models\Teach;
 use Illuminate\Http\Request;
+use App\Models\StudentExtracurricular;
 
 class ExtracurricularController extends Controller
 {
@@ -97,6 +98,7 @@ class ExtracurricularController extends Controller
      */
     public function destroy(Extracurricular $ekstrakurikuler)
     {
+        StudentExtracurricular::where('extracurricular_id',$ekstrakurikuler->id)->delete();
         $ekstrakurikuler->delete();
         return redirect()->route('dashboard.master.ekstrakurikuler.index')->with('success', 'Data berhasil dihapus');
     }
