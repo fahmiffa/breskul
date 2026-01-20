@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Carbon\Carbon;
@@ -13,7 +14,7 @@ class Students extends Model
 
     public function getageAttribute()
     {
-        return Carbon::parse($this->birth)->age;
+        return Carbon::parse($this->bith)->age;
     }
 
     public function head()
@@ -33,7 +34,7 @@ class Students extends Model
 
     public function reg()
     {
-        return $this->hasOne(Head::class, 'student_id', 'id')->where('status',1)->latest();
+        return $this->hasOne(Head::class, 'student_id', 'id')->where('status', 1)->latest();
     }
 
     public function academics()
@@ -75,5 +76,4 @@ class Students extends Model
     {
         return $this->gender == 1 ? "laki-laki" : "Perempuan";
     }
-
 }

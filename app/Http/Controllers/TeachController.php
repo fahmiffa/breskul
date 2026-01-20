@@ -144,6 +144,8 @@ class TeachController extends Controller
     public function destroy(Teach $guru)
     {
         $guru->delete();
+        $guru->mapel()->delete();
+        $guru->extra()->delete();
         return redirect()->route('dashboard.master.guru.index');
     }
 }

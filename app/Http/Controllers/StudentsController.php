@@ -272,6 +272,8 @@ class StudentsController extends Controller
     public function destroy(Students $murid)
     {
         $murid->delete();
+        $murid->head()->delete();
+        $murid->users()->delete();
         return redirect()->route('dashboard.master.murid.index');
     }
 }

@@ -246,6 +246,8 @@ class MapelDayController extends Controller
      */
     public function destroy(MapelDay $mapelDay)
     {
-        //
+        $mapelDay->delete();
+        $mapelDay->time()->delete();
+        return redirect()->route('dashboard.master.jadwal.index')->with('success', 'Data berhasil dihapus');
     }
 }

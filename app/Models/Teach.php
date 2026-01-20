@@ -15,6 +15,17 @@ class Teach extends Model
         return $this->gender == 1 ? "laki-laki" : "Perempuan";
     }
 
+    public function extra()
+    {
+        return $this->hasMany(Extracurricular::class, 'guru_id', 'id');
+    }
+
+    public function mapel()
+    {
+        return $this->hasMany(MapelTime::class, 'teacher_id', 'id');
+    }
+
+
     public function apps()
     {
         return $this->hasOne(App::class, 'id', 'app');
