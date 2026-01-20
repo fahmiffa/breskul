@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\AcademicYears;
@@ -103,23 +104,24 @@ class StudentsController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'gender'        => 'nullable|in:1,2',
-            'place'         => 'nullable|string',
-            'birth'         => 'nullable|date',
-            'dad'           => 'nullable|string',
-            'dadJob'        => 'nullable|string',
-            'mom'           => 'nullable|string',
-            'momJob'        => 'nullable|string',
-            'hp_parent'     => 'nullable|string',
-            'email'         => 'nullable|unique:users,email',
-            'image'         => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            'sekolah_kelas' => 'nullable|string',
-            'alamat'        => 'required|string',
-            'hp_siswa'      => 'required',
-            "name"          => "required",
-            "nis"           => "required",
-        ],
+        $validated = $request->validate(
+            [
+                'gender'        => 'nullable|in:1,2',
+                'place'         => 'nullable|string',
+                'birth'         => 'nullable|date',
+                'dad'           => 'nullable|string',
+                'dadJob'        => 'nullable|string',
+                'mom'           => 'nullable|string',
+                'momJob'        => 'nullable|string',
+                'hp_parent'     => 'nullable|string',
+                'email'         => 'nullable|unique:users,email',
+                'image'         => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                'sekolah_kelas' => 'nullable|string',
+                'alamat'        => 'required|string',
+                'hp_siswa'      => 'required',
+                "name"          => "required",
+                "nis"           => "required",
+            ],
             [
                 'required' => 'Field Wajib disi',
             ]
@@ -184,10 +186,7 @@ class StudentsController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Students $murid)
-    {
-
-    }
+    public function show(Students $murid) {}
 
     /**
      * Show the form for editing the specified resource.
@@ -207,23 +206,24 @@ class StudentsController extends Controller
      */
     public function update(Request $request, Students $murid)
     {
-        $validated = $request->validate([
-            // Wajib diisi
-            'gender'        => 'nullable|in:1,2',
-            'place'         => 'nullable|string',
-            'birth'         => 'nullable|date',
-            'dad'           => 'nullable|string',
-            'dadJob'        => 'nullable|string',
-            'mom'           => 'nullable|string',
-            'momJob'        => 'nullable|string',
-            'hp_parent'     => 'nullable|string',
-            'email'         => 'nullable|unique:users,email',
-            'image'         => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            'sekolah_kelas' => 'nullable|string',
-            'alamat'        => 'required|string',
-            'hp_siswa'      => 'required',
-            "name"          => "required",
-        ],
+        $validated = $request->validate(
+            [
+                // Wajib diisi
+                'gender'        => 'nullable|in:1,2',
+                'place'         => 'nullable|string',
+                'birth'         => 'nullable|date',
+                'dad'           => 'nullable|string',
+                'dadJob'        => 'nullable|string',
+                'mom'           => 'nullable|string',
+                'momJob'        => 'nullable|string',
+                'hp_parent'     => 'nullable|string',
+                'email'         => 'nullable|unique:users,email',
+                'image'         => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                'sekolah_kelas' => 'nullable|string',
+                'alamat'        => 'required|string',
+                'hp_siswa'      => 'required',
+                "name"          => "required",
+            ],
             [
                 'required' => 'Field Wajib disi',
             ]
@@ -271,9 +271,35 @@ class StudentsController extends Controller
      */
     public function destroy(Students $murid)
     {
-        $murid->delete();
-        $murid->head()->delete();
-        $murid->users()->delete();
-        return redirect()->route('dashboard.master.murid.index');
+        try {
+            DB::beginTransaction();
+
+            // 1. Delete Presents (Absensi)
+            \App\Models\Present::where('student_id', $murid->id)->delete();
+
+            // 2. Delete StudentExtracurriculars
+            \App\Models\StudentExtracurricular::where('student_id', $murid->id)->delete();
+
+            // 3. Delete Head (and its Bills)
+            foreach ($murid->head as $head) {
+                // Delete Bills for this Head
+                $head->bill()->delete();
+                $head->delete();
+            }
+
+            // 4. Delete User account if exists
+            if ($murid->users) {
+                $murid->users->delete();
+            }
+
+            // 5. Delete Student
+            $murid->delete();
+
+            DB::commit();
+            return redirect()->route('dashboard.master.murid.index')->with('success', 'Data murid beserta relasinya berhasil dihapus.');
+        } catch (\Throwable $e) {
+            DB::rollback();
+            return back()->with('error', 'Gagal menghapus data: ' . $e->getMessage());
+        }
     }
 }

@@ -15,7 +15,6 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
     Route::get('/pengumuman', [AuthController::class, 'pengumuman']);
     Route::get('/pengumuman/{id}', [AuthController::class, 'pengumuman'])->name('pengumuman');
-
 });
 
 Route::prefix('dashboard')->middleware('auth')->name('dashboard.')->group(function () {
@@ -23,6 +22,7 @@ Route::prefix('dashboard')->middleware('auth')->name('dashboard.')->group(functi
     Route::get('/', [Home::class, 'index'])->name('home');
     Route::get('/pembayaran', [Home::class, 'pembayaran'])->name('pay');
     Route::post('/pembayaran', [Home::class, 'assignPay']);
+    Route::post('/pembayaran/verifikasi', [Home::class, 'manualVerify'])->name('pay.verify');
     Route::get('/absensi', [Home::class, 'absensi'])->name('absensi');
     Route::get('setting', [Home::class, 'setting'])->name('setting');
     Route::post('/pass', [Home::class, 'pass'])->name('pass');

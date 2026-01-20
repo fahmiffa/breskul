@@ -1,20 +1,19 @@
-@extends('base.layout')
-@section('title', $title)
-@push('styles')
+<?php $__env->startSection('title', $title); ?>
+<?php $__env->startPush('styles'); ?>
 <style>
     [x-cloak] {
         display: none !important;
     }
 </style>
-@endpush
-@section('content')
+<?php $__env->stopPush(); ?>
+<?php $__env->startSection('content'); ?>
 <div class="flex flex-col bg-white rounded-lg shadow-md p-6" x-data="{
-        ...dataTable({{ json_encode($items) }}),
+        ...dataTable(<?php echo e(json_encode($items)); ?>),
         async verifyBill(id) {
             if (!confirm('Verifikasi pembayaran ini secara manual?')) return;
 
             try {
-                const response = await fetch('{{ route('dashboard.pay.verify') }}', {
+                const response = await fetch('<?php echo e(route('dashboard.pay.verify')); ?>', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -133,9 +132,9 @@
                     <select x-model="selectedClass" required
                         class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="">Pilih Pembayaran</option>
-                        @foreach (\App\Models\Payment::latest()->get() as $item)
-                        <option value="{{ $item->id }}">{{ $item->name }}</option>
-                        @endforeach
+                        <?php $__currentLoopData = \App\Models\Payment::latest()->get(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <option value="<?php echo e($item->id); ?>"><?php echo e($item->name); ?></option>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </select>
                 </div>
 
@@ -163,4 +162,5 @@
     </div>
 
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('base.layout', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH E:\project\breskul\web\resources\views/home/pay/index.blade.php ENDPATH**/ ?>

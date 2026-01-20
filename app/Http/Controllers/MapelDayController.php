@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\AcademicYears;
@@ -104,7 +105,6 @@ class MapelDayController extends Controller
                         $maptime->start       = $mapel['start_time'];
                         $maptime->end         = $mapel['end_time'];
                         $maptime->save();
-
                     }
                 }
             }
@@ -228,7 +228,6 @@ class MapelDayController extends Controller
                         $maptime->start       = $mapel['start_time'];
                         $maptime->end         = $mapel['end_time'];
                         $maptime->save();
-
                     }
                 }
             }
@@ -244,10 +243,13 @@ class MapelDayController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(MapelDay $mapelDay)
+    public function destroy($id)
     {
-        $mapelDay->delete();
-        $mapelDay->time()->delete();
+        $days = MapelDay::where('class_id', $id)->get();
+        foreach ($days as $day) {
+            $day->time()->delete();
+            $day->delete();
+        }
         return redirect()->route('dashboard.master.jadwal.index')->with('success', 'Data berhasil dihapus');
     }
 }
