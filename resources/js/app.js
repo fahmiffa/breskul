@@ -1,47 +1,46 @@
 import Alpine from "alpinejs";
 import "trix";
 import "trix/dist/trix.css";
-import './alignment-elements.js';
+import "./alignment-elements.js";
 
 window.Trix = Trix; // Don't need to bind to the window, but useful for debugging.
 Trix.config.toolbar.getDefaultHTML = toolbarDefaultHTML;
 
 Trix.config.blockAttributes.alignLeft = {
-  tagName: 'align-left',
-  parse: false,
-  nestable: false,
-  exclusive: true,
+    tagName: "align-left",
+    parse: false,
+    nestable: false,
+    exclusive: true,
 };
 
 Trix.config.blockAttributes.alignCenter = {
-  tagName: 'align-center',
-  parse: false,
-  nestable: false,
-  exclusive: true,
+    tagName: "align-center",
+    parse: false,
+    nestable: false,
+    exclusive: true,
 };
 
 Trix.config.blockAttributes.alignRight = {
-  tagName: 'align-right',
-  parse: false,
-  nestable: false,
-  exclusive: true,
+    tagName: "align-right",
+    parse: false,
+    nestable: false,
+    exclusive: true,
 };
 
 // trix-before-initialize runs too early.
 // We only need to do this once. Everything after initialize will get the
 // defaultHTML() call automatically.
-document.addEventListener('trix-initialize', updateToolbars, { once: true });
+document.addEventListener("trix-initialize", updateToolbars, { once: true });
 
 function updateToolbars(event) {
-  const toolbars = document.querySelectorAll('trix-toolbar');
-  const html = Trix.config.toolbar.getDefaultHTML();
-  toolbars.forEach((toolbar) => (toolbar.innerHTML = html));
+    const toolbars = document.querySelectorAll("trix-toolbar");
+    const html = Trix.config.toolbar.getDefaultHTML();
+    toolbars.forEach((toolbar) => (toolbar.innerHTML = html));
 }
 
-
 function toolbarDefaultHTML() {
-  const { lang } = Trix.config;
-  return `
+    const { lang } = Trix.config;
+    return `
   <div class="trix-button-row">
     <span class="trix-button-group trix-button-group--alignment-tools">
       <button type="button" class="trix-button trix-button--icon trix-button--icon-align-left" data-trix-attribute="alignLeft" title="Align Left" tabindex="-1">Align Left</button>
@@ -65,7 +64,6 @@ function toolbarDefaultHTML() {
 `;
 }
 
-
 import {
     layout,
     dataTable,
@@ -78,7 +76,8 @@ import {
     trixEditor,
     generateStudentsImport,
     jadwalForm,
-    extraForm
+    extraForm,
+    verificationPayment,
 } from "./custom.js";
 
 window.Alpine = Alpine;
@@ -87,11 +86,12 @@ Alpine.data("dataTable", dataTable);
 Alpine.data("salesChart", salesChart);
 Alpine.data("payChart", payChart);
 Alpine.data("countUp", countUp);
-Alpine.data('currencyInput', currencyInput);
-Alpine.data('generateBill', generateBill);
-Alpine.data('generateImport', generateImport);
-Alpine.data('trixEditor', trixEditor);
-Alpine.data('generateStudentsImport', generateStudentsImport);
-Alpine.data('jadwalForm', jadwalForm);
-Alpine.data('extraForm', extraForm);
+Alpine.data("currencyInput", currencyInput);
+Alpine.data("generateBill", generateBill);
+Alpine.data("generateImport", generateImport);
+Alpine.data("trixEditor", trixEditor);
+Alpine.data("generateStudentsImport", generateStudentsImport);
+Alpine.data("jadwalForm", jadwalForm);
+Alpine.data("extraForm", extraForm);
+Alpine.data("verificationPayment", verificationPayment);
 Alpine.start();

@@ -2,37 +2,48 @@ import md5 from "blueimp-md5";
 
 export function jadwalForm(initialJadwals = null) {
     const processInitialData = (data) => {
-        if (!data || data.length === 0) return [
-            { hari: "", mapels: [{ id: null, mapel_id: "", start_time: "", end_time: "" }] }
-        ];
-        
+        if (!data || data.length === 0)
+            return [
+                {
+                    hari: "",
+                    mapels: [
+                        {
+                            id: null,
+                            mapel_id: "",
+                            start_time: "",
+                            end_time: "",
+                        },
+                    ],
+                },
+            ];
+
         // Check if data is already grouped (has 'mapels' property)
-        if (data[0] && data[0].hasOwnProperty('mapels')) {
-             return data.map(group => ({
+        if (data[0] && data[0].hasOwnProperty("mapels")) {
+            return data.map((group) => ({
                 ...group,
-                mapels: group.mapels.map(m => ({
+                mapels: group.mapels.map((m) => ({
                     ...m,
                     mapel_id: m.mapel_id || m.mapel || "", // fallback for mapel_id
-                    guru_id: m.guru_id || m.guru || ""     // fallback for guru_id if needed
-                }))
-             }));
+                    guru_id: m.guru_id || m.guru || "", // fallback for guru_id if needed
+                })),
+            }));
         }
 
         const groups = {};
-        data.forEach(item => {
+        data.forEach((item) => {
             if (!groups[item.hari]) {
                 groups[item.hari] = {
                     hari: item.hari,
-                    mapels: []
+                    mapels: [],
                 };
             }
             // Ensure mapel_id is present, fallback to mapel if exists
             groups[item.hari].mapels.push({
                 ...item,
-                mapel_id: item.mapel_id || item.mapel || ""
+                mapel_id: item.mapel_id || item.mapel || "",
             });
         });
-        
+
         return Object.values(groups);
     };
 
@@ -56,7 +67,9 @@ export function jadwalForm(initialJadwals = null) {
         addJadwal() {
             this.jadwals.push({
                 hari: "",
-                mapels: [{ id: null, mapel_id: "", start_time: "", end_time: "" }]
+                mapels: [
+                    { id: null, mapel_id: "", start_time: "", end_time: "" },
+                ],
             });
         },
 
@@ -69,7 +82,7 @@ export function jadwalForm(initialJadwals = null) {
                 id: null,
                 mapel_id: "",
                 start_time: "",
-                end_time: ""
+                end_time: "",
             });
         },
 
@@ -229,7 +242,7 @@ export const dataTable = (data) => {
                     return String(val)
                         .toLowerCase()
                         .includes(this.search.toLowerCase());
-                })
+                }),
             );
 
             temp.sort((a, b) => {
@@ -385,19 +398,40 @@ export const dataTable = (data) => {
                 });
         },
         formatIndo(waktu) {
-            if (!waktu) return '-';
+            if (!waktu) return "-";
             const date = new Date(waktu);
             if (isNaN(date.getTime())) return waktu;
-            const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-            const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-            
+            const days = [
+                "Minggu",
+                "Senin",
+                "Selasa",
+                "Rabu",
+                "Kamis",
+                "Jumat",
+                "Sabtu",
+            ];
+            const months = [
+                "Januari",
+                "Februari",
+                "Maret",
+                "April",
+                "Mei",
+                "Juni",
+                "Juli",
+                "Agustus",
+                "September",
+                "Oktober",
+                "November",
+                "Desember",
+            ];
+
             const dayName = days[date.getDay()];
             const day = date.getDate();
             const monthName = months[date.getMonth()];
             const year = date.getFullYear();
-            const hours = String(date.getHours()).padStart(2, '0');
-            const minutes = String(date.getMinutes()).padStart(2, '0');
-            
+            const hours = String(date.getHours()).padStart(2, "0");
+            const minutes = String(date.getMinutes()).padStart(2, "0");
+
             return `${dayName}, ${day} ${monthName} ${year} Jam ${hours}:${minutes}`;
         },
     };
@@ -454,7 +488,7 @@ export function salesChart(par, reg) {
                 headers: {
                     "Content-Type": "application/json",
                     "X-CSRF-TOKEN": document.querySelector(
-                        "meta[name=csrf-token]"
+                        "meta[name=csrf-token]",
                     ),
                 },
             })
@@ -548,7 +582,7 @@ export function payChart(par, reg) {
                 headers: {
                     "Content-Type": "application/json",
                     "X-CSRF-TOKEN": document.querySelector(
-                        "meta[name=csrf-token]"
+                        "meta[name=csrf-token]",
                     ),
                 },
             })
@@ -574,10 +608,10 @@ export function payChart(par, reg) {
             const total = Object.values(dataByYear);
 
             const bayarData = categories.map(
-                (month) => dataByYear[month]?.bayar || 0
+                (month) => dataByYear[month]?.bayar || 0,
             );
             const belumData = categories.map(
-                (month) => dataByYear[month]?.belum || 0
+                (month) => dataByYear[month]?.belum || 0,
             );
 
             const chartData = {
@@ -900,7 +934,7 @@ export function generateStudentsImport() {
 
 export function extraForm(students = [], extras = []) {
     return {
-        searchStudent: '',
+        searchStudent: "",
         selectedStudents: [],
         students: students,
         extras: extras,
@@ -908,23 +942,67 @@ export function extraForm(students = [], extras = []) {
 
         get filteredStudents() {
             let search = this.searchStudent.toLowerCase();
-            return this.students.filter(s => {
-                const isSelected = this.selectedStudents.some(sel => sel.id === s.id);
+            return this.students.filter((s) => {
+                const isSelected = this.selectedStudents.some(
+                    (sel) => sel.id === s.id,
+                );
                 if (isSelected) return false;
-                if (search === '') return true;
-                return s.name.toLowerCase().includes(search) ||
-                       s.nis.toLowerCase().includes(search);
+                if (search === "") return true;
+                return (
+                    s.name.toLowerCase().includes(search) ||
+                    s.nis.toLowerCase().includes(search)
+                );
             });
         },
 
         selectStudent(student) {
             this.selectedStudents.push(student);
-            this.searchStudent = '';
+            this.searchStudent = "";
             this.showDropdown = false;
         },
 
         removeStudent(id) {
-            this.selectedStudents = this.selectedStudents.filter(s => s.id !== id);
-        }
+            this.selectedStudents = this.selectedStudents.filter(
+                (s) => s.id !== id,
+            );
+        },
+    };
+}
+
+export function verificationPayment(data) {
+    return {
+        ...dataTable(data),
+        async verifyBill(id) {
+            if (!confirm("Verifikasi pembayaran ini secara manual?")) return;
+
+            try {
+                const token = document
+                    .querySelector('meta[name="csrf-token"]')
+                    .getAttribute("content");
+                const response = await fetch(
+                    "/dashboard/pembayaran/verifikasi",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRF-TOKEN": token,
+                        },
+                        body: JSON.stringify({ id: id }),
+                    },
+                );
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(result.message);
+                    window.location.reload();
+                } else {
+                    alert(result.message || "Gagal verifikasi");
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Terjadi kesalahan koneksi");
+            }
+        },
     };
 }

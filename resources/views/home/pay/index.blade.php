@@ -8,35 +8,7 @@
 </style>
 @endpush
 @section('content')
-<div class="flex flex-col bg-white rounded-lg shadow-md p-6" x-data="{
-        ...dataTable({{ json_encode($items) }}),
-        async verifyBill(id) {
-            if (!confirm('Verifikasi pembayaran ini secara manual?')) return;
-
-            try {
-                const response = await fetch('{{ route('dashboard.pay.verify') }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').content
-                    },
-                    body: JSON.stringify({ id: id })
-                });
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    alert(result.message);
-                    window.location.reload();
-                } else {
-                    alert(result.message || 'Gagal verifikasi');
-                }
-            } catch (error) {
-                console.error(error);
-                alert('Terjadi kesalahan koneksi');
-            }
-        }
-    }">
+<div class="flex flex-col bg-white rounded-lg shadow-md p-6" x-data="verificationPayment({{ json_encode($items) }})">
     <div class="mb-4 flex justify-between items-center gap-2">
         <input type="text" x-model="search" placeholder="Pencarian"
             class="w-full md:w-1/2 border border-gray-300  ring-0 rounded-xl px-3 py-2 focus:outline-[#177245]" />
