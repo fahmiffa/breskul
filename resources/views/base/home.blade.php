@@ -53,8 +53,6 @@
                 <circle cx="6" cy="10" r="1" />
                 <circle cx="18" cy="10" r="1" />
             </svg>
-        </span> Ekstrakurikuler
+        </span> {{ config('app.school_mode') ? 'Ekstrakurikuler' : 'UKM' }}
     </li>
 </a>
-
-

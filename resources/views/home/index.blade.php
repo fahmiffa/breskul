@@ -13,24 +13,31 @@
 </div>
 
 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+    @if(config('app.school_mode'))
     <div class="bg-white p-4 rounded-xl shadow-md border border-gray-100 flex flex-col items-center justify-center">
         <div class="text-gray-500 text-sm font-medium">Total Kelas</div>
         <div class="text-2xl font-bold text-green-600">{{ $totalKelas }}</div>
     </div>
+    @else
     <div class="bg-white p-4 rounded-xl shadow-md border border-gray-100 flex flex-col items-center justify-center">
-        <div class="text-gray-500 text-sm font-medium">Total Mapel</div>
+        <div class="text-gray-500 text-sm font-medium">Total Prodi</div>
+        <div class="text-2xl font-bold text-green-600">{{ $totalProdi }}</div>
+    </div>
+    @endif
+    <div class="bg-white p-4 rounded-xl shadow-md border border-gray-100 flex flex-col items-center justify-center">
+        <div class="text-gray-500 text-sm font-medium">Total {{ config('app.school_mode') ? 'Mapel' : 'Makul' }}</div>
         <div class="text-2xl font-bold text-blue-600">{{ $totalMapel }}</div>
     </div>
     <div class="bg-white p-4 rounded-xl shadow-md border border-gray-100 flex flex-col items-center justify-center">
-        <div class="text-gray-500 text-sm font-medium">Total Guru</div>
+        <div class="text-gray-500 text-sm font-medium">Total {{ config('app.school_mode') ? 'Guru' : 'Dosen' }}</div>
         <div class="text-2xl font-bold text-purple-600">{{ $totalGuru }}</div>
     </div>
     <div class="bg-white p-4 rounded-xl shadow-md border border-gray-100 flex flex-col items-center justify-center">
-        <div class="text-gray-500 text-sm font-medium">Total Murid</div>
+        <div class="text-gray-500 text-sm font-medium">Total {{ config('app.school_mode') ? 'Murid' : 'Mahasiswa' }}</div>
         <div class="text-2xl font-bold text-orange-600">{{ $totalMurid }}</div>
     </div>
     <div class="bg-white p-4 rounded-xl shadow-md border border-gray-100 flex flex-col items-center justify-center">
-        <div class="text-gray-500 text-sm font-medium">Total Ekskul</div>
+        <div class="text-gray-500 text-sm font-medium">Total {{ config('app.school_mode') ? 'Ekskul' : 'UKM' }}</div>
         <div class="text-2xl font-bold text-red-600">{{ $totalEkskul }}</div>
     </div>
 </div>

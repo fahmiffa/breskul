@@ -72,6 +72,16 @@ class Students extends Model
             ->withTimestamps();    // jika ingin otomatis created_at dan updated_at dari pivot
     }
 
+    public function Prodi()
+    {
+        return $this->belongsToMany(
+            Prodi::class,
+            'heads',
+            'student_id',
+            'prodi_id'
+        )->withPivot('status')->withTimestamps();
+    }
+
     public function getjenisAttribute()
     {
         return $this->gender == 1 ? "laki-laki" : "Perempuan";

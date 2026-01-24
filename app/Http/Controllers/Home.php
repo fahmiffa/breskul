@@ -201,15 +201,32 @@ class Home extends Controller
             $q->where('app', $appId);
         })->count();
 
-        return view('home.index', compact('paymentData', 'unpaidPaymentData', 'attendanceData', 'attendanceLabels', 'year', 'totalMurid', 'totalGuru', 'totalKelas', 'totalMapel', 'totalEkskul'));
+        $totalProdi = \App\Models\Prodi::when($isAppUser, function ($q) use ($appId) {
+            $q->where('app', $appId);
+        })->count();
+
+        return view('home.index', compact('paymentData', 'unpaidPaymentData', 'attendanceData', 'attendanceLabels', 'year', 'totalMurid', 'totalGuru', 'totalKelas', 'totalMapel', 'totalEkskul', 'totalProdi'));
     }
 
     public function pembayaran()
     {
         $title = "Pembayaran";
+        $appId = auth()->user()->app->id ?? null;
+        $isAppUser = auth()->user()->role == 1 && $appId;
+
+        if (config('app.school_mode')) {
+            $classes = Classes::when($isAppUser, function ($q) use ($appId) {
+                $q->where('app', $appId);
+            })->get();
+        } else {
+            $classes = \App\Models\Prodi::when($isAppUser, function ($q) use ($appId) {
+                $q->where('app', $appId);
+            })->get();
+        }
+
         $items = Students::latest()
-            ->when(auth()->user()->role == 1 && auth()->user()->app, function ($query) {
-                $query->where('app', auth()->user()->app->id);
+            ->when($isAppUser, function ($query) use ($appId) {
+                $query->where('app', $appId);
             })
             ->has('reg')
             ->get()
@@ -230,11 +247,13 @@ class Home extends Controller
                     'head'  => $q->reg->id,
                     'nis'   => $q->nis,
                     'name'  => $q->name,
-                    'kelas' => $q->reg->kelas->name ?? null,
+                    'kelas' => config('app.school_mode')
+                        ? ($q->reg->kelas->name ?? null)
+                        : ($q->reg->prodi->name ?? null),
                     'bill'  => $bills,
                 ];
             });
-        return view('home.pay.index', compact('items', 'title'));
+        return view('home.pay.index', compact('items', 'title', 'classes'));
     }
 
     public function assignPay(Request $request)
@@ -269,8 +288,9 @@ class Home extends Controller
             DB::commit();
 
             if ($numb > 0) {
+                $studentTerm = config('app.school_mode') ? 'murid' : 'mahasiswa';
                 return response()->json([
-                    'message' => "Pembayaran berhasil ditambahkan untuk {$numb} murid"
+                    'message' => "Pembayaran berhasil ditambahkan untuk {$numb} $studentTerm"
                 ]);
             }
 

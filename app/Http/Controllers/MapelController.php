@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Mapel;
@@ -16,7 +17,7 @@ class MapelController extends Controller
                 $query->where('app', auth()->user()->app->id);
             })
             ->get();
-        $title = "Master Mata Pelajaran";
+        $title = "Master " . (config('app.school_mode') ? 'Mata Pelajaran' : 'Mata Kuliah');
         return view('master.mapel.index', compact('items', 'title'));
     }
 
@@ -26,7 +27,7 @@ class MapelController extends Controller
     public function create()
     {
         $action = "Tambah";
-        $title  = "Form Mata Pelajaran";
+        $title  = "Form " . (config('app.school_mode') ? 'Mata Pelajaran' : 'Mata Kuliah');
         return view('master.mapel.form', compact('action', 'title'));
     }
 
@@ -63,7 +64,7 @@ class MapelController extends Controller
     public function edit(Mapel $mapel)
     {
         $action = "Edit";
-        $title  = "Form Kelas";
+        $title  = "Form " . (config('app.school_mode') ? 'Mata Pelajaran' : 'Mata Kuliah');
         $items  = $mapel;
         return view('master.mapel.form', compact('action', 'title', 'items'));
     }

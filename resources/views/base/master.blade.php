@@ -1,3 +1,4 @@
+@if(config('app.school_mode'))
 <a href="{{ route('dashboard.master.kelas.index') }}">
     <li
         class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 {{ Route::is('dashboard.master.kelas.*') ? 'bg-green-100' : null }}">
@@ -18,6 +19,7 @@
         </span> Kelas
     </li>
 </a>
+@endif
 <a href="{{ route('dashboard.master.mapel.index') }}">
     <li
         class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 {{ Route::is('dashboard.master.mapel.*') ? 'bg-green-100' : null }}">
@@ -28,7 +30,7 @@
                 <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20" />
                 <path d="m9 9.5 2 2 4-4" />
             </svg>
-        </span> Mapel
+        </span> {{ config('app.school_mode') ? 'Mapel' : 'Makul' }}
     </li>
 </a>
 
@@ -46,7 +48,7 @@
                 <path d="M22 10v6" />
                 <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" />
             </svg></span>
-        Murid
+        {{ config('app.school_mode') ? 'Murid' : 'Mahasiswa' }}
     </li>
 </a>
 <a href="{{ route('dashboard.master.guru.index') }}">
@@ -62,7 +64,7 @@
                 <circle cx="16" cy="11" r="2" />
                 <circle cx="8" cy="11" r="2" />
             </svg></span>
-        Guru
+        {{ config('app.school_mode') ? 'Guru' : 'Dosen' }}
     </li>
 </a>
 
@@ -164,7 +166,7 @@
                 <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" />
                 <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />
             </svg></span>
-        Ekstrakurikuler
+        {{ config('app.school_mode') ? 'Ekstrakurikuler' : 'UKM' }}
     </li>
 </a>
 <a href="{{ route('dashboard.master.akun.index') }}">
@@ -182,34 +184,71 @@
         Akun
     </li>
 </a>
+@if(!config('app.school_mode'))
+<a href="{{ route('dashboard.master.fakultas.index') }}">
+    <li
+        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 cursor-pointer {{ Route::is('dashboard.master.fakultas.*') ? 'bg-green-100' : null }}">
+        <span class="text-green-500 mr-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="lucide lucide-building-icon lucide-building">
+                <rect width="16" height="20" x="4" y="2" rx="2" ry="2" />
+                <path d="M9 22v-4h6v4" />
+                <path d="M8 6h.01" />
+                <path d="M16 6h.01" />
+                <path d="M12 6h.01" />
+                <path d="M12 10h.01" />
+                <path d="M12 14h.01" />
+                <path d="M16 10h.01" />
+                <path d="M16 14h.01" />
+                <path d="M8 10h.01" />
+                <path d="M8 14h.01" />
+            </svg>
+        </span> Fakultas
+    </li>
+</a>
+<a href="{{ route('dashboard.master.prodi.index') }}">
+    <li
+        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 cursor-pointer {{ Route::is('dashboard.master.prodi.*') ? 'bg-green-100' : null }}">
+        <span class="text-green-500 mr-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="lucide lucide-book-open-icon lucide-book-open">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+            </svg>
+        </span> Prodi
+    </li>
+</a>
+@endif
 @if (auth()->user()->role == 0)
-    <a href="{{ route('dashboard.master.api.index') }}">
-        <li
-            class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 {{ Route::is('dashboard.api.kelas.*') ? 'bg-green-100' : null }}">
-            <span class="text-green-500 mr-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                    stroke-linejoin="round" class="lucide lucide-key-icon lucide-key">
-                    <path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4" />
-                    <path d="m21 2-9.6 9.6" />
-                    <circle cx="7.5" cy="15.5" r="5.5" />
-                </svg>
-            </span> Key
-        </li>
-    </a>
-    <a href="{{ route('dashboard.master.app.index') }}">
-        <li
-            class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 {{ Route::is('dashboard.master.app.*') ? 'bg-green-100' : null }}">
-            <span class="text-green-500 mr-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                    stroke-linejoin="round" class="lucide lucide-layout-grid-icon lucide-layout-grid">
-                    <rect width="7" height="7" x="3" y="3" rx="1" />
-                    <rect width="7" height="7" x="14" y="3" rx="1" />
-                    <rect width="7" height="7" x="14" y="14" rx="1" />
-                    <rect width="7" height="7" x="3" y="14" rx="1" />
-                </svg>
-            </span> App
-        </li>
-    </a>
+<a href="{{ route('dashboard.master.api.index') }}">
+    <li
+        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 {{ Route::is('dashboard.api.kelas.*') ? 'bg-green-100' : null }}">
+        <span class="text-green-500 mr-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" class="lucide lucide-key-icon lucide-key">
+                <path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4" />
+                <path d="m21 2-9.6 9.6" />
+                <circle cx="7.5" cy="15.5" r="5.5" />
+            </svg>
+        </span> Key
+    </li>
+</a>
+<a href="{{ route('dashboard.master.app.index') }}">
+    <li
+        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 {{ Route::is('dashboard.master.app.*') ? 'bg-green-100' : null }}">
+        <span class="text-green-500 mr-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" class="lucide lucide-layout-grid-icon lucide-layout-grid">
+                <rect width="7" height="7" x="3" y="3" rx="1" />
+                <rect width="7" height="7" x="14" y="3" rx="1" />
+                <rect width="7" height="7" x="14" y="14" rx="1" />
+                <rect width="7" height="7" x="3" y="14" rx="1" />
+            </svg>
+        </span> App
+    </li>
+</a>
 @endif

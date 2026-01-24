@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Extracurricular;
@@ -18,7 +19,7 @@ class ExtracurricularController extends Controller
                 $query->where('app', auth()->user()->app->id);
             })
             ->get();
-        $title = "Master Ekstrakurikuler";
+        $title = "Master " . (config('app.school_mode') ? 'Ekstrakurikuler' : 'UKM');
         return view('master.ekstrakurikuler.index', compact('items', 'title'));
     }
 
@@ -28,7 +29,7 @@ class ExtracurricularController extends Controller
     public function create()
     {
         $action = "Tambah";
-        $title  = "Form Ekstrakurikuler";
+        $title  = "Form " . (config('app.school_mode') ? 'Ekstrakurikuler' : 'UKM');
         $teaches = Teach::when(auth()->user()->role == 1 && auth()->user()->app, function ($query) {
             $query->where('app', auth()->user()->app->id);
         })->get();
@@ -69,7 +70,7 @@ class ExtracurricularController extends Controller
     public function edit(Extracurricular $ekstrakurikuler)
     {
         $action = "Edit";
-        $title  = "Form Ekstrakurikuler";
+        $title  = "Form " . (config('app.school_mode') ? 'Ekstrakurikuler' : 'UKM');
         $items  = $ekstrakurikuler;
         $teaches = Teach::when(auth()->user()->role == 1 && auth()->user()->app, function ($query) {
             $query->where('app', auth()->user()->app->id);
@@ -98,7 +99,7 @@ class ExtracurricularController extends Controller
      */
     public function destroy(Extracurricular $ekstrakurikuler)
     {
-        StudentExtracurricular::where('extracurricular_id',$ekstrakurikuler->id)->delete();
+        StudentExtracurricular::where('extracurricular_id', $ekstrakurikuler->id)->delete();
         $ekstrakurikuler->delete();
         return redirect()->route('dashboard.master.ekstrakurikuler.index')->with('success', 'Data berhasil dihapus');
     }

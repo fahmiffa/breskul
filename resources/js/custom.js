@@ -972,6 +972,34 @@ export function extraForm(students = [], extras = []) {
 export function verificationPayment(data) {
     return {
         ...dataTable(data),
+        selectedKelas: "",
+        filteredData() {
+            let temp = this.rows.filter((row) => {
+                const matchesSearch = Object.values(row).some((val) => {
+                    return String(val)
+                        .toLowerCase()
+                        .includes(this.search.toLowerCase());
+                });
+                const matchesKelas =
+                    this.selectedKelas === "" ||
+                    row.kelas === this.selectedKelas;
+                return matchesSearch && matchesKelas;
+            });
+
+            temp.sort((a, b) => {
+                let valA = a[this.sortColumn];
+                let valB = b[this.sortColumn];
+
+                if (typeof valA === "string") valA = valA.toLowerCase();
+                if (typeof valB === "string") valB = valB.toLowerCase();
+
+                if (valA < valB) return this.sortAsc ? -1 : 1;
+                if (valA > valB) return this.sortAsc ? 1 : -1;
+                return 0;
+            });
+
+            return temp;
+        },
         async verifyBill(id) {
             if (!confirm("Verifikasi pembayaran ini secara manual?")) return;
 

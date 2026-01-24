@@ -48,6 +48,8 @@ Route::prefix('dashboard')->middleware('auth')->name('dashboard.')->group(functi
         Route::post('/akademik/import', [App\Http\Controllers\AcademicYearsController::class, 'import'])->name('akademik.import');
         Route::post('akademik/assign-class', [App\Http\Controllers\AcademicYearsController::class, 'assignClass'])->name('akademik.assign-class');
         Route::resource('pembayaran', App\Http\Controllers\PaymentController::class);
+        Route::resource('fakultas', App\Http\Controllers\FakultasController::class);
+        Route::resource('prodi', App\Http\Controllers\ProdiController::class);
         Route::resource('mapel', App\Http\Controllers\MapelController::class);
         Route::resource('jadwal', App\Http\Controllers\MapelDayController::class);
         Route::resource('absensi', App\Http\Controllers\AttendanceConfigController::class);

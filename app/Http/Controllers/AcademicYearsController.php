@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Jobs\BulkInsertJob;
@@ -21,7 +22,7 @@ class AcademicYearsController extends Controller
             })->where('status', 1)
             ->first();
 
-        $head = Students::where('app',auth()->user()->app->id)->latest()->has('reg')->get();
+        $head = Students::where('app', auth()->user()->app->id)->latest()->has('reg')->get();
 
         $data = [];
 
@@ -53,34 +54,28 @@ class AcademicYearsController extends Controller
 
     public function akademik()
     {
-        $head = Head::whereHas('akademik', function ($q) {
-            $q->where('status', 1);
-        })->with('kelas', 'murid', 'akademik')->latest()->get();
-
-        $items = $head->map(function ($item) {
-            return [
-                'id'       => $item->murid->id,
-                'nis'      => $item->murid->nis,
-                'name'     => $item->murid->name,
-                'kelas'    => $item->kelas ? $item->kelas->name : null,
-                'akademik' => $item->akademik->name,
-                'jenis'    => $item->murid->jenis,
-            ];
-        });
+        $appId = auth()->user()->app->id ?? null;
+        $isAppUser = auth()->user()->role == 1 && $appId;
 
         $items = Students::latest()
-            ->when(auth()->user()->role == 1 && auth()->user()->app, function ($query) {
-                $query->where('app', auth()->user()->app->id);
-            })->with('kelas', 'academics')
+            ->when($isAppUser, function ($query) use ($appId) {
+                $query->where('app', $appId);
+            })
+            ->with([
+                config('app.school_mode') ? 'Kelas' : 'Prodi',
+                'academics'
+            ])
             ->get();
 
-        $title    = "Master Akademik";
+        $title = "Master Akademik";
+
         $akademik = AcademicYears::latest()
-            ->when(auth()->user()->role == 1 && auth()->user()->app, function ($query) {
-                $query->where('app', auth()->user()->app->id);
-            })->where('status', 1)
-            ->doesntHave('head')
+            ->when($isAppUser, function ($query) use ($appId) {
+                $query->where('app', $appId);
+            })
+            ->where('status', 1)
             ->first();
+
         return view('master.akademik.home', compact('items', 'title', 'akademik'));
     }
 
@@ -112,7 +107,11 @@ class AcademicYearsController extends Controller
                     ->first();
 
                 if ($head) {
-                    $head->class_id = $validated['class_id'];
+                    if (config('app.school_mode')) {
+                        $head->class_id = $validated['class_id'];
+                    } else {
+                        $head->prodi_id = $validated['class_id'];
+                    }
                     $head->save();
                     $numb += 1;
                 }
@@ -120,11 +119,13 @@ class AcademicYearsController extends Controller
 
             if ($numb > 0) {
                 DB::commit();
-                return response()->json(['message' => 'Kelas berhasil diterapkan untuk ' . $numb . ' murid']);
+                $term = config('app.school_mode') ? 'Kelas' : 'Prodi';
+                $studentTerm = config('app.school_mode') ? 'murid' : 'mahasiswa';
+                return response()->json(['message' => "$term berhasil diterapkan untuk $numb $studentTerm"]);
             } else {
-                return response()->json(['message' => 'Kelas tidak valid'], 400);
+                $term = config('app.school_mode') ? 'Kelas' : 'Prodi';
+                return response()->json(['message' => "$term tidak valid"], 400);
             }
-
         } catch (\Throwable $e) {
             DB::rollback();
             return response()->json(['message' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
@@ -160,9 +161,10 @@ class AcademicYearsController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            "name" => "required",
-        ],
+        $validated = $request->validate(
+            [
+                "name" => "required",
+            ],
             [
                 'required' => 'Field Wajib disi',
             ]
@@ -209,10 +211,11 @@ class AcademicYearsController extends Controller
      */
     public function update(Request $request, AcademicYears $semester)
     {
-        $validated = $request->validate([
-            'tahun' => 'required|digits:4',
-            "name"  => "required",
-        ],
+        $validated = $request->validate(
+            [
+                'tahun' => 'required|digits:4',
+                "name"  => "required",
+            ],
             [
                 'required' => 'Field Wajib disi',
             ]

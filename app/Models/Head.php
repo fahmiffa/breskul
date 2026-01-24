@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -25,5 +26,10 @@ class Head extends Model
     public function akademik()
     {
         return $this->belongsTo(AcademicYears::class, 'academic_id');
+    }
+
+    public function prodi()
+    {
+        return $this->belongsTo(Prodi::class, 'prodi_id');
     }
 }

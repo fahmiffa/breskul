@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Teach;
@@ -19,7 +20,7 @@ class TeachController extends Controller
             })
             ->get();
 
-        $title = "Master Guru";
+        $title = "Master " . (config('app.school_mode') ? 'Guru' : 'Dosen');
         return view('master.guru.index', compact('items', 'title'));
     }
 
@@ -29,7 +30,7 @@ class TeachController extends Controller
     public function create()
     {
         $action = "Tambah";
-        $title  = "Form Guru";
+        $title  = "Form " . (config('app.school_mode') ? 'Guru' : 'Dosen');
         return view('master.guru.form', compact('action', 'title'));
     }
 
@@ -38,11 +39,12 @@ class TeachController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'gender' => 'nullable|in:1,2',
-            'alamat' => 'required|string',
-            "name"   => "required",
-        ],
+        $validated = $request->validate(
+            [
+                'gender' => 'nullable|in:1,2',
+                'alamat' => 'required|string',
+                "name"   => "required",
+            ],
             [
                 'required' => 'Field Wajib disi',
             ]
@@ -96,7 +98,7 @@ class TeachController extends Controller
     public function edit(Teach $guru)
     {
         $action = "Edit";
-        $title  = "Form Guru";
+        $title  = "Form " . (config('app.school_mode') ? 'Guru' : 'Dosen');
         $items  = $guru;
         return view('master.guru.form', compact('action', 'title', 'items'));
     }
@@ -106,11 +108,12 @@ class TeachController extends Controller
      */
     public function update(Request $request, Teach $guru)
     {
-        $validated = $request->validate([
-            'gender' => 'nullable|in:1,2',
-            'alamat' => 'required|string',
-            "name"   => "required",
-        ],
+        $validated = $request->validate(
+            [
+                'gender' => 'nullable|in:1,2',
+                'alamat' => 'required|string',
+                "name"   => "required",
+            ],
             [
                 'required' => 'Field Wajib disi',
             ]

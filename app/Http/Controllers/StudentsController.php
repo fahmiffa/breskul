@@ -6,9 +6,11 @@ use App\Models\AcademicYears;
 use App\Models\Classes;
 use App\Models\Head;
 use App\Models\Students;
+use App\Models\Prodi;
 use DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class StudentsController extends Controller
 {
@@ -24,7 +26,7 @@ class StudentsController extends Controller
             })
             ->get();
 
-        $title = "Master Murid";
+        $title = "Master " . (config('app.school_mode') ? 'Murid' : 'Mahasiswa');
         $kelas = Classes::latest()
             ->when(auth()->user()->role == 1 && auth()->user()->app, function ($query) {
                 $query->where('app', auth()->user()->app->id);
@@ -65,9 +67,6 @@ class StudentsController extends Controller
         }
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         $action = "Tambah";
@@ -82,8 +81,16 @@ class StudentsController extends Controller
                 $query->where('app', auth()->user()->app->id);
             })->where('status', 1)
             ->get();
-        $title = "Form Murid";
-        return view('master.murid.form', compact('action', 'title', 'kelas', 'akademik'));
+
+        $prodis = null;
+        if (!config('app.school_mode')) {
+            $prodis = Prodi::when(auth()->user()->role == 1 && auth()->user()->app, function ($query) {
+                $query->where('app', auth()->user()->app->id);
+            })->get();
+        }
+
+        $title = "Form " . (config('app.school_mode') ? 'Murid' : 'Mahasiswa');
+        return view('master.murid.form', compact('action', 'title', 'kelas', 'akademik', 'prodis'));
     }
 
     public function storeRfid(Request $request, $id)
@@ -99,9 +106,6 @@ class StudentsController extends Controller
         return redirect()->back()->with('success', 'RFID berhasil disimpan.');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $validated = $request->validate(
@@ -121,6 +125,8 @@ class StudentsController extends Controller
                 'hp_siswa'      => 'required',
                 "name"          => "required",
                 "nis"           => "required",
+                "kelas"         => config('app.school_mode') ? "required" : "nullable",
+                "prodi"         => !config('app.school_mode') ? "required" : "nullable",
             ],
             [
                 'required' => 'Field Wajib disi',
@@ -167,6 +173,7 @@ class StudentsController extends Controller
             $head->app         = auth()->user()->app->id;
             $head->student_id  = $siswa->id;
             $head->class_id    = $request->kelas;
+            $head->prodi_id    = $request->prodi;
             $head->academic_id = $request->akademik;
             $head->status      = 1;
             $head->save();
@@ -188,17 +195,22 @@ class StudentsController extends Controller
      */
     public function show(Students $murid) {}
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(Students $murid)
     {
         $action   = "Edit";
-        $title    = "Form Murid";
+        $title    = "Form " . (config('app.school_mode') ? 'Murid' : 'Mahasiswa');
         $items    = $murid;
         $akademik = AcademicYears::latest()->get();
         $kelas    = Classes::latest()->get();
-        return view('master.murid.form', compact('action', 'title', 'items', 'kelas', 'akademik'));
+
+        $prodis = null;
+        if (!config('app.school_mode')) {
+            $prodis = Prodi::when(auth()->user()->role == 1 && auth()->user()->app, function ($query) {
+                $query->where('app', auth()->user()->app->id);
+            })->get();
+        }
+
+        return view('master.murid.form', compact('action', 'title', 'items', 'kelas', 'akademik', 'prodis'));
     }
 
     /**
@@ -223,6 +235,8 @@ class StudentsController extends Controller
                 'alamat'        => 'required|string',
                 'hp_siswa'      => 'required',
                 "name"          => "required",
+                "kelas"         => config('app.school_mode') ? "required" : "nullable",
+                "prodi"         => !config('app.school_mode') ? "required" : "nullable",
             ],
             [
                 'required' => 'Field Wajib disi',
@@ -232,8 +246,11 @@ class StudentsController extends Controller
         DB::beginTransaction();
 
         try {
-            $path = null;
+            $path = $murid->img;
             if ($request->hasFile('image')) {
+                if ($path) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
+                }
                 $path = $request->file('image')->store('images', 'public');
             }
 
@@ -253,14 +270,18 @@ class StudentsController extends Controller
             $siswa->gender    = $request->gender;
             $siswa->save();
 
+            // Update Head (active head)
+            $head = Head::where('student_id', $murid->id)->where('academic_id', $request->akademik)->first();
+            if ($head) {
+                $head->class_id = $request->kelas;
+                $head->prodi_id = $request->prodi;
+                $head->save();
+            }
+
             DB::commit();
             return redirect()->route('dashboard.master.murid.index');
         } catch (\Throwable $e) {
             DB::rollback();
-
-            if (isset($path)) {
-                Storage::disk('public')->delete($path);
-            }
 
             return back()->withErrors('Terjadi kesalahan saat menyimpan data: ' . $e->getMessage());
         }
