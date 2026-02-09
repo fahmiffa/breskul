@@ -21,7 +21,8 @@ use App\Models\User;
 use App\Rules\NumberWa;
 use App\Services\Firebase\FirebaseMessage;
 use App\Services\PaymentWebhookService;
-use DB;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -182,10 +183,21 @@ class ApiController extends Controller
     {
         $user  = JWTAuth::user();
         if ($user->role == 2) {
-            $app   = $user->studentData->app;
+            $app = $user->studentData->app ?? null;
+        } elseif ($user->role == 3) {
+            $app = $user->teacherData->app ?? null;
         } else {
-            $app   = $user->teacherData->app;
+            // role 1 or 0 (admin)
+            $app = $user->app->id ?? $user->studentData->app ?? $user->teacherData->app ?? null;
         }
+
+        if (!$app) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Aplikasi tidak teridentifikasi untuk user ini',
+            ], 400);
+        }
+
         $items = Annoucement::query()
             ->when($id, function ($query) use ($id) {
                 return $query->where('id', $id);
