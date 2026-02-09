@@ -226,17 +226,24 @@ class ApiController extends Controller
                     'payload'   => $request->uid,
                 ]);
 
+                $today = date('Y-m-d');
+                $historyCount = Present::where('student_id', $be->id)
+                    ->whereDate('waktu', $today)
+                    ->count();
+                $status = $historyCount == 0 ? 'masuk' : 'pulang';
+
                 $pres             = new Present;
                 $pres->student_id = $be->id;
                 $pres->app        = $be->app;
                 $pres->waktu      = date("Y-m-d H:i:s");
+                $pres->status     = $status;
                 $pres->save();
 
-                if ($be->users->fcm) {
+                if ($be->users?->fcm) {
                     $message = [
-                        "topic"  => "user_" . $be->users->id,
-                        "title" => "Absensi",
-                        "body"  => "Anda berhasil absensi " . $pres->time,
+                        "topic" => "user_" . $be->users->id,
+                        "title" => "Absensi Berhasil",
+                        "body"  => "Anda berhasil absensi " . $status . " pada " . $pres->time,
                     ];
                     ProcessFcm::dispatch($message);
                 }
@@ -330,6 +337,15 @@ class ApiController extends Controller
         $pres->waktu      = $now;
         $pres->status     = $status;
         $pres->save();
+
+        if ($student->users->fcm) {
+            $message = [
+                "topic" => "user_" . $student->users->id,
+                "title" => "Absensi Berhasil",
+                "body"  => "Anda berhasil absensi " . $status . " pada " . $pres->time,
+            ];
+            ProcessFcm::dispatch($message);
+        }
 
         return response()->json([
             'success' => true,
@@ -802,6 +818,15 @@ class ApiController extends Controller
         $pres->waktu = $now;
         $pres->status = $type;
         $pres->save();
+
+        if ($user->fcm) {
+            $message = [
+                "topic" => "user_" . $user->id,
+                "title" => "Absensi Berhasil",
+                "body"  => "Anda berhasil absensi " . $type . " pada " . $pres->time,
+            ];
+            ProcessFcm::dispatch($message);
+        }
 
         return response()->json([
             'success' => true,

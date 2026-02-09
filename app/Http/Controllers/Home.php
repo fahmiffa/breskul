@@ -87,16 +87,22 @@ class Home extends Controller
         return Transaction::hook($data);
     }
 
-    public function absensi()
+    public function absensi(Request $request)
     {
-        $items = Present::latest()
+        $start = $request->get('start_date', date('Y-m-d'));
+        $end   = $request->get('end_date', date('Y-m-d'));
+
+        $items = Present::query()
+            ->whereDate('waktu', '>=', $start)
+            ->whereDate('waktu', '<=', $end)
             ->when(auth()->user()->role == 1 && auth()->user()->app, function ($query) {
                 $query->where('app', auth()->user()->app->id);
             })
             ->with('murid')
             ->latest()
             ->get();
-        return view('home.present.index', compact('items'));
+
+        return view('home.present.index', compact('items', 'start', 'end'));
     }
 
     public function akun()
