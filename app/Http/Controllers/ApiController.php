@@ -296,24 +296,36 @@ class ApiController extends Controller
         }
 
         $now = now();
+        $today = $now->toDateString();
 
-        // Cek jika sudah absen hari ini (opsional, tapi biasanya dibutuhkan agar tidak double)
-        // Namun untuk operator scanning, mungkin dibolehkan berkali-kali? 
-        // Mari kita buat simpel saja dulu.
+        // Check existing attendance for today
+        $historyCount = Present::where('student_id', $student->id)
+            ->whereDate('waktu', $today)
+            ->count();
+
+        if ($historyCount >= 2) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Siswa ' . $student->name . ' sudah melakukan absensi masuk dan pulang hari ini.',
+            ], 400);
+        }
+
+        $status = $historyCount == 0 ? 'masuk' : 'pulang';
 
         $pres = new Present;
         $pres->student_id = $student->id;
         $pres->app        = $student->app;
         $pres->waktu      = $now;
-        $pres->status     = 'masuk'; // Default status for QR scan
+        $pres->status     = $status;
         $pres->save();
 
         return response()->json([
             'success' => true,
-            'message' => 'Absensi berhasil dicatat untuk ' . $student->name,
+            'message' => 'Absensi ' . $status . ' berhasil dicatat untuk ' . $student->name,
             'data'    => [
-                'name'  => $student->name,
-                'waktu' => $pres->time,
+                'name'   => $student->name,
+                'waktu'  => $pres->time,
+                'status' => $status,
             ],
         ]);
     }
