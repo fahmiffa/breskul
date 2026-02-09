@@ -320,6 +320,7 @@ class ApiController extends Controller
             'expires_in' => auth('api')->factory()->getTTL() * 1,
             'role'       => $user->role,
             'uid'        => md5($user->id),
+            'mode'       => config('app.school_mode')
         ]);
     }
 
