@@ -9,6 +9,8 @@ Route::post('/push', [ApiController::class, 'rfid']);
 Route::post('/status', function () {
     return response()->json([
         'status' => false,
+        'message'=> 'Mohon maaf, aplikasi sedang dalam perbaikan.\nSilahkan coba lagi secara berkala',
+        'version'=>'1.0.0'
     ], 200);
 });
 
