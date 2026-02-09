@@ -12,6 +12,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 
+use chillerlan\QRCode\QRCode;
+use chillerlan\QRCode\QROptions;
+
 class StudentsController extends Controller
 {
     /**
@@ -34,6 +37,50 @@ class StudentsController extends Controller
             ->get();
 
         return view('master.murid.index', compact('items', 'title', 'kelas'));
+    }
+
+    public function qrcode($id)
+    {
+        $student = Students::findOrFail($id);
+        $content = $student->id . '-' . $student->nis;
+
+        $options = new QROptions([
+            'outputType' => QRCode::OUTPUT_IMAGE_PNG,
+            'eccLevel' => QRCode::ECC_L,
+            'scale' => 5,
+        ]);
+
+        $qrcode = new QRCode($options);
+        $image = $qrcode->render($content);
+
+        // Remove data URI prefix to get raw PNG
+        $base64 = str_replace('data:image/png;base64,', '', $image);
+        $imageData = base64_decode($base64);
+
+        return response($imageData)->header('Content-Type', 'image/png');
+    }
+
+    public function downloadQrcode($id)
+    {
+        $student = Students::findOrFail($id);
+        $content = $student->id . '-' . $student->nis;
+
+        $options = new QROptions([
+            'outputType' => QRCode::OUTPUT_IMAGE_PNG,
+            'eccLevel' => QRCode::ECC_L,
+            'scale' => 10,
+        ]);
+
+        $qrcode = new QRCode($options);
+        $image = $qrcode->render($content);
+
+        // Remove data URI prefix to get raw PNG
+        $base64 = str_replace('data:image/png;base64,', '', $image);
+        $imageData = base64_decode($base64);
+
+        return response($imageData)
+            ->header('Content-Type', 'image/png')
+            ->header('Content-Disposition', 'attachment; filename="qrcode-' . $student->nis . '.png"');
     }
 
     public function import(Request $request)

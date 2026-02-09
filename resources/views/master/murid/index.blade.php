@@ -38,6 +38,7 @@
                     <th @click="sortBy('name')" class="cursor-pointer px-4 py-2">Nama</th>
                     <th @click="sortBy('jenis')" class="cursor-pointer px-4 py-2">Jenis Kelamin</th>
                     <th class="cursor-pointer px-4 py-2">Alamat</th>
+                    <th class="px-4 py-2">QR Code</th>
                     <th class="px-4 py-2">Action</th>
                 </tr>
             </thead>
@@ -49,6 +50,15 @@
                         <td class="px-4 py-2" x-text="row.name"></td>
                         <td class="px-4 py-2" x-text="row.jenis"></td>
                         <td class="px-4 py-2" x-text="row.alamat"></td>
+                        <td class="px-4 py-2">
+                            <div class="flex flex-col items-center gap-1">
+                                <img :src="'/dashboard/master/murid/' + row.id + '/qrcode'" alt="QR Code" class="w-16 h-16 border p-1 bg-white">
+                                <a :href="'/dashboard/master/murid/' + row.id + '/qrcode/download'"
+                                    class="text-[10px] bg-blue-500 hover:bg-blue-600 text-white px-2 py-0.5 rounded transition-colors">
+                                    Download
+                                </a>
+                            </div>
+                        </td>
                         <td class="px-4 py-2 flex items-center gap-1">
                             <a :href="'/dashboard/master/murid/' + row.id + '/edit'"
                                 class="text-green-600 hover:text-green-700">
@@ -95,7 +105,7 @@
                     </tr>
                 </template>
                 <tr x-show="filteredData().length === 0">
-                    <td colspan="5" class="text-center px-4 py-2 text-gray-500">No results found.</td>
+                    <td colspan="7" class="text-center px-4 py-2 text-gray-500">No results found.</td>
                 </tr>
             </tbody>
         </table>

@@ -40,6 +40,8 @@ Route::prefix('dashboard')->middleware('auth')->name('dashboard.')->group(functi
         Route::post('/akun/password', [Home::class, 'updateAccountPassword'])->name('akun.password');
         Route::post('/akun/status', [Home::class, 'updateAccountStatus'])->name('akun.status');
         Route::resource('murid', App\Http\Controllers\StudentsController::class);
+        Route::get('murid/{id}/qrcode', [App\Http\Controllers\StudentsController::class, 'qrcode'])->name('murid.qrcode');
+        Route::get('murid/{id}/qrcode/download', [App\Http\Controllers\StudentsController::class, 'downloadQrcode'])->name('murid.qrcode.download');
         Route::post('uuid/{rfid}', [App\Http\Controllers\StudentsController::class, 'storeRfid'])->name('rfid');
         Route::post('import', [App\Http\Controllers\StudentsController::class, 'import'])->name('import');
         Route::resource('guru', App\Http\Controllers\TeachController::class);

@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Jobs\ProcessFcm;
@@ -39,13 +40,16 @@ class ApiController extends Controller
     public function forget(Request $request)
     {
 
-        $validator = Validator::make($request->all(), [
-            'hp' => ['required', new NumberWa()],
-        ],
+        $validator = Validator::make(
+            $request->all(),
+            [
+                'hp' => ['required', new NumberWa()],
+            ],
             [
                 'hp.required' => 'Nomor wajib diisi.',
                 'hp.unique'   => 'Nomor sudah terdaftar.',
-            ]);
+            ]
+        );
         if ($validator->fails()) {
             return response()->json([
                 'errors' => $validator->errors(),
@@ -76,7 +80,6 @@ class ApiController extends Controller
             return response()->json([
                 'status' => true,
             ], 200);
-
         } catch (\Throwable $e) {
             DB::rollback();
             return response()->json(['error' => $e->getMessage()], 500);
@@ -167,7 +170,6 @@ class ApiController extends Controller
                         'nominal' => number_format($bill->payment->nominal, 0, ',', '.') ?? null,
                     ];
                 });
-
             });
 
         return response()->json([
@@ -179,12 +181,9 @@ class ApiController extends Controller
     public function pengumuman($id = null)
     {
         $user  = JWTAuth::user();
-        if($user->role == 2)
-        {
+        if ($user->role == 2) {
             $app   = $user->studentData->app;
-        }
-        else
-        {
+        } else {
             $app   = $user->teacherData->app;
         }
         $items = Annoucement::query()
@@ -223,10 +222,10 @@ class ApiController extends Controller
 
                 if ($be->users->fcm) {
                     $message = [
-                            "topic"  => "user_".$be->users->id,
-                            "title" => "Absensi",
-                            "body"  => "Anda berhasil absensi " . $pres->time,
-                            ];
+                        "topic"  => "user_" . $be->users->id,
+                        "title" => "Absensi",
+                        "body"  => "Anda berhasil absensi " . $pres->time,
+                    ];
                     ProcessFcm::dispatch($message);
                 }
 
@@ -234,7 +233,6 @@ class ApiController extends Controller
                     'success' => true,
                     'msg'     => $be->name,
                 ], 200);
-
             } else {
                 Log::channel('absensi')->info('Data absensi ditolak', [
                     'device_id' => $deviceId,
@@ -246,7 +244,6 @@ class ApiController extends Controller
                     'msg'     => 'Kartu error',
                 ], 400);
             }
-
         } else {
 
             Log::channel('absensi')->info('Data absensi ditolak', [
@@ -265,6 +262,60 @@ class ApiController extends Controller
     {
         $service->handle($request->all());
         return response()->json(['success' => true], 200);
+    }
+
+    public function scanQr(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'qr_code' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'errors' => $validator->errors(),
+            ], 400);
+        }
+
+        $qrData = \explode('-', $request->qr_code);
+        if (\count($qrData) != 2) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Format QR Code tidak valid',
+            ], 400);
+        }
+
+        $studentId = $qrData[0];
+        $nis = $qrData[1];
+
+        $student = Students::where('id', $studentId)->where('nis', $nis)->first();
+        if (!$student) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Siswa tidak ditemukan',
+            ], 404);
+        }
+
+        $now = now();
+
+        // Cek jika sudah absen hari ini (opsional, tapi biasanya dibutuhkan agar tidak double)
+        // Namun untuk operator scanning, mungkin dibolehkan berkali-kali? 
+        // Mari kita buat simpel saja dulu.
+
+        $pres = new Present;
+        $pres->student_id = $student->id;
+        $pres->app        = $student->app;
+        $pres->waktu      = $now;
+        $pres->status     = 'masuk'; // Default status for QR scan
+        $pres->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Absensi berhasil dicatat untuk ' . $student->name,
+            'data'    => [
+                'name'  => $student->name,
+                'waktu' => $pres->time,
+            ],
+        ]);
     }
 
     /**
@@ -288,7 +339,7 @@ class ApiController extends Controller
 
         $user = \App\Models\User::where('email', $login)
             ->orWhere('username', $login)
-            ->whereIn('role', [2, 3])
+            ->whereIn('role', [0, 1, 2, 3])
             ->first();
 
         if (! $user) {
@@ -357,8 +408,7 @@ class ApiController extends Controller
 
         $user = Auth::user();
 
-        if (Auth::user()->role == 2) 
-        {
+        if (Auth::user()->role == 2) {
             return response()->json([
                 'success' => true,
                 'data'    => [
@@ -373,10 +423,7 @@ class ApiController extends Controller
                     ],
                 ],
             ]);
-
-        }
-        else
-        {
+        } else {
             return response()->json([
                 'success' => true,
                 'data'    => [
@@ -391,7 +438,6 @@ class ApiController extends Controller
                 ],
             ]);
         }
-
     }
 
     public function uploadImage(Request $request)
@@ -408,14 +454,14 @@ class ApiController extends Controller
 
         try {
             $user = Auth::user();
-            
+
             // Delete old image if exists
             if ($user->image && \Storage::disk('public')->exists($user->image)) {
                 \Storage::disk('public')->delete($user->image);
             }
 
             $path = $request->file('image')->store('profiles', 'public');
-            
+
             $user->image = $path;
             $user->save();
 
@@ -424,7 +470,6 @@ class ApiController extends Controller
                 'message' => 'Foto profil berhasil diperbarui',
                 'image'   => asset('storage/' . $path),
             ]);
-
         } catch (\Throwable $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
@@ -437,28 +482,27 @@ class ApiController extends Controller
 
             $head = Head::where('status', 1)
                 ->where('student_id', $user)
-                ->with(['kelas.jadwal.time.mapel','kelas.jadwal.time.mapelteach'])
+                ->with(['kelas.jadwal.time.mapel', 'kelas.jadwal.time.mapelteach'])
                 ->first();
 
             $data = $head ?  $head->kelas->jadwal->map(function ($q) {
-                    return [
-                        'hari'  => $q->hari,
-                        'waktu' => $q->time->map(function ($val) {
-                            return [
-                                'start' => date("H:i", strtotime($val->start)),
-                                'end'   => date("H:i", strtotime($val->end)),
-                                'mapel' => $val->mapel->name,
-                                'guru' => $val->mapelteach->name,
-                            ];
-                        }),
-                    ];
-                }) : null;
+                return [
+                    'hari'  => $q->hari,
+                    'waktu' => $q->time->map(function ($val) {
+                        return [
+                            'start' => date("H:i", strtotime($val->start)),
+                            'end'   => date("H:i", strtotime($val->end)),
+                            'mapel' => $val->mapel->name,
+                            'guru' => $val->mapelteach->name,
+                        ];
+                    }),
+                ];
+            }) : null;
 
             return response()->json([
                 'success' => true,
                 'data'    => $data,
             ]);
-
         } else if (Auth::user()->role == 3) {
             $user   = Auth::user()->data->id;
             $jadwal = MapelTime::where('teacher_id', $user)
@@ -632,7 +676,9 @@ class ApiController extends Controller
         return response()->json([
             'success' => true,
             'data'    => [
-                "testing", "informasi","user_{$id}"
+                "testing",
+                "informasi",
+                "user_{$id}"
             ],
         ]);
     }
@@ -706,13 +752,13 @@ class ApiController extends Controller
 
         // Check if already absensi today for this type
         $exists = Present::where('app', $app)
-            ->when($user->role == 2, function($q) use ($studentId) {
+            ->when($user->role == 2, function ($q) use ($studentId) {
                 return $q->where('student_id', $studentId);
-            }, function($q) use ($teacherId) {
+            }, function ($q) use ($teacherId) {
                 return $q->where('teacher_id', $teacherId);
             })
             ->whereDate('waktu', $now->toDateString())
-            ->where('status', $type) 
+            ->where('status', $type)
             ->exists();
 
         if ($exists) {
@@ -769,17 +815,17 @@ class ApiController extends Controller
                 // Namun simplenya, kita cek expired_at yang kita simpan
                 $now = now();
                 $expiredAt = $bill->qris_expired_at ? \Carbon\Carbon::parse($bill->qris_expired_at) : null;
-                
-                if ($expiredAt && $now->lt($expiredAt)) {
-                     // Reuse Existing
-                     $qrisString = $bill->qris_data;
-                     $uniqueCode = $bill->unique_code;
-                     $nominal = $bill->payment->nominal;
-                     $totalAmount = $nominal + intval($uniqueCode);
-                     // Generate Image URL (or store it, but dynamic is fine)
-                     $qrImageUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' . urlencode($qrisString);
 
-                     return response()->json([
+                if ($expiredAt && $now->lt($expiredAt)) {
+                    // Reuse Existing
+                    $qrisString = $bill->qris_data;
+                    $uniqueCode = $bill->unique_code;
+                    $nominal = $bill->payment->nominal;
+                    $totalAmount = $nominal + intval($uniqueCode);
+                    // Generate Image URL (or store it, but dynamic is fine)
+                    $qrImageUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' . urlencode($qrisString);
+
+                    return response()->json([
                         'success' => true,
                         'data' => [
                             'qris_string' => $qrisString,
@@ -789,7 +835,7 @@ class ApiController extends Controller
                             'total_amount' => $totalAmount,
                             'expired_at' => $expiredAt->toIso8601String(),
                             'reset_at' => '22:00',
-                            'is_existing' => true 
+                            'is_existing' => true
                         ]
                     ]);
                 }
@@ -807,10 +853,10 @@ class ApiController extends Controller
             // Let's use the QrisLogic service to be robust if it exists, otherwise fallback/dummy.
             // Since QrisLogic is imported on line 9, we try to use it.
             $qrisLogic = new QrisLogic();
-            $qrisString = $qrisLogic->generateDynamicQris(env("QRIS"),$totalAmount); 
+            $qrisString = $qrisLogic->generateDynamicQris(env("QRIS"), $totalAmount);
             // If QrisLogic doesn't exist or we want to use the previous dummy logic, we would swap it here. 
             // But let's assume QrisLogic works.
-            
+
             // Update Bill with QRIS Data
             $expiredAt = \Carbon\Carbon::now()->setTime(23, 0, 0);
             $bill->unique_code = $uniqueCode;
@@ -833,7 +879,6 @@ class ApiController extends Controller
                     'is_existing' => false
                 ]
             ]);
-
         } catch (\Throwable $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
@@ -866,9 +911,9 @@ class ApiController extends Controller
             // Kirim Notif ke User
             if ($bill->head && $bill->head->murid && $bill->head->murid->users) {
                 $user = $bill->head->murid->users;
-                
+
                 // Topic convention: user_{id}
-                $topic = 'user_' . $user->id; 
+                $topic = 'user_' . $user->id;
                 $title = 'Pembayaran Berhasil';
                 $nominal = number_format($bill->payment->nominal ?? 0, 0, ',', '.');
                 $body = "Pembayaran " . $bill->payment->name . " sebesar Rp " . $nominal . " telah lunas.";
@@ -882,9 +927,8 @@ class ApiController extends Controller
                         ],
                     ],
                 ];
-                
+
                 FirebaseMessage::sendTopicBroadcast($topic, $title, $body);
-                
             }
 
             return response()->json([
@@ -892,7 +936,6 @@ class ApiController extends Controller
                 'message' => 'Simulasi pembayaran berhasil.',
                 'data' => $bill
             ]);
-
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
