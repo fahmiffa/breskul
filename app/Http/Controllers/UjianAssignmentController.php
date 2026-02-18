@@ -120,4 +120,16 @@ class UjianAssignmentController extends Controller
             ]
         ]);
     }
+
+    public function pdf($id)
+    {
+        $item = UjianStudent::with(['ujian.mapel', 'ujian.guru', 'student'])->findOrFail($id);
+
+        $soalIds = $item->ujian->soal_id ?? [];
+        $soals = \App\Models\Soal::whereIn('id', $soalIds)->get();
+        $answers = $item->answers ?? [];
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('master.ujian_assignment.pdf', compact('item', 'soals', 'answers'));
+        return $pdf->download('Evaluasi-' . $item->student->name . '-' . $item->ujian->nama . '.pdf');
+    }
 }

@@ -142,7 +142,15 @@
                 <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600"></div>
             </div>
         </div>
-        <div class="p-6 border-t bg-gray-50 flex justify-end">
+        <div class="p-6 border-t bg-gray-50 flex justify-end gap-3">
+            <a id="btnDownloadPdf" href="#" target="_blank" class="px-6 py-2 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition-all flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" x2="12" y1="15" y2="3" />
+                </svg>
+                Download PDF
+            </a>
             <button onclick="closeModal()" class="px-6 py-2 bg-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-300 transition-all">Tutup</button>
         </div>
     </div>
@@ -157,6 +165,7 @@
 
         modal.classList.remove('hidden');
         content.innerHTML = `<div class="flex justify-center py-10"><div class="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600"></div></div>`;
+        document.getElementById('btnDownloadPdf').href = `{{ url('dashboard/penjadwalan-ujian') }}/${id}/pdf`;
 
         fetch(`{{ url('dashboard/penjadwalan-ujian') }}/${id}`)
             .then(response => response.json())
@@ -167,28 +176,52 @@
                     subtitle.innerText = `${data.student.name} • Skor: ${data.item.score}`;
 
                     let html = '';
+                    const stripHtml = (html) => {
+                        let tmp = document.createElement("DIV");
+                        tmp.innerHTML = html;
+                        return tmp.textContent || tmp.innerText || "";
+                    };
+
                     data.soals.forEach((soal, index) => {
-                        const studentAnswer = data.answers[soal.id] || '-';
-                        const isCorrect = studentAnswer === soal.jawaban;
+                        const studentKey = (data.answers[soal.id] || '-').toString().trim().toUpperCase();
+                        const correctValue = stripHtml(soal.jawaban).trim();
+
+                        // Deteksi value student (kunci atau teks langsung)
+                        let studentValue = studentKey;
+                        if (['A', 'B', 'C', 'D', 'E'].includes(studentKey)) {
+                            const optKey = 'opsi_' + studentKey.toLowerCase();
+                            studentValue = soal[optKey] ? stripHtml(soal[optKey]) : studentKey;
+                        }
+
+                        const isCorrect = stripHtml(studentValue).trim().toLowerCase() === correctValue.toLowerCase() ||
+                            studentKey.toLowerCase() === correctValue.toLowerCase();
 
                         html += `
                         <div class="mb-8 p-6 rounded-2xl border ${isCorrect ? 'border-green-100 bg-green-50/30' : 'border-red-100 bg-red-50/30'}">
                             <div class="flex justify-between items-start mb-4">
                                 <span class="bg-gray-800 text-white text-[10px] px-2 py-1 rounded-md font-bold uppercase tracking-wider">Soal ${index + 1}</span>
-                                <span class="text-xs font-bold ${isCorrect ? 'text-green-600' : 'text-red-600'} uppercase tracking-widest">${isCorrect ? 'Benar' : 'Salah'}</span>
+                                <span class="px-3 py-1 rounded-full text-[10px] font-black ${isCorrect ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} uppercase tracking-widest border ${isCorrect ? 'border-green-200' : 'border-red-200'}">
+                                    ${isCorrect ? '✓ Benar' : '✗ Salah'}
+                                </span>
                             </div>
                             <div class="prose prose-sm max-w-none text-gray-800 mb-6 font-medium leading-relaxed">
                                 ${soal.nama}
                             </div>
                             
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mt-4">
-                                <div class="p-3 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-between">
-                                    <span class="text-gray-500 font-bold text-xs uppercase letter-spacing-1">Jawaban Murid:</span>
-                                    <span class="font-black text-lg ${isCorrect ? 'text-green-600' : 'text-red-600'}">${studentAnswer}</span>
+                                <div class="p-4 rounded-xl bg-white border border-gray-100 shadow-sm flex flex-col gap-1">
+                                    <span class="text-gray-400 font-bold text-[9px] uppercase tracking-widest">Jawaban Murid</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-6 h-6 flex items-center justify-center rounded-lg ${isCorrect ? 'bg-green-600' : 'bg-red-600'} text-white font-bold text-xs">${studentKey}</span>
+                                        <span class="font-bold text-gray-700">${studentValue}</span>
+                                    </div>
                                 </div>
-                                <div class="p-3 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-between">
-                                    <span class="text-gray-500 font-bold text-xs uppercase letter-spacing-1">Jawaban Kunci:</span>
-                                    <span class="font-black text-lg text-green-600">${soal.jawaban || '-'}</span>
+                                <div class="p-4 rounded-xl bg-white border border-gray-100 shadow-sm flex flex-col gap-1">
+                                    <span class="text-gray-400 font-bold text-[9px] uppercase tracking-widest">Kunci Jawaban</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-6 h-6 flex items-center justify-center rounded-lg bg-green-600 text-white font-bold text-xs">✔</span>
+                                        <span class="font-bold text-green-700">${correctValue}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>`;
@@ -196,11 +229,12 @@
 
                     content.innerHTML = html;
                 } else {
-                    content.innerHTML = `<div class="text-center py-10 text-red-500">Gagal memuat data.</div>`;
+                    content.innerHTML = `<div class="text-center py-10 text-red-500 font-bold">Gagal memuat data detail ujian.</div>`;
                 }
             })
             .catch(err => {
-                content.innerHTML = `<div class="text-center py-10 text-red-500">Terjadi kesalahan sistem.</div>`;
+                console.error(err);
+                content.innerHTML = `<div class="text-center py-10 text-red-500 font-bold">Terjadi kesalahan sistem saat mengambil data.</div>`;
             });
     }
 
