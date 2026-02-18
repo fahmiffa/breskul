@@ -1062,20 +1062,11 @@ class ApiController extends Controller
         if (!$assign) return response()->json(['error' => 'Assignment not found'], 404);
         if ($assign->status == 2) return response()->json(['error' => 'Exam already submitted'], 400);
 
-        $soals = Soal::whereIn('id', $assign->ujian->soal_id ?? [])->get();
-        $correctCount = 0;
-        $total = count($soals);
-
-        foreach ($soals as $soal) {
-            $submittedAnswer = $request->answers[$soal->id] ?? null;
-            if ($submittedAnswer == $soal->jawaban) {
-                $correctCount++;
-            }
-        }
-
-        $score = ($total > 0) ? ($correctCount / $total) * 100 : 0;
+        // Hitung score menggunakan logic di Model Soal
+        $score = Soal::calculateScore($assign->ujian->soal_id ?? [], $request->answers);
 
         $assign->score = $score;
+        $assign->answers = $request->answers;
         $assign->status = 2;
         $assign->finished_at = now();
         $assign->save();

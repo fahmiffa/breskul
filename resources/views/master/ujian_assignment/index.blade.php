@@ -83,17 +83,27 @@
                     </td>
                     <td class="px-6 py-4 font-bold text-gray-800">{{ $row->score ?? '-' }}</td>
                     <td class="px-6 py-4 text-center">
-                        <form action="{{ route('dashboard.penjadwalan-ujian.destroy', $row->id) }}" method="POST" onsubmit="return confirm('Hapus penugasan ini?')">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                        <div class="flex items-center gap-1 justify-center">
+                            @if($row->status == 2)
+                            <button onclick="showDetail({{ $row->id }})" class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors" title="Lihat Jawaban">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M3 6h18" />
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-                                    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                                    <circle cx="12" cy="12" r="3" />
                                 </svg>
                             </button>
-                        </form>
+                            @endif
+                            <form action="{{ route('dashboard.penjadwalan-ujian.destroy', $row->id) }}" method="POST" onsubmit="return confirm('Hapus penugasan ini?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M3 6h18" />
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                                        <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                    </svg>
+                                </button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
                 @empty
@@ -111,4 +121,99 @@
         {{ $items->links() }}
     </div>
 </div>
+
+<!-- Detail Modal -->
+<div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 z-[999] hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+        <div class="p-6 border-b flex justify-between items-center bg-gray-50">
+            <div>
+                <h3 class="text-xl font-bold text-gray-800" id="modalTitle">Detail Ujian</h3>
+                <p class="text-sm text-gray-500" id="modalSubtitle"></p>
+            </div>
+            <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-100 transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 6 6 18M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <div class="p-6 overflow-y-auto flex-1 bg-white" id="modalContent">
+            <!-- Questions and answers will be injected here -->
+            <div class="flex justify-center py-10">
+                <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600"></div>
+            </div>
+        </div>
+        <div class="p-6 border-t bg-gray-50 flex justify-end">
+            <button onclick="closeModal()" class="px-6 py-2 bg-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-300 transition-all">Tutup</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showDetail(id) {
+        const modal = document.getElementById('detailModal');
+        const content = document.getElementById('modalContent');
+        const title = document.getElementById('modalTitle');
+        const subtitle = document.getElementById('modalSubtitle');
+
+        modal.classList.remove('hidden');
+        content.innerHTML = `<div class="flex justify-center py-10"><div class="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600"></div></div>`;
+
+        fetch(`{{ url('dashboard/penjadwalan-ujian') }}/${id}`)
+            .then(response => response.json())
+            .then(res => {
+                if (res.success) {
+                    const data = res.data;
+                    title.innerText = data.ujian.nama;
+                    subtitle.innerText = `${data.student.name} • Skor: ${data.item.score}`;
+
+                    let html = '';
+                    data.soals.forEach((soal, index) => {
+                        const studentAnswer = data.answers[soal.id] || '-';
+                        const isCorrect = studentAnswer === soal.jawaban;
+
+                        html += `
+                        <div class="mb-8 p-6 rounded-2xl border ${isCorrect ? 'border-green-100 bg-green-50/30' : 'border-red-100 bg-red-50/30'}">
+                            <div class="flex justify-between items-start mb-4">
+                                <span class="bg-gray-800 text-white text-[10px] px-2 py-1 rounded-md font-bold uppercase tracking-wider">Soal ${index + 1}</span>
+                                <span class="text-xs font-bold ${isCorrect ? 'text-green-600' : 'text-red-600'} uppercase tracking-widest">${isCorrect ? 'Benar' : 'Salah'}</span>
+                            </div>
+                            <div class="prose prose-sm max-w-none text-gray-800 mb-6 font-medium leading-relaxed">
+                                ${soal.nama}
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mt-4">
+                                <div class="p-3 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-between">
+                                    <span class="text-gray-500 font-bold text-xs uppercase letter-spacing-1">Jawaban Murid:</span>
+                                    <span class="font-black text-lg ${isCorrect ? 'text-green-600' : 'text-red-600'}">${studentAnswer}</span>
+                                </div>
+                                <div class="p-3 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-between">
+                                    <span class="text-gray-500 font-bold text-xs uppercase letter-spacing-1">Jawaban Kunci:</span>
+                                    <span class="font-black text-lg text-green-600">${soal.jawaban || '-'}</span>
+                                </div>
+                            </div>
+                        </div>`;
+                    });
+
+                    content.innerHTML = html;
+                } else {
+                    content.innerHTML = `<div class="text-center py-10 text-red-500">Gagal memuat data.</div>`;
+                }
+            })
+            .catch(err => {
+                content.innerHTML = `<div class="text-center py-10 text-red-500">Terjadi kesalahan sistem.</div>`;
+            });
+    }
+
+    function closeModal() {
+        document.getElementById('detailModal').classList.add('hidden');
+    }
+
+    // Close modal on outside click
+    window.onclick = function(event) {
+        const modal = document.getElementById('detailModal');
+        if (event.target == modal) {
+            closeModal();
+        }
+    }
+</script>
 @endsection

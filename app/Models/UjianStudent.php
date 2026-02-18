@@ -16,8 +16,13 @@ class UjianStudent extends Model
         'student_id',
         'status',
         'score',
+        'answers',
         'started_at',
         'finished_at',
+    ];
+
+    protected $casts = [
+        'answers' => 'array',
     ];
 
     public function ujian()

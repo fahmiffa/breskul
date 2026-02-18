@@ -92,4 +92,23 @@ class UjianAssignmentController extends Controller
         $penjadwalan_ujian->delete();
         return back()->with('success', 'Penugasan berhasil dihapus.');
     }
+
+    public function show($id)
+    {
+        $item = UjianStudent::with(['ujian.mapel', 'student'])->findOrFail($id);
+
+        $soalIds = $item->ujian->soal_id ?? [];
+        $soals = \App\Models\Soal::whereIn('id', $soalIds)->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'item' => $item,
+                'ujian' => $item->ujian,
+                'student' => $item->student,
+                'soals' => $soals,
+                'answers' => $item->answers ?? []
+            ]
+        ]);
+    }
 }
