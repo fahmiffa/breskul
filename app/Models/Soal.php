@@ -37,16 +37,30 @@ class Soal extends Model
     {
         if (empty($soalIds)) return 0;
 
+        // Ensure answers is an array (logic handling for Request/Collection)
+        $answers = is_array($answers) ? $answers : (method_exists($answers, 'toArray') ? $answers->toArray() : (array)$answers);
+
         $soals = self::whereIn('id', $soalIds)->get();
         $correctCount = 0;
         $total = count($soals);
 
         foreach ($soals as $soal) {
-            $submittedKey = strtoupper($answers[$soal->id] ?? '');
+            // Robust key lookup (integer or string)
+            $studentAnswer = $answers[$soal->id] ?? $answers[(string)$soal->id] ?? null;
+            if ($studentAnswer === null) continue;
 
-            // Resolusi kunci A-E ke nilai opsinya
-            $submittedValue = null;
+            $submittedKey = strtoupper(trim(strip_tags($studentAnswer)));
+            $correctValue = trim(strip_tags($soal->jawaban));
+
+            // 1. Check if direct key (e.g. "A") matches the answer
+            if (strcasecmp($submittedKey, $correctValue) === 0) {
+                $correctCount++;
+                continue;
+            }
+
+            // 2. Check resolved value for Multiple Choice
             if ($soal->tipe == 'Pilihan ganda') {
+                $submittedValue = null;
                 switch ($submittedKey) {
                     case 'A':
                         $submittedValue = $soal->opsi_a;
@@ -63,19 +77,14 @@ class Soal extends Model
                     case 'E':
                         $submittedValue = $soal->opsi_e;
                         break;
-                    default:
-                        $submittedValue = $submittedKey; // Jika dikirim teks langsung
                 }
-            } else {
-                $submittedValue = $answers[$soal->id] ?? '';
-            }
 
-            // Bandingkan dengan jawaban di database (case-insensitive & trimmed)
-            $correctValue = trim($soal->jawaban);
-            $studentValue = trim($submittedValue);
-
-            if (strcasecmp($studentValue, $correctValue) === 0) {
-                $correctCount++;
+                if ($submittedValue !== null) {
+                    $resolvedValue = trim(strip_tags($submittedValue));
+                    if (strcasecmp($resolvedValue, $correctValue) === 0) {
+                        $correctCount++;
+                    }
+                }
             }
         }
 

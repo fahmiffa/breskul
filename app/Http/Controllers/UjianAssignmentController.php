@@ -97,6 +97,15 @@ class UjianAssignmentController extends Controller
     {
         $item = UjianStudent::with(['ujian.mapel', 'student'])->findOrFail($id);
 
+        // Auto-recalculate score if answers exist and already finished
+        if ($item->status == 2 && !empty($item->answers)) {
+            $newScore = \App\Models\Soal::calculateScore($item->ujian->soal_id ?? [], $item->answers);
+            if ($item->score != $newScore) {
+                $item->score = $newScore;
+                $item->save();
+            }
+        }
+
         $soalIds = $item->ujian->soal_id ?? [];
         $soals = \App\Models\Soal::whereIn('id', $soalIds)->get();
 
