@@ -42,8 +42,39 @@ class Soal extends Model
         $total = count($soals);
 
         foreach ($soals as $soal) {
-            $submittedAnswer = $answers[$soal->id] ?? null;
-            if ($submittedAnswer == $soal->jawaban) {
+            $submittedKey = strtoupper($answers[$soal->id] ?? '');
+
+            // Resolusi kunci A-E ke nilai opsinya
+            $submittedValue = null;
+            if ($soal->tipe == 'Pilihan ganda') {
+                switch ($submittedKey) {
+                    case 'A':
+                        $submittedValue = $soal->opsi_a;
+                        break;
+                    case 'B':
+                        $submittedValue = $soal->opsi_b;
+                        break;
+                    case 'C':
+                        $submittedValue = $soal->opsi_c;
+                        break;
+                    case 'D':
+                        $submittedValue = $soal->opsi_d;
+                        break;
+                    case 'E':
+                        $submittedValue = $soal->opsi_e;
+                        break;
+                    default:
+                        $submittedValue = $submittedKey; // Jika dikirim teks langsung
+                }
+            } else {
+                $submittedValue = $answers[$soal->id] ?? '';
+            }
+
+            // Bandingkan dengan jawaban di database (case-insensitive & trimmed)
+            $correctValue = trim($soal->jawaban);
+            $studentValue = trim($submittedValue);
+
+            if (strcasecmp($studentValue, $correctValue) === 0) {
                 $correctCount++;
             }
         }
