@@ -19,6 +19,9 @@ use App\Models\Students;
 use App\Models\AttendanceConfig;
 use App\Models\User;
 use App\Rules\NumberWa;
+use App\Models\Soal;
+use App\Models\Ujian;
+use App\Models\UjianStudent;
 use App\Services\Firebase\FirebaseMessage;
 use App\Services\PaymentWebhookService;
 use Illuminate\Support\Facades\DB;
@@ -988,5 +991,99 @@ class ApiController extends Controller
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
+    }
+
+    public function listExam()
+    {
+        $user = Auth::user();
+        $student = $user->studentData;
+        if (!$student) return response()->json(['error' => 'Not a student'], 403);
+
+        $exams = UjianStudent::where('student_id', $student->id)
+            ->with(['ujian.mapel', 'ujian.guru'])
+            ->latest()
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $exams
+        ]);
+    }
+
+    public function detailExam($id)
+    {
+        $user = Auth::user();
+        $student = $user->studentData;
+        if (!$student) return response()->json(['error' => 'Not a student'], 403);
+
+        $assign = UjianStudent::where('id', $id)
+            ->where('student_id', $student->id)
+            ->with(['ujian.mapel', 'ujian.guru'])
+            ->first();
+
+        if (!$assign) return response()->json(['error' => 'Exam not found'], 404);
+
+        if ($assign->status == 0) {
+            $assign->status = 1;
+            $assign->started_at = now();
+            $assign->save();
+        }
+
+        $ujian = $assign->ujian;
+        // Fetch questions but hide the correct answer until finished? 
+        // Or just send them, student app needs them to calculate or just show.
+        $soals = Soal::whereIn('id', $ujian->soal_id ?? [])->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'assignment' => $assign,
+                'ujian' => $ujian,
+                'questions' => $soals
+            ]
+        ]);
+    }
+
+    public function submitExam(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'assignment_id' => 'required|exists:ujian_students,id',
+            'answers' => 'required|array', // [soal_id => answer_key]
+        ]);
+
+        if ($validator->fails()) return response()->json(['errors' => $validator->errors()], 400);
+
+        $user = Auth::user();
+        $student = $user->studentData;
+        $assign = UjianStudent::where('id', $request->assignment_id)
+            ->where('student_id', $student->id)
+            ->first();
+
+        if (!$assign) return response()->json(['error' => 'Assignment not found'], 404);
+        if ($assign->status == 2) return response()->json(['error' => 'Exam already submitted'], 400);
+
+        $soals = Soal::whereIn('id', $assign->ujian->soal_id ?? [])->get();
+        $correctCount = 0;
+        $total = count($soals);
+
+        foreach ($soals as $soal) {
+            $submittedAnswer = $request->answers[$soal->id] ?? null;
+            if ($submittedAnswer == $soal->jawaban) {
+                $correctCount++;
+            }
+        }
+
+        $score = ($total > 0) ? ($correctCount / $total) * 100 : 0;
+
+        $assign->score = $score;
+        $assign->status = 2;
+        $assign->finished_at = now();
+        $assign->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Ujian selesai dikerjakan.',
+            'score' => $score
+        ]);
     }
 }

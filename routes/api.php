@@ -41,4 +41,11 @@ Route::middleware('jwt')->group(function () {
     Route::get('/pengumuman', [ApiController::class, 'pengumuman']);
     Route::get('/pengumuman/{id}', [ApiController::class, 'pengumuman']);
     Route::post('/upload-image', [ApiController::class, 'uploadImage']);
+
+    // Exam API
+    Route::prefix('exam')->group(function () {
+        Route::get('/', [ApiController::class, 'listExam']);
+        Route::get('/{id}', [ApiController::class, 'detailExam']);
+        Route::post('/submit', [ApiController::class, 'submitExam']);
+    });
 });
