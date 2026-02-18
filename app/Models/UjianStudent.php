@@ -1,0 +1,32 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class UjianStudent extends Model
+{
+    use HasFactory;
+
+    protected $table = 'ujian_students';
+
+    protected $fillable = [
+        'ujian_id',
+        'student_id',
+        'status',
+        'score',
+        'started_at',
+        'finished_at',
+    ];
+
+    public function ujian()
+    {
+        return $this->belongsTo(Ujian::class, 'ujian_id');
+    }
+
+    public function student()
+    {
+        return $this->belongsTo(Students::class, 'student_id');
+    }
+}

@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Annoucement;
@@ -23,20 +24,36 @@ class AuthController extends Controller
                 return $query->latest();
             })
             ->get();
-        return view('auth.pengumuman',compact('items'));
+        return view('auth.pengumuman', compact('items'));
     }
 
     public function login(Request $request)
     {
         $request->validate([
-            'email'    => 'required|email',
+            'email'    => 'required',
             'password' => 'required',
         ]);
 
-        $credentials = $request->only('email', 'password');
+        $loginValue = $request->input('email');
+        $isEmail = filter_var($loginValue, FILTER_VALIDATE_EMAIL);
+        $loginField = $isEmail ? 'email' : 'username';
+
+        $credentials = [
+            $loginField => $loginValue,
+            'password'  => $request->password,
+        ];
 
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
+
+            // Jika login menggunakan username, pastikan role-nya adalah 3 (Guru)
+            if (!$isEmail && $user->role != 3) {
+                Auth::logout();
+                return back()->withErrors([
+                    'email' => 'Login menggunakan username hanya diperbolehkan untuk Guru.',
+                ])->onlyInput('email');
+            }
+
             if ($user->status != 1) {
                 Auth::logout();
 
@@ -48,12 +65,13 @@ class AuthController extends Controller
                     'email' => 'Akun Anda tidak aktif.',
                 ]);
             }
+
             $request->session()->regenerate();
             return redirect()->intended('/dashboard');
         }
 
         return back()->withErrors([
-            'email' => 'Email atau password salah.',
+            'email' => 'Email/Username atau password salah.',
         ])->onlyInput('email');
     }
 

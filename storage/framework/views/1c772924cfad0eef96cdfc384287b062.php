@@ -1,26 +1,32 @@
-@extends('base.layout')
-@section('title', 'Login')
-@section('content')
+<?php $__env->startSection('title', 'Login'); ?>
+<?php $__env->startSection('content'); ?>
 <div class="min-h-screen flex items-center justify-center w-full px-4 sm:px-6 lg:px-8">
     <div class="bg-white/70 backdrop-blur-xl shadow-2xl w-full max-w-sm sm:max-w-md rounded-3xl border border-white/40 p-8">
         <div class="flex flex-col items-center mb-6">
-            <img src="{{ asset('icon.png') }}" class="w-24 h-24 object-contain mb-4 drop-shadow-md" alt="Breskul">
+            <img src="<?php echo e(asset('icon.png')); ?>" class="w-24 h-24 object-contain mb-4 drop-shadow-md" alt="Breskul">
             <h2 class="text-2xl font-bold text-gray-800">Welcome Back</h2>
             <p class="text-sm text-gray-500">Please sign in to your account</p>
         </div>
 
-        <form method="POST" action="{{ route('login') }}" class="space-y-6">
-            @csrf
+        <form method="POST" action="<?php echo e(route('login')); ?>" class="space-y-6">
+            <?php echo csrf_field(); ?>
 
             <div>
                 <label for="email" class="block text-sm font-medium text-gray-700 mb-1 pl-1">Email or Username</label>
-                <input type="text" id="email" name="email" value="{{ old('email') }}" required
+                <input type="text" id="email" name="email" value="<?php echo e(old('email')); ?>" required
                     autocomplete="email" autofocus
                     class="block w-full px-4 py-3 rounded-xl border-gray-300 focus:border-green-500 focus:ring focus:ring-green-500/20 transition duration-200 bg-white/50 hover:bg-white/80"
                     placeholder="you@example.com or username">
-                @error('email')
-                <p class="text-red-500 text-xs mt-1 pl-1">{{ $message }}</p>
-                @enderror
+                <?php $__errorArgs = ['email'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                <p class="text-red-500 text-xs mt-1 pl-1"><?php echo e($message); ?></p>
+                <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
             </div>
 
             <div>
@@ -37,26 +43,34 @@
                         </svg>
                     </button>
                 </div>
-                @error('password')
-                <p class="text-red-500 text-xs mt-1 pl-1">{{ $message }}</p>
-                @enderror
+                <?php $__errorArgs = ['password'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                <p class="text-red-500 text-xs mt-1 pl-1"><?php echo e($message); ?></p>
+                <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
             </div>
 
             <div class="flex items-center justify-between text-sm">
                 <div class="flex items-center">
-                    <input type="checkbox" name="remember" id="remember" {{ old('remember') ? 'checked' : '' }}
+                    <input type="checkbox" name="remember" id="remember" <?php echo e(old('remember') ? 'checked' : ''); ?>
+
                         class="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 cursor-pointer">
                     <label for="remember" class="ml-2 block text-gray-600 cursor-pointer select-none">
                         Remember Me
                     </label>
                 </div>
 
-                @if (Route::has('password.request'))
+                <?php if(Route::has('password.request')): ?>
                 <a class="font-medium text-green-600 hover:text-green-800 transition-colors"
-                    href="{{ route('password.request') }}">
+                    href="<?php echo e(route('password.request')); ?>">
                     Forgot Password?
                 </a>
-                @endif
+                <?php endif; ?>
             </div>
 
             <div>
@@ -68,8 +82,8 @@
         </form>
     </div>
 </div>
-@endsection
-@push('script')
+<?php $__env->stopSection(); ?>
+<?php $__env->startPush('script'); ?>
 <script>
     const eyeIcon = `
         <svg xmlns="http://www.w3.org/2000/svg" class="size-5" fill="currentColor" viewBox="0 0 24 24">
@@ -93,13 +107,14 @@
         }
     }
 </script>
-@endpush
+<?php $__env->stopPush(); ?>
 
-@push('styles')
+<?php $__env->startPush('styles'); ?>
 <style>
     body {
         background-color: #b0e298 !important;
         background-image: none !important;
     }
 </style>
-@endpush
+<?php $__env->stopPush(); ?>
+<?php echo $__env->make('base.layout', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH E:\project\breskul\web\resources\views/auth/login.blade.php ENDPATH**/ ?>

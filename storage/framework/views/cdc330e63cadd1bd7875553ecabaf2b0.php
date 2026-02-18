@@ -1,7 +1,7 @@
-@if(auth()->user()->role != 3)
-<a href="{{ route('dashboard.pengumuman.index') }}">
+<?php if(auth()->user()->role != 3): ?>
+<a href="<?php echo e(route('dashboard.pengumuman.index')); ?>">
     <li
-        class="flex items-center px-4 py-3 border-b border-green-300 hover:bg-green-100 {{ Route::is('dashboard.pengumuman.*') ? 'bg-green-100' : null }}">
+        class="flex items-center px-4 py-3 border-b border-green-300 hover:bg-green-100 <?php echo e(Route::is('dashboard.pengumuman.*') ? 'bg-green-100' : null); ?>">
         <span class="text-green-500 mr-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -14,9 +14,9 @@
         </span> Pengumuman
     </li>
 </a>
-<a href="{{ route('dashboard.pay') }}">
+<a href="<?php echo e(route('dashboard.pay')); ?>">
     <li
-        class="flex items-center px-4 py-3 border-b border-green-300 hover:bg-green-100 {{ Route::is('dashboard.pay') ? 'bg-green-100' : null }}">
+        class="flex items-center px-4 py-3 border-b border-green-300 hover:bg-green-100 <?php echo e(Route::is('dashboard.pay') ? 'bg-green-100' : null); ?>">
         <span class="text-green-500 mr-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -28,9 +28,9 @@
         </span> Pembayaran
     </li>
 </a>
-<a href="{{ route('dashboard.absensi') }}">
+<a href="<?php echo e(route('dashboard.absensi')); ?>">
     <li
-        class="flex items-center px-4 py-3 border-b border-green-300 hover:bg-green-100 {{ Route::is('dashboard.absensi') ? 'bg-green-100' : null }}">
+        class="flex items-center px-4 py-3 border-b border-green-300 hover:bg-green-100 <?php echo e(Route::is('dashboard.absensi') ? 'bg-green-100' : null); ?>">
         <span class="text-green-500 mr-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -42,9 +42,9 @@
         </span> Absensi
     </li>
 </a>
-<a href="{{ route('dashboard.ekstrakurikuler.index') }}">
+<a href="<?php echo e(route('dashboard.ekstrakurikuler.index')); ?>">
     <li
-        class="flex items-center px-4 py-3 border-b border-green-300 hover:bg-green-100 {{ Route::is('dashboard.ekstrakurikuler.*') ? 'bg-green-100' : null }}">
+        class="flex items-center px-4 py-3 border-b border-green-300 hover:bg-green-100 <?php echo e(Route::is('dashboard.ekstrakurikuler.*') ? 'bg-green-100' : null); ?>">
         <span class="text-green-500 mr-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -54,14 +54,15 @@
                 <circle cx="6" cy="10" r="1" />
                 <circle cx="18" cy="10" r="1" />
             </svg>
-        </span> {{ config('app.school_mode') ? 'Ekstrakurikuler' : 'UKM' }}
+        </span> <?php echo e(config('app.school_mode') ? 'Ekstrakurikuler' : 'UKM'); ?>
+
     </li>
 </a>
-@endif
+<?php endif; ?>
 
-@if(auth()->user()->role == 3)
-<a href="{{ route('dashboard.penjadwalan-ujian.index') }}">
-    <li class="flex items-center px-4 py-3 border-b border-green-300 hover:bg-green-100 {{ Route::is('dashboard.penjadwalan-ujian.*') ? 'bg-green-100' : null }}">
+<?php if(auth()->user()->role == 3): ?>
+<a href="<?php echo e(route('dashboard.penjadwalan-ujian.index')); ?>">
+    <li class="flex items-center px-4 py-3 border-b border-green-300 hover:bg-green-100 <?php echo e(Route::is('dashboard.penjadwalan-ujian.*') ? 'bg-green-100' : null); ?>">
         <span class="text-green-500 mr-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-check">
                 <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
@@ -73,4 +74,4 @@
         </span> Exam
     </li>
 </a>
-@endif
+<?php endif; ?><?php /**PATH E:\project\breskul\web\resources\views/base/home.blade.php ENDPATH**/ ?>

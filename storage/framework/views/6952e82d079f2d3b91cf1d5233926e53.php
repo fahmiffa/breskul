@@ -1,8 +1,8 @@
-@if(auth()->user()->role != 3)
-@if(config('app.school_mode'))
-<a href="{{ route('dashboard.master.kelas.index') }}">
+<?php if(auth()->user()->role != 3): ?>
+<?php if(config('app.school_mode')): ?>
+<a href="<?php echo e(route('dashboard.master.kelas.index')); ?>">
     <li
-        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 {{ Route::is('dashboard.master.kelas.*') ? 'bg-green-100' : null }}">
+        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 <?php echo e(Route::is('dashboard.master.kelas.*') ? 'bg-green-100' : null); ?>">
         <span class="text-green-500 mr-2">
 
 
@@ -20,12 +20,12 @@
         </span> Kelas
     </li>
 </a>
-@endif
-@endif
-@if(auth()->user()->role != 3)
-<a href="{{ route('dashboard.master.mapel.index') }}">
+<?php endif; ?>
+<?php endif; ?>
+<?php if(auth()->user()->role != 3): ?>
+<a href="<?php echo e(route('dashboard.master.mapel.index')); ?>">
     <li
-        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 {{ Route::is('dashboard.master.mapel.*') ? 'bg-green-100' : null }}">
+        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 <?php echo e(Route::is('dashboard.master.mapel.*') ? 'bg-green-100' : null); ?>">
         <span class="text-green-500 mr-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -33,15 +33,16 @@
                 <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20" />
                 <path d="m9 9.5 2 2 4-4" />
             </svg>
-        </span> {{ config('app.school_mode') ? 'Mapel' : 'Makul' }}
+        </span> <?php echo e(config('app.school_mode') ? 'Mapel' : 'Makul'); ?>
+
     </li>
 </a>
 
 
 
-<a href="{{ route('dashboard.master.murid.index') }}">
+<a href="<?php echo e(route('dashboard.master.murid.index')); ?>">
     <li
-        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 cursor-pointer {{ Route::is('dashboard.master.murid.*') ? 'bg-green-100' : null }}">
+        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 cursor-pointer <?php echo e(Route::is('dashboard.master.murid.*') ? 'bg-green-100' : null); ?>">
         <span class="text-green-500 mr-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -51,12 +52,13 @@
                 <path d="M22 10v6" />
                 <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" />
             </svg></span>
-        {{ config('app.school_mode') ? 'Murid' : 'Mahasiswa' }}
+        <?php echo e(config('app.school_mode') ? 'Murid' : 'Mahasiswa'); ?>
+
     </li>
 </a>
-<a href="{{ route('dashboard.master.guru.index') }}">
+<a href="<?php echo e(route('dashboard.master.guru.index')); ?>">
     <li
-        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 cursor-pointer {{ Route::is('dashboard.master.guru.*') ? 'bg-green-100' : null }}">
+        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 cursor-pointer <?php echo e(Route::is('dashboard.master.guru.*') ? 'bg-green-100' : null); ?>">
         <span class="text-green-500 mr-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -67,13 +69,14 @@
                 <circle cx="16" cy="11" r="2" />
                 <circle cx="8" cy="11" r="2" />
             </svg></span>
-        {{ config('app.school_mode') ? 'Guru' : 'Dosen' }}
+        <?php echo e(config('app.school_mode') ? 'Guru' : 'Dosen'); ?>
+
     </li>
 </a>
 
-<a href="{{ route('dashboard.master.jadwal.index') }}">
+<a href="<?php echo e(route('dashboard.master.jadwal.index')); ?>">
     <li
-        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 {{ Route::is('dashboard.master.jadwal.*') ? 'bg-green-100' : null }}">
+        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 <?php echo e(Route::is('dashboard.master.jadwal.*') ? 'bg-green-100' : null); ?>">
         <span class="text-green-500 mr-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -88,9 +91,9 @@
         </span> Jadwal
     </li>
 </a>
-<a href="{{ route('dashboard.master.absensi.index') }}">
+<a href="<?php echo e(route('dashboard.master.absensi.index')); ?>">
     <li
-        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 {{ Route::is('dashboard.master.absensi.*') ? 'bg-green-100' : null }}">
+        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 <?php echo e(Route::is('dashboard.master.absensi.*') ? 'bg-green-100' : null); ?>">
         <span class="text-green-500 mr-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -101,9 +104,9 @@
         </span> Setting Absensi
     </li>
 </a>
-<a href="{{ route('dashboard.master.pembayaran.index') }}">
+<a href="<?php echo e(route('dashboard.master.pembayaran.index')); ?>">
     <li
-        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 cursor-pointer  {{ Route::is('dashboard.master.pembayaran.*') ? 'bg-green-100' : null }}">
+        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 cursor-pointer  <?php echo e(Route::is('dashboard.master.pembayaran.*') ? 'bg-green-100' : null); ?>">
         <span class="text-green-500 mr-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -114,9 +117,9 @@
         Pembayaran
     </li>
 </a>
-<a href="{{ route('dashboard.master.semester.index') }}">
+<a href="<?php echo e(route('dashboard.master.semester.index')); ?>">
     <li
-        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 cursor-pointer  {{ Route::is('dashboard.master.semester.*') ? 'bg-green-100' : null }}">
+        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 cursor-pointer  <?php echo e(Route::is('dashboard.master.semester.*') ? 'bg-green-100' : null); ?>">
         <span class="text-green-500 mr-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -138,9 +141,9 @@
         Semester
     </li>
 </a>
-<a href="{{ route('dashboard.master.akademik.index') }}">
+<a href="<?php echo e(route('dashboard.master.akademik.index')); ?>">
     <li
-        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 cursor-pointer  {{ Route::is('dashboard.master.akademik.*') ? 'bg-green-100' : null }}">
+        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 cursor-pointer  <?php echo e(Route::is('dashboard.master.akademik.*') ? 'bg-green-100' : null); ?>">
         <span class="text-green-500 mr-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -157,9 +160,9 @@
         Akademik
     </li>
 </a>
-<a href="{{ route('dashboard.master.ekstrakurikuler.index') }}">
+<a href="<?php echo e(route('dashboard.master.ekstrakurikuler.index')); ?>">
     <li
-        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 cursor-pointer  {{ Route::is('dashboard.master.ekstrakurikuler.*') ? 'bg-green-100' : null }}">
+        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 cursor-pointer  <?php echo e(Route::is('dashboard.master.ekstrakurikuler.*') ? 'bg-green-100' : null); ?>">
         <span class="text-green-500 mr-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -169,13 +172,14 @@
                 <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" />
                 <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />
             </svg></span>
-        {{ config('app.school_mode') ? 'Ekstrakurikuler' : 'UKM' }}
+        <?php echo e(config('app.school_mode') ? 'Ekstrakurikuler' : 'UKM'); ?>
+
     </li>
 </a>
-@endif @if (auth()->user()->role == 3)
-<a href="{{ route('dashboard.master.soal.index') }}">
+<?php endif; ?> <?php if(auth()->user()->role == 3): ?>
+<a href="<?php echo e(route('dashboard.master.soal.index')); ?>">
     <li
-        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 cursor-pointer  {{ Route::is('dashboard.master.soal.*') ? 'bg-green-100' : null }}">
+        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 cursor-pointer  <?php echo e(Route::is('dashboard.master.soal.*') ? 'bg-green-100' : null); ?>">
         <span class="text-green-500 mr-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -187,9 +191,9 @@
         Soal
     </li>
 </a>
-<a href="{{ route('dashboard.master.ujian.index') }}">
+<a href="<?php echo e(route('dashboard.master.ujian.index')); ?>">
     <li
-        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 cursor-pointer  {{ Route::is('dashboard.master.ujian.*') ? 'bg-green-100' : null }}">
+        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 cursor-pointer  <?php echo e(Route::is('dashboard.master.ujian.*') ? 'bg-green-100' : null); ?>">
         <span class="text-green-500 mr-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -201,11 +205,11 @@
         Ujian
     </li>
 </a>
-@endif
-@if(auth()->user()->role != 3)
-<a href="{{ route('dashboard.master.akun.index') }}">
+<?php endif; ?>
+<?php if(auth()->user()->role != 3): ?>
+<a href="<?php echo e(route('dashboard.master.akun.index')); ?>">
     <li
-        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 cursor-pointer  {{ Route::is('dashboard.master.akun.*') ? 'bg-green-100' : null }}">
+        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 cursor-pointer  <?php echo e(Route::is('dashboard.master.akun.*') ? 'bg-green-100' : null); ?>">
         <span class="text-green-500 mr-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -218,10 +222,10 @@
         Akun
     </li>
 </a>
-@if(!config('app.school_mode'))
-<a href="{{ route('dashboard.master.fakultas.index') }}">
+<?php if(!config('app.school_mode')): ?>
+<a href="<?php echo e(route('dashboard.master.fakultas.index')); ?>">
     <li
-        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 cursor-pointer {{ Route::is('dashboard.master.fakultas.*') ? 'bg-green-100' : null }}">
+        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 cursor-pointer <?php echo e(Route::is('dashboard.master.fakultas.*') ? 'bg-green-100' : null); ?>">
         <span class="text-green-500 mr-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -241,9 +245,9 @@
         </span> Fakultas
     </li>
 </a>
-<a href="{{ route('dashboard.master.prodi.index') }}">
+<a href="<?php echo e(route('dashboard.master.prodi.index')); ?>">
     <li
-        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 cursor-pointer {{ Route::is('dashboard.master.prodi.*') ? 'bg-green-100' : null }}">
+        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 cursor-pointer <?php echo e(Route::is('dashboard.master.prodi.*') ? 'bg-green-100' : null); ?>">
         <span class="text-green-500 mr-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -254,11 +258,11 @@
         </span> Prodi
     </li>
 </a>
-@endif
-@if (auth()->user()->role == 0)
-<a href="{{ route('dashboard.master.api.index') }}">
+<?php endif; ?>
+<?php if(auth()->user()->role == 0): ?>
+<a href="<?php echo e(route('dashboard.master.api.index')); ?>">
     <li
-        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 {{ Route::is('dashboard.api.kelas.*') ? 'bg-green-100' : null }}">
+        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 <?php echo e(Route::is('dashboard.api.kelas.*') ? 'bg-green-100' : null); ?>">
         <span class="text-green-500 mr-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -270,9 +274,9 @@
         </span> Key
     </li>
 </a>
-<a href="{{ route('dashboard.master.app.index') }}">
+<a href="<?php echo e(route('dashboard.master.app.index')); ?>">
     <li
-        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 {{ Route::is('dashboard.master.app.*') ? 'bg-green-100' : null }}">
+        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 <?php echo e(Route::is('dashboard.master.app.*') ? 'bg-green-100' : null); ?>">
         <span class="text-green-500 mr-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -285,5 +289,5 @@
         </span> App
     </li>
 </a>
-@endif
-@endif
+<?php endif; ?>
+<?php endif; ?><?php /**PATH E:\project\breskul\web\resources\views/base/master.blade.php ENDPATH**/ ?>

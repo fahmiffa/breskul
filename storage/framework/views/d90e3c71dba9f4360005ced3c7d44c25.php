@@ -1,11 +1,10 @@
-@extends('base.layout')
-@section('title', 'Pengumuman')
-@section('content')
-    <div class="flex flex-col bg-white rounded-lg shadow-md p-6" x-data="dataTable({{ json_encode($items) }})">
+<?php $__env->startSection('title', 'Pengumuman'); ?>
+<?php $__env->startSection('content'); ?>
+    <div class="flex flex-col bg-white rounded-lg shadow-md p-6" x-data="dataTable(<?php echo e(json_encode($items)); ?>)">
 
         <div class="mb-4 flex justify-end items-center gap-2">
 
-            <a href="{{ route('dashboard.pengumuman.create') }}"
+            <a href="<?php echo e(route('dashboard.pengumuman.create')); ?>"
                 class="cursor-pointer bg-green-500 text-xs hover:bg-green-700 text-white font-semibold py-2 px-3 rounded-2xl focus:outline-none focus:shadow-outline">
                 Tambah
             </a>
@@ -49,8 +48,8 @@
 
                                     <form :action="'/dashboard/pengumuman/' + row.id" method="POST"
                                         @submit.prevent="deleteRow($event)">
-                                        @csrf
-                                        @method('DELETE')
+                                        <?php echo csrf_field(); ?>
+                                        <?php echo method_field('DELETE'); ?>
                                         <button type="submit" class="text-red-500">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -85,4 +84,6 @@
                 class="px-3 py-1 text-white rounded bg-green-500 hover:bg-green-600 disabled:opacity-50">Next</button>
         </div>
     </div>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('base.layout', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH E:\project\breskul\web\resources\views/home/pengumuman/index.blade.php ENDPATH**/ ?>

@@ -1,21 +1,20 @@
-@extends('base.layout')
-@section('title', $title)
-@push('styles')
+<?php $__env->startSection('title', $title); ?>
+<?php $__env->startPush('styles'); ?>
 <style>
     [x-cloak] {
         display: none !important;
     }
 </style>
-@endpush
-@section('content')
-<div class="flex flex-col bg-white rounded-lg shadow-md p-6" x-data="{ ...dataTable({{ json_encode($items) }}), showImportModal: false, showJob: false, showRfidModal: false, selectedStudentId: null, rfid: null }">
+<?php $__env->stopPush(); ?>
+<?php $__env->startSection('content'); ?>
+<div class="flex flex-col bg-white rounded-lg shadow-md p-6" x-data="{ ...dataTable(<?php echo e(json_encode($items)); ?>), showImportModal: false, showJob: false, showRfidModal: false, selectedStudentId: null, rfid: null }">
 
     <div class="mb-4 flex justify-between items-center gap-2">
         <input type="text" x-model="search" placeholder="Pencarian"
             class="w-full md:w-1/2 border border-gray-300  ring-0 rounded-xl px-3 py-2 focus:outline-[#177245]" />
 
         <div class="flex gap-2 items-center">
-            <a href="{{ route('dashboard.master.murid.create') }}"
+            <a href="<?php echo e(route('dashboard.master.murid.create')); ?>"
                 class="cursor-pointer bg-green-500 text-xs hover:bg-green-700 text-white font-semibold py-2 px-3 rounded-2xl focus:outline-none focus:shadow-outline">
                 Tambah
             </a>
@@ -34,13 +33,13 @@
             <thead>
                 <tr class="bg-green-500 text-left text-white">
                     <th class="px-4 py-2">No</th>
-                    <th @click="sortBy('nis')" class="cursor-pointer px-4 py-2">{{ config('app.school_mode') ? 'NIS' : 'NIM' }}</th>
+                    <th @click="sortBy('nis')" class="cursor-pointer px-4 py-2"><?php echo e(config('app.school_mode') ? 'NIS' : 'NIM'); ?></th>
                     <th @click="sortBy('name')" class="cursor-pointer px-4 py-2">Nama</th>
                     <th @click="sortBy('jenis')" class="cursor-pointer px-4 py-2">Jenis Kelamin</th>
                     <th class="cursor-pointer px-4 py-2">Alamat</th>
-                    @if(config('app.qrcode'))
+                    <?php if(config('app.qrcode')): ?>
                     <th class="px-4 py-2">QR Code</th>
-                    @endif
+                    <?php endif; ?>
                     <th class="px-4 py-2">Action</th>
                 </tr>
             </thead>
@@ -52,7 +51,7 @@
                         <td class="px-4 py-2" x-text="row.name"></td>
                         <td class="px-4 py-2" x-text="row.jenis"></td>
                         <td class="px-4 py-2" x-text="row.alamat"></td>
-                        @if(config('app.qrcode'))
+                        <?php if(config('app.qrcode')): ?>
                         <td class="px-4 py-2">
                             <div class="flex flex-col items-center gap-1">
                                 <img :src="'/dashboard/master/murid/' + row.id + '/qrcode'" alt="QR Code" class="w-16 h-16 border p-1 bg-white">
@@ -62,7 +61,7 @@
                                 </a>
                             </div>
                         </td>
-                        @endif
+                        <?php endif; ?>
                         <td class="px-4 py-2 flex items-center gap-1">
                             <a :href="'/dashboard/master/murid/' + row.id + '/edit'"
                                 class="text-green-600 hover:text-green-700">
@@ -78,8 +77,8 @@
 
                             <form :action="'/dashboard/master/murid/' + row.id" method="POST"
                                 @submit.prevent="deleteRow($event)">
-                                @csrf
-                                @method('DELETE')
+                                <?php echo csrf_field(); ?>
+                                <?php echo method_field('DELETE'); ?>
                                 <button type="submit" class="text-red-500 cursor-pointer">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                         viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -94,7 +93,7 @@
                                 </button>
                             </form>
 
-                            @if(config('app.uuid'))
+                            <?php if(config('app.uuid')): ?>
                             <button @click="showRfidModal = true; selectedStudentId = row.id; rfid = row.uuid"
                                 :class="{
                                         'bg-green-500 hover:bg-green-700': row.uuid,
@@ -105,13 +104,13 @@
                                     UUID
                                 </div>
                             </button>
-                            @endif
+                            <?php endif; ?>
 
                         </td>
                     </tr>
                 </template>
                 <tr x-show="filteredData().length === 0">
-                    <td colspan="{{ config('app.qrcode') ? 7 : 6 }}" class="text-center px-4 py-2 text-gray-500">No results found.</td>
+                    <td colspan="<?php echo e(config('app.qrcode') ? 7 : 6); ?>" class="text-center px-4 py-2 text-gray-500">No results found.</td>
                 </tr>
             </tbody>
         </table>
@@ -131,7 +130,7 @@
     <div x-show="showImportModal" x-cloak class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
         x-transition>
         <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md" @click.away="showImportModal = false">
-            <h2 class="text-lg font-semibold mb-4">Import Data {{ config('app.school_mode') ? 'Murid' : 'Mahasiswa' }}</h2>
+            <h2 class="text-lg font-semibold mb-4">Import Data <?php echo e(config('app.school_mode') ? 'Murid' : 'Mahasiswa'); ?></h2>
 
             <div x-data="generateStudentsImport()">
                 <div class="mb-4">
@@ -140,21 +139,21 @@
                 </div>
 
                 <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-semibold mb-2">{{ config('app.school_mode') ? 'Kelas' : 'Prodi' }}</label>
+                    <label class="block text-gray-700 text-sm font-semibold mb-2"><?php echo e(config('app.school_mode') ? 'Kelas' : 'Prodi'); ?></label>
                     <select x-model="kelas"
                         class="block border border-gray-300  ring-0 rounded-xl px-3 py-2 w-full focus:outline-[#177245]"
                         required>
-                        <option value="">Pilih {{ config('app.school_mode') ? 'kelas' : 'prodi' }}</option>
-                        @if(config('app.school_mode'))
-                        @foreach ($kelas as $row)
-                        <option value="{{ $row->id }}">{{ $row->name }}</option>
-                        @endforeach
-                        @else
-                        @php $prodis = \App\Models\Prodi::latest()->get(); @endphp
-                        @foreach ($prodis as $row)
-                        <option value="{{ $row->id }}">{{ $row->name }}</option>
-                        @endforeach
-                        @endif
+                        <option value="">Pilih <?php echo e(config('app.school_mode') ? 'kelas' : 'prodi'); ?></option>
+                        <?php if(config('app.school_mode')): ?>
+                        <?php $__currentLoopData = $kelas; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $row): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <option value="<?php echo e($row->id); ?>"><?php echo e($row->name); ?></option>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                        <?php else: ?>
+                        <?php $prodis = \App\Models\Prodi::latest()->get(); ?>
+                        <?php $__currentLoopData = $prodis; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $row): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <option value="<?php echo e($row->id); ?>"><?php echo e($row->name); ?></option>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                        <?php endif; ?>
                     </select>
                 </div>
 
@@ -194,7 +193,7 @@
             <h2 class="text-lg font-semibold mb-4">UUID</h2>
 
             <form :action="'/dashboard/master/uuid/' + selectedStudentId" method="POST">
-                @csrf
+                <?php echo csrf_field(); ?>
                 <div class="mb-4">
                     <input type="text" name="rfid" required :value="rfid"
                         class="border border-gray-300 rounded px-3 py-2 w-full focus:outline-[#177245]" />
@@ -250,4 +249,5 @@
     </div>
 
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('base.layout', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH E:\project\breskul\web\resources\views/master/murid/index.blade.php ENDPATH**/ ?>

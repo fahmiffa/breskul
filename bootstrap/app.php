@@ -16,9 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'isRole' => \App\Http\Middleware\isRole::class,
             'jwt'    => \App\Http\Middleware\JwtMiddleware::class,
+            'checkMaster' => \App\Http\Middleware\CheckMasterAccess::class,
         ]);
-
     })
-    ->withExceptions(function (Exceptions $exceptions): void {
-
-    })->create();
+    ->withExceptions(function (Exceptions $exceptions): void {})->create();

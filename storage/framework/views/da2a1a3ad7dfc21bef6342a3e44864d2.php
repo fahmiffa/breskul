@@ -1,18 +1,18 @@
 <header class="bg-green-700 text-white">
     <div class="max-w-7xl mx-auto flex items-center justify-between px-5 md:px-6 py-3">
         <div class="text-2xl font-bold">
-            {{ auth()->user()->role == 0 ? (auth()->user()->app->name ?? env('APP_NAME')) : (auth()->user()->data->apps->name ?? env('APP_NAME')) }}<span
+            <?php echo e(auth()->user()->role == 0 ? (auth()->user()->app->name ?? env('APP_NAME')) : (auth()->user()->data->apps->name ?? env('APP_NAME'))); ?><span
                 class="font-light"></span>
         </div>
         <nav class="space-x-6">
-            <a href="{{ route('dashboard.home') }}"
-                class="@if (Route::is('dashboard.home')) font-semibold @endif ">Home</a>
-            <a href="{{ auth()->user()->role == 3 ? route('dashboard.master.soal.index') : route('dashboard.master.index') }}"
-                class="@if (Route::is('dashboard.master.*')) font-semibold @endif ">Master</a>
+            <a href="<?php echo e(route('dashboard.home')); ?>"
+                class="<?php if(Route::is('dashboard.home')): ?> font-semibold <?php endif; ?> ">Home</a>
+            <a href="<?php echo e(auth()->user()->role == 3 ? route('dashboard.master.soal.index') : route('dashboard.master.index')); ?>"
+                class="<?php if(Route::is('dashboard.master.*')): ?> font-semibold <?php endif; ?> ">Master</a>
         </nav>
         <div class="flex space-x-4">
-            <div class="font-semibold hidden md:flex">{{auth()->user()->name}}</div>
-            <a href="{{ route('dashboard.setting') }}">
+            <div class="font-semibold hidden md:flex"><?php echo e(auth()->user()->name); ?></div>
+            <a href="<?php echo e(route('dashboard.setting')); ?>">
                 <svg xmlns="http://www.w3.org/2000/svg" class="size-5" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                     class="lucide lucide-settings-icon lucide-settings">
@@ -21,7 +21,7 @@
                     <circle cx="12" cy="12" r="3" />
                 </svg>
             </a>
-            <a class="text-sm" href="{{ route('dashboard.logout') }}">
+            <a class="text-sm" href="<?php echo e(route('dashboard.logout')); ?>">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                     class="lucide lucide-log-out-icon lucide-log-out">
@@ -37,14 +37,17 @@
 <div class="bg-green-600 text-white">
     <div class="max-w-7xl mx-auto flex justify-between px-6 py-3">
         <div>
-            <h2 class="text-xl font-semibold">{{ request()->segment(2) ? str_replace("-"," ",ucfirst(request()->segment(2))) : 'Dashboard' }}
+            <h2 class="text-xl font-semibold"><?php echo e(request()->segment(2) ? str_replace("-"," ",ucfirst(request()->segment(2))) : 'Dashboard'); ?>
+
             </h2>
-            @if (request()->segment(3))
-            <p class="text-sm opacity-80">{{ request()->segment(2) ? str_replace("-"," ",ucfirst(request()->segment(2))) : 'Dashboard' }}
+            <?php if(request()->segment(3)): ?>
+            <p class="text-sm opacity-80"><?php echo e(request()->segment(2) ? str_replace("-"," ",ucfirst(request()->segment(2))) : 'Dashboard'); ?>
+
                 >
-                {{ request()->segment(3) ? str_replace("-"," ",ucfirst(request()->segment(3))) : null }}
+                <?php echo e(request()->segment(3) ? str_replace("-"," ",ucfirst(request()->segment(3))) : null); ?>
+
             </p>
-            @endif
+            <?php endif; ?>
         </div>
 
         <div class="block md:hidden items-center">
@@ -59,4 +62,4 @@
             </button>
         </div>
     </div>
-</div>
+</div><?php /**PATH E:\project\breskul\web\resources\views/base/header.blade.php ENDPATH**/ ?>

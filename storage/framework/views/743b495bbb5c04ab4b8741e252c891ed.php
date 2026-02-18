@@ -1,62 +1,61 @@
-@extends('base.layout')
-@section('title', 'Dashboard')
-@section('content')
+<?php $__env->startSection('title', 'Dashboard'); ?>
+<?php $__env->startSection('content'); ?>
 <div class="mb-4 flex justify-between items-center">
     <h1 class="text-2xl font-bold text-gray-800">Dashboard</h1>
-    <form action="{{ route('dashboard.home') }}" method="GET">
+    <form action="<?php echo e(route('dashboard.home')); ?>" method="GET">
         <select name="year" onchange="this.form.submit()" class="border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500 p-2 cursor-pointer">
-            @for($y = date('Y'); $y >= date('Y')-2; $y--)
-            <option value="{{ $y }}" {{ $year == $y ? 'selected' : '' }}>{{ $y }}</option>
-            @endfor
+            <?php for($y = date('Y'); $y >= date('Y')-2; $y--): ?>
+            <option value="<?php echo e($y); ?>" <?php echo e($year == $y ? 'selected' : ''); ?>><?php echo e($y); ?></option>
+            <?php endfor; ?>
         </select>
     </form>
 </div>
 
-@if(auth()->user()->role != 3)
+<?php if(auth()->user()->role != 3): ?>
 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
-    @if(config('app.school_mode'))
+    <?php if(config('app.school_mode')): ?>
     <div class="bg-white p-4 rounded-xl shadow-md border border-gray-100 flex flex-col items-center justify-center">
         <div class="text-gray-500 text-sm font-medium">Total Kelas</div>
-        <div class="text-2xl font-bold text-green-600">{{ $totalKelas }}</div>
+        <div class="text-2xl font-bold text-green-600"><?php echo e($totalKelas); ?></div>
     </div>
-    @else
+    <?php else: ?>
     <div class="bg-white p-4 rounded-xl shadow-md border border-gray-100 flex flex-col items-center justify-center">
         <div class="text-gray-500 text-sm font-medium">Total Prodi</div>
-        <div class="text-2xl font-bold text-green-600">{{ $totalProdi }}</div>
+        <div class="text-2xl font-bold text-green-600"><?php echo e($totalProdi); ?></div>
     </div>
-    @endif
+    <?php endif; ?>
     <div class="bg-white p-4 rounded-xl shadow-md border border-gray-100 flex flex-col items-center justify-center">
-        <div class="text-gray-500 text-sm font-medium">Total {{ config('app.school_mode') ? 'Mapel' : 'Makul' }}</div>
-        <div class="text-2xl font-bold text-blue-600">{{ $totalMapel }}</div>
-    </div>
-    <div class="bg-white p-4 rounded-xl shadow-md border border-gray-100 flex flex-col items-center justify-center">
-        <div class="text-gray-500 text-sm font-medium">Total {{ config('app.school_mode') ? 'Guru' : 'Dosen' }}</div>
-        <div class="text-2xl font-bold text-purple-600">{{ $totalGuru }}</div>
+        <div class="text-gray-500 text-sm font-medium">Total <?php echo e(config('app.school_mode') ? 'Mapel' : 'Makul'); ?></div>
+        <div class="text-2xl font-bold text-blue-600"><?php echo e($totalMapel); ?></div>
     </div>
     <div class="bg-white p-4 rounded-xl shadow-md border border-gray-100 flex flex-col items-center justify-center">
-        <div class="text-gray-500 text-sm font-medium">Total {{ config('app.school_mode') ? 'Murid' : 'Mahasiswa' }}</div>
-        <div class="text-2xl font-bold text-orange-600">{{ $totalMurid }}</div>
+        <div class="text-gray-500 text-sm font-medium">Total <?php echo e(config('app.school_mode') ? 'Guru' : 'Dosen'); ?></div>
+        <div class="text-2xl font-bold text-purple-600"><?php echo e($totalGuru); ?></div>
     </div>
     <div class="bg-white p-4 rounded-xl shadow-md border border-gray-100 flex flex-col items-center justify-center">
-        <div class="text-gray-500 text-sm font-medium">Total {{ config('app.school_mode') ? 'Ekskul' : 'UKM' }}</div>
-        <div class="text-2xl font-bold text-red-600">{{ $totalEkskul }}</div>
+        <div class="text-gray-500 text-sm font-medium">Total <?php echo e(config('app.school_mode') ? 'Murid' : 'Mahasiswa'); ?></div>
+        <div class="text-2xl font-bold text-orange-600"><?php echo e($totalMurid); ?></div>
+    </div>
+    <div class="bg-white p-4 rounded-xl shadow-md border border-gray-100 flex flex-col items-center justify-center">
+        <div class="text-gray-500 text-sm font-medium">Total <?php echo e(config('app.school_mode') ? 'Ekskul' : 'UKM'); ?></div>
+        <div class="text-2xl font-bold text-red-600"><?php echo e($totalEkskul); ?></div>
     </div>
 </div>
 
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
     <!-- Payment Chart -->
     <div class="bg-white rounded-xl shadow-md p-6 border border-gray-100">
-        <h3 class="text-lg font-semibold text-gray-700 mb-4">Grafik Pembayaran ({{ $year }})</h3>
+        <h3 class="text-lg font-semibold text-gray-700 mb-4">Grafik Pembayaran (<?php echo e($year); ?>)</h3>
         <canvas id="paymentChart"></canvas>
     </div>
 
     <!-- Attendance Chart -->
     <div class="bg-white rounded-xl shadow-md p-6 border border-gray-100">
-        <h3 class="text-lg font-semibold text-gray-700 mb-4">Grafik Absensi ({{ date('F Y') }})</h3>
+        <h3 class="text-lg font-semibold text-gray-700 mb-4">Grafik Absensi (<?php echo e(date('F Y')); ?>)</h3>
         <canvas id="attendanceChart"></canvas>
     </div>
 </div>
-@else
+<?php else: ?>
 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center flex flex-col items-center justify-center space-y-4">
     <div class="p-4 bg-green-50 text-green-600 rounded-full">
         <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -64,9 +63,9 @@
             <path d="M6 12v5c3 3 9 3 12 0v-5" />
         </svg>
     </div>
-    <h2 class="text-2xl font-bold text-gray-800">Selamat Datang, {{ auth()->user()->name }}</h2>
+    <h2 class="text-2xl font-bold text-gray-800">Selamat Datang, <?php echo e(auth()->user()->name); ?></h2>
     <p class="text-gray-500 max-w-sm">Anda masuk sebagai Guru. Gunakan menu Exam di samping untuk mengelola ujian dan penugasan murid.</p>
-    <a href="{{ route('dashboard.penjadwalan-ujian.index') }}" class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-lg shadow-green-100">
+    <a href="<?php echo e(route('dashboard.penjadwalan-ujian.index')); ?>" class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-lg shadow-green-100">
         Mulai Kelola Ujian
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M5 12h14" />
@@ -74,11 +73,11 @@
         </svg>
     </a>
 </div>
-@endif
-@endsection
+<?php endif; ?>
+<?php $__env->stopSection(); ?>
 
-@if(auth()->user()->role != 3)
-@push('script')
+<?php if(auth()->user()->role != 3): ?>
+<?php $__env->startPush('script'); ?>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     // Payment Chart
@@ -89,7 +88,7 @@
             labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
             datasets: [{
                     label: 'Total Lunas (Rp)',
-                    data: @json($paymentData ?? []),
+                    data: <?php echo json_encode($paymentData ?? [], 15, 512) ?>,
                     backgroundColor: 'rgba(22, 163, 74, 0.7)', // Green-600
                     borderColor: 'rgba(22, 163, 74, 1)',
                     borderWidth: 1,
@@ -99,7 +98,7 @@
                 },
                 {
                     label: 'Total Tagihan (Rp)',
-                    data: @json($unpaidPaymentData ?? []),
+                    data: <?php echo json_encode($unpaidPaymentData ?? [], 15, 512) ?>,
                     backgroundColor: 'rgba(220, 38, 38, 0.7)', // Red-600
                     borderColor: 'rgba(220, 38, 38, 1)',
                     borderWidth: 1,
@@ -162,10 +161,10 @@
     new Chart(ctxAttendance, {
         type: 'line',
         data: {
-            labels: @json($attendanceLabels ?? []),
+            labels: <?php echo json_encode($attendanceLabels ?? [], 15, 512) ?>,
             datasets: [{
                 label: 'Jumlah Kehadiran',
-                data: @json($attendanceData ?? []),
+                data: <?php echo json_encode($attendanceData ?? [], 15, 512) ?>,
                 borderColor: '#3b82f6',
                 backgroundColor: 'rgba(59, 130, 246, 0.1)',
                 fill: true,
@@ -200,5 +199,6 @@
         }
     });
 </script>
-@endpush
-@endif
+<?php $__env->stopPush(); ?>
+<?php endif; ?>
+<?php echo $__env->make('base.layout', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH E:\project\breskul\web\resources\views/home/index.blade.php ENDPATH**/ ?>

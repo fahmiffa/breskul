@@ -13,8 +13,10 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
+    'name' => env('APP_NAME', 'Breskul'),
     'school_mode' => env('APP_SCHOOL', true),
+    'qrcode' => env('QRCODE', true),
+    'uuid' => env('UUID', true),
 
     /*
     |--------------------------------------------------------------------------

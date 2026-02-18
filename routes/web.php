@@ -3,6 +3,7 @@
 use App\Http\Controllers\AnnoucementController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Home;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/kebijakan-privasi', function () {
@@ -28,13 +29,14 @@ Route::prefix('dashboard')->middleware('auth')->name('dashboard.')->group(functi
     Route::post('/pass', [Home::class, 'pass'])->name('pass');
     Route::resource('pengumuman', AnnoucementController::class);
     Route::resource('ekstrakurikuler', App\Http\Controllers\StudentExtracurricularController::class);
+    Route::resource('penjadwalan-ujian', App\Http\Controllers\UjianAssignmentController::class);
 
     Route::get('job-progress/{jobId}', function ($jobId) {
         $progress = Cache::get("job-progress-{$jobId}", 0);
         return response()->json(['progress' => $progress]);
     });
 
-    Route::prefix('master')->name('master.')->group(function () {
+    Route::prefix('master')->name('master.')->middleware('checkMaster')->group(function () {
         Route::resource('kelas', App\Http\Controllers\ClassesController::class);
         Route::get('/akun', [Home::class, 'akun'])->name('akun.index');
         Route::post('/akun/password', [Home::class, 'updateAccountPassword'])->name('akun.password');
@@ -56,6 +58,8 @@ Route::prefix('dashboard')->middleware('auth')->name('dashboard.')->group(functi
         Route::resource('jadwal', App\Http\Controllers\MapelDayController::class);
         Route::resource('absensi', App\Http\Controllers\AttendanceConfigController::class);
         Route::resource('ekstrakurikuler', App\Http\Controllers\ExtracurricularController::class);
+        Route::resource('soal', App\Http\Controllers\SoalController::class);
+        Route::resource('ujian', App\Http\Controllers\UjianController::class);
         Route::middleware(['isRole'])->group(function () {
             Route::resource('app', App\Http\Controllers\AppController::class);
             Route::resource('api', App\Http\Controllers\ApiKeyController::class);
