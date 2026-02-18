@@ -17,6 +17,7 @@ class UjianStudent extends Model
         'status',
         'score',
         'answers',
+        'pdf',
         'started_at',
         'finished_at',
     ];

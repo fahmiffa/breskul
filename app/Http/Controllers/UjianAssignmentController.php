@@ -125,11 +125,24 @@ class UjianAssignmentController extends Controller
     {
         $item = UjianStudent::with(['ujian.mapel', 'ujian.guru', 'student'])->findOrFail($id);
 
+        // Jika PDF sudah pernah di-generate via Job, langsung serve dari storage
+        if ($item->pdf && \Illuminate\Support\Facades\Storage::disk('public')->exists($item->pdf)) {
+            $fileName = 'Evaluasi-' . $item->student->name . '-' . $item->ujian->nama . '.pdf';
+            return response()->download(storage_path('app/public/' . $item->pdf), $fileName);
+        }
+
+        // Jika belum ada, generate on-the-fly, simpan, lalu download
         $soalIds = $item->ujian->soal_id ?? [];
         $soals = \App\Models\Soal::whereIn('id', $soalIds)->get();
         $answers = $item->answers ?? [];
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('master.ujian_assignment.pdf', compact('item', 'soals', 'answers'));
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('master.ujian_assignment.pdf', compact('item', 'soals', 'answers'))->setPaper('a4', 'portrait');
+
+        $fileName = 'exam-pdf/Evaluasi-' . $item->id . '-' . time() . '.pdf';
+        \Illuminate\Support\Facades\Storage::disk('public')->put($fileName, $pdf->output());
+        $item->pdf = $fileName;
+        $item->save();
+
         return $pdf->download('Evaluasi-' . $item->student->name . '-' . $item->ujian->nama . '.pdf');
     }
 }

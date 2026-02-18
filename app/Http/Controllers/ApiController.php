@@ -1071,6 +1071,9 @@ class ApiController extends Controller
         $assign->finished_at = now();
         $assign->save();
 
+        // Generate PDF evaluasi via queue
+        \App\Jobs\GenerateExamPdf::dispatch($assign->id);
+
         return response()->json([
             'success' => true,
             'message' => 'Ujian selesai dikerjakan.',

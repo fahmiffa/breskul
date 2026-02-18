@@ -142,29 +142,29 @@
 
     <div class="info-section">
         <div class="score-box">
-            <span class="score-value">{{ $item->score }}</span>
+            <span class="score-value"><?php echo e($item->score); ?></span>
             <span style="font-size: 10px;">SKOR TOTAL</span>
         </div>
         <table class="info-table">
             <tr>
                 <td class="info-label">Nama Murid</td>
-                <td>: {{ $item->student->name }}</td>
+                <td>: <?php echo e($item->student->name); ?></td>
             </tr>
             <tr>
                 <td class="info-label">Nama Ujian</td>
-                <td>: {{ $item->ujian->nama }}</td>
+                <td>: <?php echo e($item->ujian->nama); ?></td>
             </tr>
             <tr>
                 <td class="info-label">Mata Pelajaran</td>
-                <td>: {{ $item->ujian->mapel->name ?? '-' }}</td>
+                <td>: <?php echo e($item->ujian->mapel->name ?? '-'); ?></td>
             </tr>
             <tr>
                 <td class="info-label">Guru Pengampu</td>
-                <td>: {{ $item->ujian->guru->name ?? '-' }}</td>
+                <td>: <?php echo e($item->ujian->guru->name ?? '-'); ?></td>
             </tr>
             <tr>
                 <td class="info-label">Tanggal Selesai</td>
-                <td>: {{ $item->finished_at ? \Carbon\Carbon::parse($item->finished_at)->format('d M Y, H:i') : '-' }}</td>
+                <td>: <?php echo e($item->finished_at ? \Carbon\Carbon::parse($item->finished_at)->format('d M Y, H:i') : '-'); ?></td>
             </tr>
         </table>
     </div>
@@ -172,15 +172,15 @@
     <div style="clear: both; margin-top: 40px;">
         <h3>Detail Pengerjaan</h3>
 
-        @php
+        <?php
         $stripHtml = function($html) {
         return strip_tags(str_replace(['<br>', '<br />', '<p>', '
     </div>'], ["\n", "\n", "\n", "\n"], $html));
     };
-    @endphp
+    ?>
 
-    @foreach($soals as $index => $soal)
-    @php
+    <?php $__currentLoopData = $soals; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $soal): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+    <?php
     $studentKey = strtoupper(trim($answers[$soal->id] ?? '-'));
     $correctValue = trim(strip_tags($soal->jawaban));
 
@@ -191,18 +191,20 @@
     }
 
     $isCorrect = (trim(strip_tags($studentValue)) == $correctValue) || ($studentKey == strtoupper($correctValue));
-    @endphp
+    ?>
 
     <div class="question-card">
         <div class="question-header">
-            <span class="question-number">SOAL {{ $index + 1 }}</span>
-            <span class="status {{ $isCorrect ? 'status-benar' : 'status-salah' }}">
-                {{ $isCorrect ? '✓ Benar' : '✗ Salah' }}
+            <span class="question-number">SOAL <?php echo e($index + 1); ?></span>
+            <span class="status <?php echo e($isCorrect ? 'status-benar' : 'status-salah'); ?>">
+                <?php echo e($isCorrect ? '✓ Benar' : '✗ Salah'); ?>
+
             </span>
         </div>
 
         <div class="question-text">
-            {!! $soal->nama !!}
+            <?php echo $soal->nama; ?>
+
         </div>
 
         <table style="width: 100%; margin-top: 5px; border-spacing: 5px 0;">
@@ -210,24 +212,24 @@
                 <td style="width: 50%; padding: 0;">
                     <div class="answer-box">
                         <span class="answer-label">Murid:</span>
-                        <span class="answer-text">{{ $studentKey }} - {{ $studentValue }}</span>
+                        <span class="answer-text"><?php echo e($studentKey); ?> - <?php echo e($studentValue); ?></span>
                     </div>
                 </td>
                 <td style="width: 50%; padding: 0;">
                     <div class="answer-box">
                         <span class="answer-label">Kunci:</span>
-                        <span class="answer-text" style="color: #059669;">{{ $correctValue }}</span>
+                        <span class="answer-text" style="color: #059669;"><?php echo e($correctValue); ?></span>
                     </div>
                 </td>
             </tr>
         </table>
     </div>
-    @endforeach
+    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
     </div>
 
     <div style="margin-top: 50px; text-align: right; font-size: 12px;">
-        <p>Dicetak pada: {{ now()->format('d M Y, H:i') }}</p>
+        <p>Dicetak pada: <?php echo e(now()->format('d M Y, H:i')); ?></p>
     </div>
 </body>
 
-</html>
+</html><?php /**PATH E:\project\breskul\web\resources\views/master/ujian_assignment/pdf.blade.php ENDPATH**/ ?>

@@ -85,17 +85,27 @@
                     </td>
                     <td class="px-6 py-4 font-bold text-gray-800"><?php echo e($row->score ?? '-'); ?></td>
                     <td class="px-6 py-4 text-center">
-                        <form action="<?php echo e(route('dashboard.penjadwalan-ujian.destroy', $row->id)); ?>" method="POST" onsubmit="return confirm('Hapus penugasan ini?')">
-                            <?php echo csrf_field(); ?>
-                            <?php echo method_field('DELETE'); ?>
-                            <button type="submit" class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                        <div class="flex items-center gap-1 justify-center">
+                            <?php if($row->status == 2): ?>
+                            <button onclick="showDetail(<?php echo e($row->id); ?>)" class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors" title="Lihat Jawaban">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M3 6h18" />
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-                                    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                                    <circle cx="12" cy="12" r="3" />
                                 </svg>
                             </button>
-                        </form>
+                            <?php endif; ?>
+                            <form action="<?php echo e(route('dashboard.penjadwalan-ujian.destroy', $row->id)); ?>" method="POST" onsubmit="return confirm('Hapus penugasan ini?')">
+                                <?php echo csrf_field(); ?>
+                                <?php echo method_field('DELETE'); ?>
+                                <button type="submit" class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M3 6h18" />
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                                        <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                    </svg>
+                                </button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
@@ -114,5 +124,134 @@
 
     </div>
 </div>
+
+<!-- Detail Modal -->
+<div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 z-[999] hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+        <div class="p-6 border-b flex justify-between items-center bg-gray-50">
+            <div>
+                <h3 class="text-xl font-bold text-gray-800" id="modalTitle">Detail Ujian</h3>
+                <p class="text-sm text-gray-500" id="modalSubtitle"></p>
+            </div>
+            <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-100 transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 6 6 18M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <div class="p-6 overflow-y-auto flex-1 bg-white" id="modalContent">
+            <!-- Questions and answers will be injected here -->
+            <div class="flex justify-center py-10">
+                <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600"></div>
+            </div>
+        </div>
+        <div class="p-6 border-t bg-gray-50 flex justify-end gap-3">
+            <a id="btnDownloadPdf" href="#" target="_blank" class="px-6 py-2 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition-all flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" x2="12" y1="15" y2="3" />
+                </svg>
+                Download PDF
+            </a>
+            <button onclick="closeModal()" class="px-6 py-2 bg-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-300 transition-all">Tutup</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showDetail(id) {
+        const modal = document.getElementById('detailModal');
+        const content = document.getElementById('modalContent');
+        const title = document.getElementById('modalTitle');
+        const subtitle = document.getElementById('modalSubtitle');
+
+        modal.classList.remove('hidden');
+        content.innerHTML = `<div class="flex justify-center py-10"><div class="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600"></div></div>`;
+        document.getElementById('btnDownloadPdf').href = `<?php echo e(url('dashboard/penjadwalan-ujian')); ?>/${id}/pdf`;
+
+        fetch(`<?php echo e(url('dashboard/penjadwalan-ujian')); ?>/${id}`)
+            .then(response => response.json())
+            .then(res => {
+                if (res.success) {
+                    const data = res.data;
+                    title.innerText = data.ujian.nama;
+                    subtitle.innerText = `${data.student.name} • Skor: ${data.item.score}`;
+
+                    let html = '';
+                    const stripHtml = (html) => {
+                        let tmp = document.createElement("DIV");
+                        tmp.innerHTML = html;
+                        return tmp.textContent || tmp.innerText || "";
+                    };
+
+                    data.soals.forEach((soal, index) => {
+                        const studentKey = (data.answers[soal.id] || '-').toString().trim().toUpperCase();
+                        const correctValue = stripHtml(soal.jawaban).trim();
+
+                        // Deteksi value student (kunci atau teks langsung)
+                        let studentValue = studentKey;
+                        if (['A', 'B', 'C', 'D', 'E'].includes(studentKey)) {
+                            const optKey = 'opsi_' + studentKey.toLowerCase();
+                            studentValue = soal[optKey] ? stripHtml(soal[optKey]) : studentKey;
+                        }
+
+                        const isCorrect = stripHtml(studentValue).trim().toLowerCase() === correctValue.toLowerCase() ||
+                            studentKey.toLowerCase() === correctValue.toLowerCase();
+
+                        html += `
+                        <div class="mb-8 p-6 rounded-2xl border ${isCorrect ? 'border-green-100 bg-green-50/30' : 'border-red-100 bg-red-50/30'}">
+                            <div class="flex justify-between items-start mb-4">
+                                <span class="bg-gray-800 text-white text-[10px] px-2 py-1 rounded-md font-bold uppercase tracking-wider">Soal ${index + 1}</span>
+                                <span class="px-3 py-1 rounded-full text-[10px] font-black ${isCorrect ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} uppercase tracking-widest border ${isCorrect ? 'border-green-200' : 'border-red-200'}">
+                                    ${isCorrect ? '✓ Benar' : '✗ Salah'}
+                                </span>
+                            </div>
+                            <div class="prose prose-sm max-w-none text-gray-800 mb-6 font-medium leading-relaxed">
+                                ${soal.nama}
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mt-4">
+                                <div class="p-4 rounded-xl bg-white border border-gray-100 shadow-sm flex flex-col gap-1">
+                                    <span class="text-gray-400 font-bold text-[9px] uppercase tracking-widest">Jawaban Murid</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-6 h-6 flex items-center justify-center rounded-lg ${isCorrect ? 'bg-green-600' : 'bg-red-600'} text-white font-bold text-xs">${studentKey}</span>
+                                        <span class="font-bold text-gray-700">${studentValue}</span>
+                                    </div>
+                                </div>
+                                <div class="p-4 rounded-xl bg-white border border-gray-100 shadow-sm flex flex-col gap-1">
+                                    <span class="text-gray-400 font-bold text-[9px] uppercase tracking-widest">Kunci Jawaban</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-6 h-6 flex items-center justify-center rounded-lg bg-green-600 text-white font-bold text-xs">✔</span>
+                                        <span class="font-bold text-green-700">${correctValue}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`;
+                    });
+
+                    content.innerHTML = html;
+                } else {
+                    content.innerHTML = `<div class="text-center py-10 text-red-500 font-bold">Gagal memuat data detail ujian.</div>`;
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                content.innerHTML = `<div class="text-center py-10 text-red-500 font-bold">Terjadi kesalahan sistem saat mengambil data.</div>`;
+            });
+    }
+
+    function closeModal() {
+        document.getElementById('detailModal').classList.add('hidden');
+    }
+
+    // Close modal on outside click
+    window.onclick = function(event) {
+        const modal = document.getElementById('detailModal');
+        if (event.target == modal) {
+            closeModal();
+        }
+    }
+</script>
 <?php $__env->stopSection(); ?>
 <?php echo $__env->make('base.layout', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH E:\project\breskul\web\resources\views/master/ujian_assignment/index.blade.php ENDPATH**/ ?>
