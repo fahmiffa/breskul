@@ -126,12 +126,13 @@
                         <td class="px-6 py-4 text-center">
                             <div class="flex items-center gap-1 justify-center">
                                 @if($row->status == 2)
-                                <button onclick="showDetail({{ $row->id }})" class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors" title="Lihat Jawaban">
+                                <a href="{{ route('dashboard.penjadwalan-ujian.pdf', $row->id) }}" target="_blank" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Download PDF Evaluasi">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-                                        <circle cx="12" cy="12" r="3" />
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                        <polyline points="7 10 12 15 17 10" />
+                                        <line x1="12" x2="12" y1="15" y2="3" />
                                     </svg>
-                                </button>
+                                </a>
                                 @endif
                                 <button type="button" onclick="confirmDelete({{ $row->id }})" class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
