@@ -107,13 +107,18 @@ class Home extends Controller
 
     public function akun()
     {
+        $appId = auth()->user()->app->id ?? null;
+        $isAppUser = auth()->user()->role == 1 && $appId;
+
         $items = User::latest()
             ->whereIn('role', [2, 3])
-            ->where(function ($q) {
-                $q->whereHas('teacherData', function ($q) {
-                    $q->where('app', auth()->user()->app->id);
-                })->orWhereHas('studentData', function ($q) {
-                    $q->where('app', auth()->user()->app->id);
+            ->when($isAppUser, function ($query) use ($appId) {
+                $query->where(function ($q) use ($appId) {
+                    $q->whereHas('teacherData', function ($q) use ($appId) {
+                        $q->where('app', $appId);
+                    })->orWhereHas('studentData', function ($q) use ($appId) {
+                        $q->where('app', $appId);
+                    });
                 });
             })
             ->with(['teacherData', 'studentData'])
