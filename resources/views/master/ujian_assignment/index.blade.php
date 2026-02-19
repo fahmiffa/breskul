@@ -14,6 +14,12 @@
         </a>
     </div>
 
+    {{-- Form Deletion (Hidden) --}}
+    <form id="deleteForm" method="POST" class="hidden">
+        @csrf
+        @method('DELETE')
+    </form>
+
     @if(session('success'))
     <div class="mb-4 p-4 bg-green-50 text-green-700 rounded-xl border border-green-200">
         {{ session('success') }}
@@ -127,17 +133,13 @@
                                     </svg>
                                 </button>
                                 @endif
-                                <form action="{{ route('dashboard.penjadwalan-ujian.destroy', $row->id) }}" method="POST" onsubmit="return confirm('Hapus penugasan ini?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M3 6h18" />
-                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-                                            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                        </svg>
-                                    </button>
-                                </form>
+                                <button type="button" onclick="confirmDelete({{ $row->id }})" class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M3 6h18" />
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                                        <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                    </svg>
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -198,6 +200,14 @@
     const rowCheckboxes = document.querySelectorAll('.row-checkbox');
     const bulkActions = document.getElementById('bulkActions');
     const selectedCount = document.getElementById('selectedCount');
+
+    function confirmDelete(id) {
+        if (confirm('Hapus penugasan ini?')) {
+            const form = document.getElementById('deleteForm');
+            form.action = `{{ url('dashboard/penjadwalan-ujian') }}/${id}`;
+            form.submit();
+        }
+    }
 
     function updateBulkActions() {
         const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
