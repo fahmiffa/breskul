@@ -1071,6 +1071,13 @@ class ApiController extends Controller
         $assign->finished_at = now();
         $assign->save();
 
+
+        $bill = new Bill;
+        $bill->payment_id = $assign->ujian_id;
+        $bill->head_id    = $assign->student_id;
+        $bill->exam = 1;
+        $bill->save();
+
         // Generate PDF evaluasi via queue
         \App\Jobs\GenerateExamPdf::dispatch($assign->id);
 
