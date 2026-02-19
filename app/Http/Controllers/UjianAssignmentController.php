@@ -93,6 +93,25 @@ class UjianAssignmentController extends Controller
         return back()->with('success', 'Penugasan berhasil dihapus.');
     }
 
+    public function bulkVerify(Request $request)
+    {
+        $teach = Teach::where('user_id', Auth::id())->first();
+        if (!$teach) return abort(403);
+
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:ujian_students,id',
+        ]);
+
+        UjianStudent::whereIn('id', $request->ids)
+            ->whereHas('ujian', function ($q) use ($teach) {
+                $q->where('teach_id', $teach->id);
+            })
+            ->update(['payment_status' => 1]);
+
+        return back()->with('success', count($request->ids) . ' pembayaran berhasil diverifikasi.');
+    }
+
     public function show($id)
     {
         $item = UjianStudent::with(['ujian.mapel', 'student'])->findOrFail($id);

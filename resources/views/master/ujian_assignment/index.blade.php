@@ -44,91 +44,114 @@
         </form>
     </div>
 
-    <div class="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
-        <table class="min-w-full bg-white text-sm">
-            <thead>
-                <tr class="bg-gray-50 text-left text-gray-600 border-b border-gray-200">
-                    <th class="px-6 py-4 font-bold uppercase tracking-wider text-[11px]">No</th>
-                    <th class="px-6 py-4 font-bold uppercase tracking-wider text-[11px]">Ujian</th>
-                    <th class="px-6 py-4 font-bold uppercase tracking-wider text-[11px]">Murid</th>
-                    <th class="px-6 py-4 font-bold uppercase tracking-wider text-[11px]">Kelas</th>
-                    <th class="px-6 py-4 font-bold uppercase tracking-wider text-[11px]">Status</th>
-                    <th class="px-6 py-4 font-bold uppercase tracking-wider text-[11px]">Bayar</th>
-                    <th class="px-6 py-4 font-bold uppercase tracking-wider text-[11px]">Skor</th>
-                    <th class="px-6 py-4 font-bold uppercase tracking-wider text-[11px]">Action</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-                @forelse($items as $index => $row)
-                <tr class="hover:bg-gray-50 transition-colors">
-                    <td class="px-6 py-4 text-gray-500 font-medium">{{ $items->firstItem() + $index }}</td>
-                    <td class="px-6 py-4 font-bold text-gray-800">{{ $row->ujian->nama }}</td>
-                    <td class="px-6 py-4 text-gray-700">{{ $row->student->name }}</td>
-                    <td class="px-6 py-4 text-gray-600">
-                        @foreach($row->student->Kelas as $kelas)
-                        <span class="px-2 py-0.5 bg-gray-100 rounded text-[10px]">{{ $kelas->name }}</span>
-                        @endforeach
-                    </td>
-                    <td class="px-6 py-4">
-                        @php
-                        $statusMap = [
-                        0 => ['label' => 'Belum', 'class' => 'bg-gray-100 text-gray-600'],
-                        1 => ['label' => 'Mengerjakan', 'class' => 'bg-blue-100 text-blue-600'],
-                        2 => ['label' => 'Selesai', 'class' => 'bg-green-100 text-green-600'],
-                        ];
-                        $st = $statusMap[$row->status] ?? $statusMap[0];
-                        @endphp
-                        <span class="px-2 py-1 {{ $st['class'] }} rounded-full font-bold text-[10px] uppercase">
-                            {{ $st['label'] }}
-                        </span>
-                    </td>
-                    <td class="px-6 py-4">
-                        @if(!$row->ujian->is_paid)
-                        <span class="px-2 py-1 bg-blue-50 text-blue-600 rounded-full font-bold text-[10px] uppercase border border-blue-200">Gratis</span>
-                        @elseif($row->payment_status == 1)
-                        <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full font-bold text-[10px] uppercase border border-green-200">✓ Lunas</span>
-                        @else
-                        <div>
-                            <span class="px-2 py-1 bg-orange-100 text-orange-700 rounded-full font-bold text-[10px] uppercase border border-orange-200">Belum Bayar</span>
-                            <div class="text-[10px] text-gray-400 mt-0.5">Rp {{ number_format($row->ujian->harga, 0, ',', '.') }}</div>
-                        </div>
-                        @endif
-                    </td>
-                    <td class="px-6 py-4 font-bold text-gray-800">{{ $row->score ?? '-' }}</td>
-                    <td class="px-6 py-4 text-center">
-                        <div class="flex items-center gap-1 justify-center">
-                            @if($row->status == 2)
-                            <button onclick="showDetail({{ $row->id }})" class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors" title="Lihat Jawaban">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-                                    <circle cx="12" cy="12" r="3" />
-                                </svg>
-                            </button>
+    <form id="bulkForm" method="POST" action="{{ route('dashboard.penjadwalan-ujian.bulk-verify') }}">
+        @csrf
+        <div id="bulkActions" class="mb-4 hidden animate-in fade-in slide-in-from-top-2 duration-300">
+            <div class="flex items-center gap-3 p-3 bg-blue-50 border border-blue-100 rounded-xl">
+                <span class="text-sm font-medium text-blue-700 ml-2" id="selectedCount">0 dipilih</span>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-5 rounded-xl text-xs transition-all shadow-md flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 6 9 17l-5-5" />
+                    </svg>
+                    Verifikasi manual yang dipilih
+                </button>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+            <table class="min-w-full bg-white text-sm">
+                <thead>
+                    <tr class="bg-gray-50 text-left text-gray-600 border-b border-gray-200">
+                        <th class="px-6 py-4 w-10">
+                            <input type="checkbox" id="selectAll" class="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500">
+                        </th>
+                        <th class="px-6 py-4 font-bold uppercase tracking-wider text-[11px]">No</th>
+                        <th class="px-6 py-4 font-bold uppercase tracking-wider text-[11px]">Ujian</th>
+                        <th class="px-6 py-4 font-bold uppercase tracking-wider text-[11px]">Murid</th>
+                        <th class="px-6 py-4 font-bold uppercase tracking-wider text-[11px]">Kelas</th>
+                        <th class="px-6 py-4 font-bold uppercase tracking-wider text-[11px]">Status</th>
+                        <th class="px-6 py-4 font-bold uppercase tracking-wider text-[11px]">Bayar</th>
+                        <th class="px-6 py-4 font-bold uppercase tracking-wider text-[11px]">Skor</th>
+                        <th class="px-6 py-4 font-bold uppercase tracking-wider text-[11px]">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse($items as $index => $row)
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-6 py-4">
+                            @if($row->ujian->is_paid && $row->payment_status == 0)
+                            <input type="checkbox" name="ids[]" value="{{ $row->id }}" class="row-checkbox w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500">
                             @endif
-                            <form action="{{ route('dashboard.penjadwalan-ujian.destroy', $row->id) }}" method="POST" onsubmit="return confirm('Hapus penugasan ini?')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                        </td>
+                        <td class="px-6 py-4 text-gray-500 font-medium">{{ $items->firstItem() + $index }}</td>
+                        <td class="px-6 py-4 font-bold text-gray-800">{{ $row->ujian->nama }}</td>
+                        <td class="px-6 py-4 text-gray-700">{{ $row->student->name }}</td>
+                        <td class="px-6 py-4 text-gray-600">
+                            @foreach($row->student->Kelas as $kelas)
+                            <span class="px-2 py-0.5 bg-gray-100 rounded text-[10px]">{{ $kelas->name }}</span>
+                            @endforeach
+                        </td>
+                        <td class="px-6 py-4">
+                            @php
+                            $statusMap = [
+                            0 => ['label' => 'Belum', 'class' => 'bg-gray-100 text-gray-600'],
+                            1 => ['label' => 'Mengerjakan', 'class' => 'bg-blue-100 text-blue-600'],
+                            2 => ['label' => 'Selesai', 'class' => 'bg-green-100 text-green-600'],
+                            ];
+                            $st = $statusMap[$row->status] ?? $statusMap[0];
+                            @endphp
+                            <span class="px-2 py-1 {{ $st['class'] }} rounded-full font-bold text-[10px] uppercase">
+                                {{ $st['label'] }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            @if(!$row->ujian->is_paid)
+                            <span class="px-2 py-1 bg-blue-50 text-blue-600 rounded-full font-bold text-[10px] uppercase border border-blue-200">Gratis</span>
+                            @elseif($row->payment_status == 1)
+                            <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full font-bold text-[10px] uppercase border border-green-200">✓ Lunas</span>
+                            @else
+                            <div>
+                                <span class="px-2 py-1 bg-orange-100 text-orange-700 rounded-full font-bold text-[10px] uppercase border border-orange-200">Belum Bayar</span>
+                                <div class="text-[10px] text-gray-400 mt-0.5">Rp {{ number_format($row->ujian->harga, 0, ',', '.') }}</div>
+                            </div>
+                            @endif
+                        </td>
+                        <td class="px-6 py-4 font-bold text-gray-800">{{ $row->score ?? '-' }}</td>
+                        <td class="px-6 py-4 text-center">
+                            <div class="flex items-center gap-1 justify-center">
+                                @if($row->status == 2)
+                                <button onclick="showDetail({{ $row->id }})" class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors" title="Lihat Jawaban">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M3 6h18" />
-                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-                                        <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                                        <circle cx="12" cy="12" r="3" />
                                     </svg>
                                 </button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="8" class="text-center px-6 py-10 text-gray-500">
-                        Belum ada ujian yang ditugaskan.
-                    </td>
-                </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
+                                @endif
+                                <form action="{{ route('dashboard.penjadwalan-ujian.destroy', $row->id) }}" method="POST" onsubmit="return confirm('Hapus penugasan ini?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M3 6h18" />
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                                            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                        </svg>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="8" class="text-center px-6 py-10 text-gray-500">
+                            Belum ada ujian yang ditugaskan.
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </form>
 
     <div class="mt-6">
         {{ $items->links() }}
@@ -170,6 +193,39 @@
 </div>
 
 <script>
+    // Bulk Selection Logic
+    const selectAll = document.getElementById('selectAll');
+    const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+    const bulkActions = document.getElementById('bulkActions');
+    const selectedCount = document.getElementById('selectedCount');
+
+    function updateBulkActions() {
+        const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
+        if (checkedCount > 0) {
+            bulkActions.classList.remove('hidden');
+            selectedCount.innerText = `${checkedCount} dipilih`;
+        } else {
+            bulkActions.classList.add('hidden');
+        }
+    }
+
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            rowCheckboxes.forEach(cb => {
+                cb.checked = this.checked;
+            });
+            updateBulkActions();
+        });
+    }
+
+    rowCheckboxes.forEach(cb => {
+        cb.addEventListener('change', function() {
+            updateBulkActions();
+            if (!this.checked) selectAll.checked = false;
+            if (document.querySelectorAll('.row-checkbox:checked').length === rowCheckboxes.length) selectAll.checked = true;
+        });
+    });
+
     function showDetail(id) {
         const modal = document.getElementById('detailModal');
         const content = document.getElementById('modalContent');

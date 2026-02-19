@@ -30,6 +30,7 @@ Route::prefix('dashboard')->middleware('auth')->name('dashboard.')->group(functi
     Route::resource('pengumuman', AnnoucementController::class);
     Route::resource('ekstrakurikuler', App\Http\Controllers\StudentExtracurricularController::class);
     Route::get('penjadwalan-ujian/{id}/pdf', [App\Http\Controllers\UjianAssignmentController::class, 'pdf'])->name('penjadwalan-ujian.pdf');
+    Route::post('penjadwalan-ujian/bulk-verify', [App\Http\Controllers\UjianAssignmentController::class, 'bulkVerify'])->name('penjadwalan-ujian.bulk-verify');
     Route::resource('penjadwalan-ujian', App\Http\Controllers\UjianAssignmentController::class);
 
     Route::get('job-progress/{jobId}', function ($jobId) {
