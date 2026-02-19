@@ -403,7 +403,6 @@ class Home extends Controller
 
         return back()->with('success', 'Password berhasil diperbarui.');
     }
-    
     public function updateAccountPassword(Request $request)
     {
         $validator = Validator::make($request->all(), [
