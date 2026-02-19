@@ -47,5 +47,7 @@ Route::middleware('jwt')->group(function () {
         Route::get('/', [ApiController::class, 'listExam']);
         Route::get('/{id}', [ApiController::class, 'detailExam']);
         Route::post('/submit', [ApiController::class, 'submitExam']);
+        Route::post('/pay/generate', [ApiController::class, 'generateExamQris']);
+        Route::post('/pay/simulate', [ApiController::class, 'payExamSimulation']);
     });
 });

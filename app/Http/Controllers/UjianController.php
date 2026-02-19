@@ -59,13 +59,18 @@ class UjianController extends Controller
             'mapel_id' => 'required|exists:mapels,id',
             'soal_id'  => 'required|array',
             'soal_id.*' => 'exists:soals,id',
+            'harga'    => 'nullable|integer|min:0',
         ]);
+
+        $isPaid = $request->boolean('is_paid');
 
         Ujian::create([
             'nama'     => $request->nama,
             'mapel_id' => $request->mapel_id,
             'teach_id' => $teach->id,
             'soal_id'  => $request->soal_id,
+            'is_paid'  => $isPaid,
+            'harga'    => $isPaid ? ($request->harga ?? 0) : 0,
         ]);
 
         return redirect()->route('dashboard.master.ujian.index')->with('success', 'Ujian berhasil dibuat.');
@@ -97,12 +102,17 @@ class UjianController extends Controller
             'mapel_id' => 'required|exists:mapels,id',
             'soal_id'  => 'required|array',
             'soal_id.*' => 'exists:soals,id',
+            'harga'    => 'nullable|integer|min:0',
         ]);
+
+        $isPaid = $request->boolean('is_paid');
 
         $ujian->update([
             'nama'     => $request->nama,
             'mapel_id' => $request->mapel_id,
             'soal_id'  => $request->soal_id,
+            'is_paid'  => $isPaid,
+            'harga'    => $isPaid ? ($request->harga ?? 0) : 0,
         ]);
 
         return redirect()->route('dashboard.master.ujian.index')->with('success', 'Ujian berhasil diperbarui.');

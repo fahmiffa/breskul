@@ -53,6 +53,7 @@
                     <th class="px-6 py-4 font-bold uppercase tracking-wider text-[11px]">Murid</th>
                     <th class="px-6 py-4 font-bold uppercase tracking-wider text-[11px]">Kelas</th>
                     <th class="px-6 py-4 font-bold uppercase tracking-wider text-[11px]">Status</th>
+                    <th class="px-6 py-4 font-bold uppercase tracking-wider text-[11px]">Bayar</th>
                     <th class="px-6 py-4 font-bold uppercase tracking-wider text-[11px]">Skor</th>
                     <th class="px-6 py-4 font-bold uppercase tracking-wider text-[11px]">Action</th>
                 </tr>
@@ -81,6 +82,18 @@
                             {{ $st['label'] }}
                         </span>
                     </td>
+                    <td class="px-6 py-4">
+                        @if(!$row->ujian->is_paid)
+                        <span class="px-2 py-1 bg-blue-50 text-blue-600 rounded-full font-bold text-[10px] uppercase border border-blue-200">Gratis</span>
+                        @elseif($row->payment_status == 1)
+                        <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full font-bold text-[10px] uppercase border border-green-200">✓ Lunas</span>
+                        @else
+                        <div>
+                            <span class="px-2 py-1 bg-orange-100 text-orange-700 rounded-full font-bold text-[10px] uppercase border border-orange-200">Belum Bayar</span>
+                            <div class="text-[10px] text-gray-400 mt-0.5">Rp {{ number_format($row->ujian->harga, 0, ',', '.') }}</div>
+                        </div>
+                        @endif
+                    </td>
                     <td class="px-6 py-4 font-bold text-gray-800">{{ $row->score ?? '-' }}</td>
                     <td class="px-6 py-4 text-center">
                         <div class="flex items-center gap-1 justify-center">
@@ -108,7 +121,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="7" class="text-center px-6 py-10 text-gray-500">
+                    <td colspan="8" class="text-center px-6 py-10 text-gray-500">
                         Belum ada ujian yang ditugaskan.
                     </td>
                 </tr>

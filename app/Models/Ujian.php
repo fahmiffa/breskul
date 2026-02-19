@@ -14,10 +14,14 @@ class Ujian extends Model
         'soal_id',
         'mapel_id',
         'teach_id',
+        'is_paid',
+        'harga',
     ];
 
     protected $casts = [
-        'soal_id' => 'array',
+        'soal_id'  => 'array',
+        'is_paid'  => 'boolean',
+        'harga'    => 'integer',
     ];
 
     public function guru()

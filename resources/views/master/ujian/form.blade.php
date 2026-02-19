@@ -15,6 +15,9 @@
             selectedMapelId: '{{ old('mapel_id', isset($items) ? ($items->mapel_id ?? '') : '') }}',
             mapelDropdownOpen: false,
 
+            isPaid: {{ old('is_paid', isset($items) ? ($items->is_paid ? 'true' : 'false') : 'false') }},
+            harga: '{{ old('harga', isset($items) ? ($items->harga ?? 0) : 0) }}',
+
             get selectedMapelName() {
                 const found = this.mapels.find(m => String(m.id) === String(this.selectedMapelId));
                 return found ? found.name : '';
@@ -149,6 +152,43 @@
                     @enderror
                 </div>
 
+                {{-- Pengaturan Pembayaran --}}
+                <div class="rounded-2xl border border-gray-200 overflow-hidden">
+                    <div class="bg-gray-50 px-4 py-3 border-b border-gray-200 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-green-600">
+                            <rect width="20" height="14" x="2" y="5" rx="2" />
+                            <line x1="2" x2="22" y1="10" y2="10" />
+                        </svg>
+                        <span class="text-xs font-bold text-gray-600 uppercase tracking-widest">Pengaturan Pembayaran</span>
+                    </div>
+                    <div class="p-4 space-y-4">
+                        {{-- Toggle Berbayar --}}
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <div class="font-semibold text-sm text-gray-800">Ujian Berbayar</div>
+                                <div class="text-xs text-gray-500 mt-0.5">Murid wajib membayar sebelum mengerjakan</div>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="is_paid" value="1" class="sr-only peer" x-model="isPaid">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                            </label>
+                        </div>
+
+                        {{-- Input Harga --}}
+                        <div x-show="isPaid" x-transition>
+                            <label class="block text-gray-700 text-xs font-bold mb-1.5 ml-1">Harga Ujian (Rp)</label>
+                            <div class="relative">
+                                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold text-sm">Rp</span>
+                                <input type="number" name="harga" x-model="harga" min="0" placeholder="0"
+                                    class="border border-gray-300 rounded-xl pl-12 pr-4 py-2.5 w-full focus:outline-[#177245] bg-white transition-all shadow-sm text-sm">
+                            </div>
+                            @error('harga')
+                            <p class="text-red-500 text-xs italic mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+
                 {{-- Summary --}}
                 <div class="p-4 bg-blue-50 rounded-2xl border border-blue-100 space-y-2">
                     <h4 class="font-bold text-blue-800 text-xs uppercase tracking-wider flex items-center gap-2">
@@ -165,8 +205,15 @@
                     <div class="text-sm text-blue-700">
                         Total Soal Terpilih: <span class="font-black text-lg" x-text="selectedSoals.length"></span>
                     </div>
+                    <div class="text-sm text-blue-700" x-show="isPaid">
+                        Harga: <span class="font-semibold" x-text="'Rp ' + Number(harga || 0).toLocaleString('id-ID')"></span>
+                    </div>
+                    <div class="text-sm text-blue-700" x-show="!isPaid">
+                        Biaya: <span class="font-semibold text-green-700">Gratis</span>
+                    </div>
                 </div>
             </div>
+
 
             {{-- Right Column - Soal List --}}
             <div class="space-y-4">

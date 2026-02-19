@@ -20,10 +20,15 @@ class UjianStudent extends Model
         'pdf',
         'started_at',
         'finished_at',
+        'payment_status',
+        'unique_code',
+        'qris_data',
+        'qris_expired_at',
     ];
 
     protected $casts = [
-        'answers' => 'array',
+        'answers'        => 'array',
+        'payment_status' => 'integer',
     ];
 
     public function ujian()

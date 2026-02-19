@@ -1002,7 +1002,31 @@ class ApiController extends Controller
         $exams = UjianStudent::where('student_id', $student->id)
             ->with(['ujian.mapel', 'ujian.guru'])
             ->latest()
-            ->get();
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'id'             => $item->id,
+                    'ujian_id'       => $item->ujian_id,
+                    'student_id'     => $item->student_id,
+                    'status'         => $item->status,
+                    'score'          => $item->score,
+                    'started_at'     => $item->started_at,
+                    'finished_at'    => $item->finished_at,
+                    'pdf'            => $item->pdf,
+                    'payment_status' => $item->payment_status,
+                    'ujian'          => $item->ujian ? [
+                        'id'       => $item->ujian->id,
+                        'nama'     => $item->ujian->nama,
+                        'mapel_id' => $item->ujian->mapel_id,
+                        'teach_id' => $item->ujian->teach_id,
+                        'soal_id'  => $item->ujian->soal_id,
+                        'is_paid'  => $item->ujian->is_paid,
+                        'harga'    => $item->ujian->harga,
+                        'mapel'    => $item->ujian->mapel,
+                        'guru'     => $item->ujian->guru,
+                    ] : null,
+                ];
+            });
 
         return response()->json([
             'success' => true,
@@ -1023,6 +1047,16 @@ class ApiController extends Controller
 
         if (!$assign) return response()->json(['error' => 'Exam not found'], 404);
 
+        // Cek payment gate: jika ujian berbayar tapi belum bayar, tolak akses
+        if ($assign->ujian && $assign->ujian->is_paid && $assign->payment_status == 0) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'payment_required',
+                'message' => 'Anda harus membayar terlebih dahulu untuk mengikuti ujian ini.',
+                'harga'   => $assign->ujian->harga,
+            ], 402);
+        }
+
         if ($assign->status == 0) {
             $assign->status = 1;
             $assign->started_at = now();
@@ -1041,6 +1075,139 @@ class ApiController extends Controller
                 'ujian' => $ujian,
                 'questions' => $soals
             ]
+        ]);
+    }
+
+    public function generateExamQris(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'assignment_id' => 'required|exists:ujian_students,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 400);
+        }
+
+        $user = Auth::user();
+        $student = $user->studentData;
+        if (!$student) return response()->json(['error' => 'Not a student'], 403);
+
+        $assign = UjianStudent::with('ujian')->where('id', $request->assignment_id)
+            ->where('student_id', $student->id)
+            ->first();
+
+        if (!$assign) return response()->json(['error' => 'Assignment not found'], 404);
+
+        if (!$assign->ujian || !$assign->ujian->is_paid) {
+            return response()->json(['error' => 'Ujian ini gratis, tidak perlu pembayaran.'], 400);
+        }
+
+        if ($assign->payment_status == 1) {
+            return response()->json(['error' => 'Ujian ini sudah dibayar.'], 400);
+        }
+
+        try {
+            // Cek apakah sudah ada QRIS aktif/belum expired
+            if (!empty($assign->unique_code) && !empty($assign->qris_data)) {
+                $now = now();
+                $expiredAt = $assign->qris_expired_at ? \Carbon\Carbon::parse($assign->qris_expired_at) : null;
+
+                if ($expiredAt && $now->lt($expiredAt)) {
+                    $nominal = $assign->ujian->harga;
+                    $totalAmount = $nominal + intval($assign->unique_code);
+                    $qrImageUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' . urlencode($assign->qris_data);
+
+                    return response()->json([
+                        'success' => true,
+                        'data' => [
+                            'qris_string'  => $assign->qris_data,
+                            'qr_image_url' => $qrImageUrl,
+                            'amount_base'  => $nominal,
+                            'unique_code'  => $assign->unique_code,
+                            'total_amount' => $totalAmount,
+                            'expired_at'   => $expiredAt->toIso8601String(),
+                            'is_existing'  => true,
+                        ]
+                    ]);
+                }
+            }
+
+            // Generate kode unik baru (1-999)
+            $uniqueCode = rand(1, 999);
+            $nominal = $assign->ujian->harga;
+            $totalAmount = $nominal + $uniqueCode;
+
+            // Generate QRIS
+            $qrisLogic = new \App\Services\QrisLogic();
+            $qrisString = $qrisLogic->generateDynamicQris(env('QRIS'), $totalAmount);
+
+            $expiredAt = \Carbon\Carbon::now()->setTime(23, 0, 0);
+
+            $assign->unique_code     = $uniqueCode;
+            $assign->qris_data       = $qrisString;
+            $assign->qris_expired_at = $expiredAt;
+            $assign->save();
+
+            $qrImageUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' . urlencode($qrisString);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'qris_string'  => $qrisString,
+                    'qr_image_url' => $qrImageUrl,
+                    'amount_base'  => $nominal,
+                    'unique_code'  => $uniqueCode,
+                    'total_amount' => $totalAmount,
+                    'expired_at'   => $expiredAt->toIso8601String(),
+                    'is_existing'  => false,
+                ]
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function payExamSimulation(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'assignment_id' => 'required|exists:ujian_students,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 400);
+        }
+
+        $user = Auth::user();
+        $student = $user->studentData;
+        if (!$student) return response()->json(['error' => 'Not a student'], 403);
+
+        $assign = UjianStudent::with(['ujian', 'student.users'])
+            ->where('id', $request->assignment_id)
+            ->where('student_id', $student->id)
+            ->first();
+
+        if (!$assign) return response()->json(['error' => 'Assignment not found'], 404);
+
+        if ($assign->payment_status == 1) {
+            return response()->json(['message' => 'Ujian sudah dibayar.'], 200);
+        }
+
+        $assign->payment_status = 1;
+        $assign->save();
+
+        // Kirim notifikasi jika user punya FCM
+        if ($assign->student && $assign->student->users && $assign->student->users->fcm) {
+            $userModel = $assign->student->users;
+            $topic = 'user_' . $userModel->id;
+            $title = 'Pembayaran Ujian Berhasil';
+            $nominal = number_format($assign->ujian->harga ?? 0, 0, ',', '.');
+            $body = 'Pembayaran ujian ' . ($assign->ujian->nama ?? '') . ' sebesar Rp ' . $nominal . ' telah dikonfirmasi.';
+            FirebaseMessage::sendTopicBroadcast($topic, $title, $body);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pembayaran ujian berhasil dikonfirmasi.',
         ]);
     }
 
