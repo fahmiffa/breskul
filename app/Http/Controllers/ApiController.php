@@ -1107,44 +1107,50 @@ class ApiController extends Controller
         }
 
         try {
-            // Cek apakah sudah ada QRIS aktif/belum expired
-            if (!empty($assign->unique_code) && !empty($assign->qris_data)) {
-                $now = now();
-                $expiredAt = $assign->qris_expired_at ? \Carbon\Carbon::parse($assign->qris_expired_at) : null;
+            $uniqueCode = $assign->unique_code;
+            $qrisString = $assign->qris_data;
+            $expiredAt = $assign->qris_expired_at ? \Carbon\Carbon::parse($assign->qris_expired_at) : null;
+            $now = now();
 
-                if ($expiredAt && $now->lt($expiredAt)) {
-                    $nominal = $assign->ujian->harga;
-                    $totalAmount = $nominal + intval($assign->unique_code);
-                    $qrImageUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' . urlencode($assign->qris_data);
+            // 1. If we already have a unique_code AND qris_data that is NOT expired, return it immediately
+            if (!empty($uniqueCode) && !empty($qrisString) && $expiredAt && $now->lt($expiredAt)) {
+                $nominal = $assign->ujian->harga;
+                $totalAmount = $nominal + intval($uniqueCode);
+                $qrImageUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' . urlencode($qrisString);
 
-                    return response()->json([
-                        'success' => true,
-                        'data' => [
-                            'qris_string'  => $assign->qris_data,
-                            'qr_image_url' => $qrImageUrl,
-                            'amount_base'  => $nominal,
-                            'unique_code'  => $assign->unique_code,
-                            'total_amount' => $totalAmount,
-                            'expired_at'   => $expiredAt->toIso8601String(),
-                            'is_existing'  => true,
-                        ]
-                    ]);
-                }
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'qris_string'  => $qrisString,
+                        'qr_image_url' => $qrImageUrl,
+                        'amount_base'  => $nominal,
+                        'unique_code'  => $uniqueCode,
+                        'total_amount' => $totalAmount,
+                        'expired_at'   => $expiredAt->toIso8601String(),
+                        'is_existing'  => true,
+                    ]
+                ]);
             }
 
-            // Generate kode unik baru (1-999)
-            $uniqueCode = rand(1, 999);
-            $nominal = $assign->ujian->harga;
-            $totalAmount = $nominal + $uniqueCode;
+            // 2. If uniqueCode doesn't exist, generate a new one (LOCK it)
+            if (empty($uniqueCode)) {
+                // You might want to use BillingCodeService here if you want global uniqueness
+                // For now, let's stick to the current logic but ensure it's saved.
+                $uniqueCode = rand(1, 999);
+                $assign->unique_code = $uniqueCode;
+            }
 
-            // Generate QRIS
+            // 3. Generate/Regenerate QRIS (because it's either missing or expired)
+            $nominal = $assign->ujian->harga;
+            $totalAmount = $nominal + intval($uniqueCode);
+
             $qrisLogic = new \App\Services\QrisLogic();
             $qrisString = $qrisLogic->generateDynamicQris(env('QRIS'), $totalAmount);
 
+            // Set expiration to 11 PM today
             $expiredAt = \Carbon\Carbon::now()->setTime(23, 0, 0);
 
-            $assign->unique_code     = $uniqueCode;
-            $assign->qris_data       = $qrisString;
+            $assign->qris_data = $qrisString;
             $assign->qris_expired_at = $expiredAt;
             $assign->save();
 
