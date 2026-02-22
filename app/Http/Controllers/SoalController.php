@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Soal;
+use App\Imports\SoalImport;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Response;
 
 class SoalController extends Controller
 {
@@ -124,5 +127,52 @@ class SoalController extends Controller
     {
         $soal->delete();
         return redirect()->route('dashboard.master.soal.index')->with('success', 'Soal berhasil dihapus.');
+    }
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv'
+        ]);
+
+        $user = Auth::user();
+        $teachId = $user->teacherData->id ?? null;
+
+        if (!$teachId) {
+            return back()->with('error', 'Data Guru tidak ditemukan.');
+        }
+
+        try {
+            Excel::import(new SoalImport($teachId), $request->file('file'));
+            return redirect()->route('dashboard.master.soal.index')->with('success', 'Soal berhasil diimport.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Terjadi kesalahan saat mengimport: ' . $e->getMessage());
+        }
+    }
+
+    public function template()
+    {
+        $headers = [
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=template_soal.csv",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $columns = ['No', 'Pertanyaan', 'Tipe', 'Opsi A', 'Opsi B', 'Opsi C', 'Opsi D', 'Opsi E', 'Jawaban'];
+
+        $callback = function () use ($columns) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $columns);
+
+            // Example row
+            fputcsv($file, ['1', 'Siapakah penemu lampu pijar?', 'Pilihan ganda', 'Albert Einstein', 'Thomas Alva Edison', 'Isaac Newton', 'Nikola Tesla', 'Galileo Galilei', 'Thomas Alva Edison']);
+            fputcsv($file, ['2', 'Ibu kota Indonesia adalah...', 'Isian', '', '', '', '', '', 'Jakarta']);
+
+            fclose($file);
+        };
+
+        return Response::stream($callback, 200, $headers);
     }
 }

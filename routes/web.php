@@ -63,6 +63,8 @@ Route::prefix('dashboard')->middleware('auth')->name('dashboard.')->group(functi
         Route::resource('jadwal', App\Http\Controllers\MapelDayController::class);
         Route::resource('absensi', App\Http\Controllers\AttendanceConfigController::class);
         Route::resource('ekstrakurikuler', App\Http\Controllers\ExtracurricularController::class);
+        Route::post('soal/import', [App\Http\Controllers\SoalController::class, 'import'])->name('soal.import');
+        Route::get('soal/template', [App\Http\Controllers\SoalController::class, 'template'])->name('soal.template');
         Route::resource('soal', App\Http\Controllers\SoalController::class);
         Route::resource('ujian', App\Http\Controllers\UjianController::class);
         Route::middleware(['isRole'])->group(function () {

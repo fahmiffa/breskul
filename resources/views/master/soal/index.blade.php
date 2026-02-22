@@ -8,7 +8,7 @@
 </style>
 @endpush
 @section('content')
-<div class="flex flex-col bg-white rounded-lg shadow-md p-6" x-data="{ ...dataTable({{ json_encode($items) }}) }">
+<div class="flex flex-col bg-white rounded-lg shadow-md p-6" x-data="{ ...dataTable({{ json_encode($items) }}), showImportModal: false }">
 
     <div class="mb-4 flex justify-between items-center gap-2">
         <input type="text" x-model="search" placeholder="Pencarian"
@@ -19,6 +19,10 @@
                 class="cursor-pointer bg-green-500 text-xs hover:bg-green-700 text-white font-semibold py-2 px-3 rounded-2xl focus:outline-none focus:shadow-outline">
                 Tambah
             </a>
+            <button @click="showImportModal = true"
+                class="cursor-pointer bg-blue-500 text-xs hover:bg-blue-700 text-white font-semibold py-2 px-3 rounded-2xl focus:outline-none focus:shadow-outline">
+                Import
+            </button>
         </div>
     </div>
 
@@ -92,6 +96,58 @@
 
         <button @click="nextPage()" :disabled="currentPage === totalPages()"
             class="px-3 py-1 text-white rounded bg-green-500 hover:bg-green-600 disabled:opacity-50">Next</button>
+    </div>
+
+    <div x-show="showImportModal" x-cloak class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+        x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md transform transition-all" @click.away="showImportModal = false">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-gray-800">Import Soal Excel</h2>
+                <button @click="showImportModal = false" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <form action="{{ route('dashboard.master.soal.import') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+                @csrf
+                <div class="space-y-2">
+                    <label class="block text-sm font-semibold text-gray-700 ml-1">Pilih File Excel/CSV</label>
+                    <div class="relative group">
+                        <input type="file" name="file" accept=".xlsx,.xls,.csv" required
+                            class="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 transition-all border border-gray-200 rounded-xl p-1 group-hover:border-green-300">
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 rounded-xl p-4 border border-blue-100 flex items-start gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-500 shrink-0 mt-0.5">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M12 16v-4" />
+                        <path d="M12 8h.01" />
+                    </svg>
+                    <div class="text-xs text-blue-700 leading-relaxed">
+                        Gunakan template yang tersedia untuk memastikan format data sudah benar.
+                        <a href="{{ route('dashboard.master.soal.template') }}" class="font-bold underline hover:text-blue-800">Download Template di sini</a>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" @click="showImportModal = false"
+                        class="px-5 py-2.5 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition-colors">Batal</button>
+                    <button type="submit" class="px-5 py-2.5 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 shadow-lg shadow-green-100 transition-all flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="17 8 12 3 7 8" />
+                            <line x1="12" x2="12" y1="3" y2="15" />
+                        </svg>
+                        <span>Mulai Import</span>
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 
 </div>

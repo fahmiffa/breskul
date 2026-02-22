@@ -14,7 +14,10 @@
         @csrf
 
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b pb-4">
-            <div class="font-semibold text-xl text-gray-800">{{ $action }} Soal</div>
+            <div class="flex flex-col">
+                <div class="font-semibold text-xl text-gray-800">{{ $action }} Soal</div>
+                <div class="text-[11px] text-gray-500 font-medium">Atau ingin mengimport banyak soal sekaligus? <a href="{{ route('dashboard.master.soal.index') }}" class="text-blue-600 hover:underline">Klik di sini untuk Import Excel</a></div>
+            </div>
             <div class="w-full md:w-64">
                 <label class="block text-gray-600 text-[11px] font-bold uppercase mb-1 ml-1">Tipe Pertanyaan</label>
                 <select name="tipe" x-model="tipe" required
