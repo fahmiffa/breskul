@@ -1064,9 +1064,10 @@ class ApiController extends Controller
         }
 
         $ujian = $assign->ujian;
-        // Fetch questions but hide the correct answer until finished? 
-        // Or just send them, student app needs them to calculate or just show.
-        $soals = Soal::whereIn('id', $ujian->soal_id ?? [])->get();
+        // Fetch questions in random order using assignment ID as seed for consistency per student
+        $soals = Soal::whereIn('id', $ujian->soal_id ?? [])
+            ->inRandomOrder($assign->id)
+            ->get();
 
         return response()->json([
             'success' => true,
