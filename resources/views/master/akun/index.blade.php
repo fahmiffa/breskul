@@ -11,8 +11,16 @@
 <div class="flex flex-col bg-white rounded-lg shadow-md p-6" x-data="accountManagement({{ json_encode($items) }})">
 
     <div class="mb-4 flex justify-between items-center gap-2">
-        <input type="text" x-model="search" placeholder="Cari Nama"
-            class="w-full md:w-1/2 border border-gray-300  ring-0 rounded-xl px-3 py-2 focus:outline-[#177245]" />
+        <div class="flex gap-2 w-full md:w-1/2">
+            <input type="text" x-model="search" placeholder="Cari Nama"
+                class="w-full border border-gray-300  ring-0 rounded-xl px-3 py-2 focus:outline-[#177245]" />
+            <select x-model="filterRole"
+                class="border border-gray-300 ring-0 rounded-xl px-3 py-2 focus:outline-[#177245]">
+                <option value="">Semua Tipe</option>
+                <option value="Guru">Guru</option>
+                <option value="Siswa">Siswa</option>
+            </select>
+        </div>
     </div>
 
     <div class="overflow-x-auto">
@@ -22,7 +30,7 @@
                     <th class="px-4 py-2">No</th>
                     <th @click="sortBy('name')" class="cursor-pointer px-4 py-2">Nama</th>
                     <th class="px-4 py-2">Username</th>
-                    <th class="px-4 py-2">Waktu</th>
+                    <th class="px-4 py-2">Tipe</th>
                     <th class="px-4 py-2">Status</th>
                     <th class="px-4 py-2">Opsi</th>
                 </tr>

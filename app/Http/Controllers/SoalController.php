@@ -24,7 +24,18 @@ class SoalController extends Controller
 
         $teachId = $user->teacherData->id ?? null;
 
-        $items = Soal::where('teach_id', $teachId)->latest()->get();
+        // Get all exams by this teacher to check question usage
+        $exams = \App\Models\Ujian::where('teach_id', $teachId)->get();
+
+        $items = Soal::where('teach_id', $teachId)->latest()->get()->map(function ($soal) use ($exams) {
+            $usedIn = $exams->filter(function ($exam) use ($soal) {
+                return is_array($exam->soal_id) && in_array($soal->id, $exam->soal_id);
+            })->pluck('nama')->toArray();
+
+            $soal->used_in_exams = $usedIn;
+            return $soal;
+        });
+
         $title = "Master Soal";
 
         return view('master.soal.index', compact('items', 'title'));

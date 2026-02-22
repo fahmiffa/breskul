@@ -44,8 +44,21 @@ class UjianController extends Controller
         // Fetch all subjects that belong to the same app/institution as the teacher
         $mapels = Mapel::where('app', $teach->app)->whereNull('deleted_at')->orderBy('name')->get();
 
-        // Fetch questions created by this teacher
-        $soals = Soal::where('teach_id', $teach->id)->get();
+        // Get all exams by this teacher to check question usage
+        $exams = Ujian::where('teach_id', $teach->id)->get();
+
+        // Fetch questions created by this teacher and attach where they are used
+        $soals = Soal::where('teach_id', $teach->id)->get()->map(function ($soal) use ($exams) {
+            $usedIn = $exams->filter(function ($exam) use ($soal) {
+                return is_array($exam->soal_id) && in_array($soal->id, $exam->soal_id);
+            })->pluck('nama')->toArray();
+
+            $soal->used_in_exams = $usedIn;
+            return $soal;
+        })->filter(function ($soal) {
+            // Only show questions that are NOT used in any exam
+            return count($soal->used_in_exams) === 0;
+        })->values();
 
         return view('master.ujian.form', compact('action', 'title', 'mapels', 'soals'));
     }
@@ -87,7 +100,19 @@ class UjianController extends Controller
 
         // Fetch all subjects that belong to the same app/institution as the teacher
         $mapels = Mapel::where('app', $teach->app)->whereNull('deleted_at')->orderBy('name')->get();
-        $soals  = Soal::where('teach_id', $teach->id)->get();
+
+        // Get all exams by this teacher to check question usage
+        $exams = Ujian::where('teach_id', $teach->id)->get();
+
+        // Fetch questions created by this teacher and filter those used in other exams
+        $soals = Soal::where('teach_id', $teach->id)->get()->filter(function ($soal) use ($exams, $ujian) {
+            // Check if this question is used in ANY exam OTHER than the current one
+            $countInOthers = $exams->where('id', '!=', $ujian->id)->filter(function ($exam) use ($soal) {
+                return is_array($exam->soal_id) && in_array($soal->id, $exam->soal_id);
+            })->count();
+
+            return $countInOthers === 0;
+        })->values();
 
         return view('master.ujian.form', compact('action', 'title', 'items', 'mapels', 'soals'));
     }

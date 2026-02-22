@@ -7,7 +7,7 @@
         action="{{ isset($items) ? route('dashboard.master.ujian.update', ['ujian' => $items->id]) : route('dashboard.master.ujian.store') }}"
         class="space-y-6"
         x-data="{
-            selectedSoals: {{ json_encode(old('soal_id', isset($items) ? ($items->soal_id ?? []) : [])) }},
+            selectedSoals: {{ json_encode(old('soal_id', isset($items) ? ($items->soal_id ?? []) : [])) }}.map(id => String(id)),
             allSoals: {{ json_encode($soals) }},
 
             mapels: {{ json_encode($mapels->values()) }},
@@ -31,6 +31,22 @@
                 this.mapelSearch = '';
                 this.mapelDropdownOpen = false;
                 this.selectedSoals = [];
+            },
+            toggleAllSoals() {
+                if (this.selectedSoals.length === this.allSoals.length) {
+                    this.selectedSoals = [];
+                } else {
+                    this.selectedSoals = this.allSoals.map(s => String(s.id));
+                }
+            },
+            soalSearch: '',
+            get filteredSoals() {
+                if (!this.soalSearch) return this.allSoals;
+                return this.allSoals.filter(s => {
+                    const name = s.nama.toLowerCase();
+                    const search = this.soalSearch.toLowerCase();
+                    return name.includes(search);
+                });
             }
         }"
         x-init="$watch('selectedMapelId', () => selectedSoals = [])">
@@ -217,40 +233,63 @@
 
             {{-- Right Column - Soal List --}}
             <div class="space-y-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2 ml-1">Pilih Soal (Pilih Minimal 1)</label>
-                <div class="border border-gray-300 rounded-2xl overflow-hidden bg-gray-50 flex flex-col h-[400px]">
-                    <div class="bg-gray-100 px-4 py-3 border-b flex justify-between items-center">
-                        <span class="text-xs font-bold text-gray-600 uppercase tracking-widest">Daftar Bank Soal</span>
-                        <div class="text-[10px] text-gray-400 font-medium">Klik untuk memilih</div>
+                <div class="flex justify-between items-center ml-1">
+                    <label class="block text-gray-700 text-sm font-bold">Pilih Soal (Pilih Minimal 1)</label>
+                    <label class="flex items-center gap-2 cursor-pointer group">
+                        <input type="checkbox" @click="toggleAllSoals()"
+                            :checked="selectedSoals.length === allSoals.length && allSoals.length > 0"
+                            class="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500">
+                        <span class="text-xs font-semibold text-gray-600 group-hover:text-green-700 transition-colors">Pilih Semua</span>
+                    </label>
+                </div>
+
+                <div class="border border-gray-300 rounded-2xl overflow-hidden bg-gray-50 flex flex-col h-[500px]">
+                    <div class="bg-gray-100 px-4 py-3 border-b border-gray-200">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-xs font-bold text-gray-600 uppercase tracking-widest">Daftar Bank Soal</span>
+                            <div class="text-[10px] text-gray-400 font-medium">Klik untuk memilih</div>
+                        </div>
+                        <div class="relative">
+                            <input type="text" x-model="soalSearch" placeholder="Cari soal..."
+                                class="w-full pl-9 pr-4 py-2 text-xs border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 bg-white transition-all shadow-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                                <circle cx="11" cy="11" r="8" />
+                                <path d="m21 21-4.3-4.3" />
+                            </svg>
+                        </div>
                     </div>
 
                     <div class="overflow-y-auto flex-1 divide-y divide-gray-200">
-                        @forelse($soals as $soal)
-                        <label class="flex items-start gap-3 p-4 hover:bg-white cursor-pointer transition-colors group">
-                            <input type="checkbox" name="soal_id[]" value="{{ $soal->id }}"
-                                x-model="selectedSoals"
-                                class="mt-1 w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500 transition-all">
-                            <div class="space-y-1">
-                                <div class="text-sm font-medium text-gray-800 group-hover:text-green-700 transition-colors line-clamp-2">
-                                    {!! $soal->nama !!}
-                                </div>
-                                <div class="flex gap-2">
-                                    <span class="text-[9px] font-bold uppercase py-0.5 px-2 rounded-full {{ $soal->tipe == 'Pilihan ganda' ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600' }}">
-                                        {{ $soal->tipe }}
-                                    </span>
+                        <template x-for="soal in filteredSoals" :key="soal.id">
+                            <div class="flex items-start gap-3 p-4 hover:bg-white transition-colors group relative border-l-4"
+                                :class="selectedSoals.includes(String(soal.id)) ? 'border-green-500 bg-green-50/30' : 'border-transparent'">
+                                <input type="checkbox" name="soal_id[]" :value="soal.id"
+                                    x-model="selectedSoals"
+                                    class="mt-1 w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500 transition-all cursor-pointer">
+                                <div class="space-y-1 flex-1">
+                                    <label :for="'soal_' + soal.id" class="text-sm font-medium text-gray-800 group-hover:text-green-700 transition-colors line-clamp-3 cursor-pointer block">
+                                        <div x-html="soal.nama"></div>
+                                    </label>
+                                    <div class="flex flex-wrap gap-2 items-center">
+                                        <span class="text-[9px] font-bold uppercase py-0.5 px-2 rounded-full"
+                                            :class="soal.tipe === 'Pilihan ganda' ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'"
+                                            x-text="soal.tipe">
+                                        </span>
+
+
+                                    </div>
                                 </div>
                             </div>
-                        </label>
-                        @empty
-                        <div class="flex flex-col items-center justify-center h-full text-gray-400 p-8 text-center space-y-2">
+                        </template>
+
+                        <div x-show="filteredSoals.length === 0" class="flex flex-col items-center justify-center h-full text-gray-400 p-8 text-center space-y-2">
                             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-                                <path d="M10 13h4" />
-                                <path d="M12 11v4" />
+                                <circle cx="11" cy="11" r="8" />
+                                <path d="m21 21-4.3-4.3" />
                             </svg>
-                            <p class="text-xs font-medium">Belum ada soal tersedia. <br> <a href="{{ route('dashboard.master.soal.create') }}" class="text-green-600 hover:underline">Buat soal dulu?</a></p>
+                            <p class="text-xs font-medium">Tidak ada soal yang cocok dengan pencarian Anda.</p>
                         </div>
-                        @endforelse
                     </div>
                 </div>
                 @error('soal_id')

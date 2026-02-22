@@ -43,6 +43,13 @@
                         <td class="px-4 py-3" x-text="((currentPage - 1) * perPage) + index + 1"></td>
                         <td class="px-4 py-3 max-w-xs md:max-w-md">
                             <div class="line-clamp-2 text-gray-700" x-html="row.nama"></div>
+                            <template x-if="row.used_in_exams && row.used_in_exams.length > 0">
+                                <div class="mt-1 flex flex-wrap gap-1">
+                                    <template x-for="exam in row.used_in_exams" :key="exam">
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium bg-red-50 text-red-700 border border-red-100" x-text="exam"></span>
+                                    </template>
+                                </div>
+                            </template>
                         </td>
                         <td class="px-4 py-3 text-nowrap">
                             <span :class="row.tipe === 'Pilihan ganda' ? 'bg-blue-100 text-blue-700 border border-blue-200' : 'bg-orange-100 text-orange-700 border border-orange-200'"

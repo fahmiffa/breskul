@@ -1043,7 +1043,36 @@ export function accountManagement(data) {
         selectedUserName: "",
         newPassword: "",
         isLoading: false,
+        filterRole: "",
 
+        filteredData() {
+            let temp = this.rows.filter((row) => {
+                const matchesSearch = Object.values(row).some((val) => {
+                    return String(val)
+                        .toLowerCase()
+                        .includes(this.search.toLowerCase());
+                });
+
+                const matchesRole =
+                    this.filterRole === "" || row.roles === this.filterRole;
+
+                return matchesSearch && matchesRole;
+            });
+
+            temp.sort((a, b) => {
+                let valA = a[this.sortColumn];
+                let valB = b[this.sortColumn];
+
+                if (typeof valA === "string") valA = valA.toLowerCase();
+                if (typeof valB === "string") valB = valB.toLowerCase();
+
+                if (valA < valB) return this.sortAsc ? -1 : 1;
+                if (valA > valB) return this.sortAsc ? 1 : -1;
+                return 0;
+            });
+
+            return temp;
+        },
         openPasswordModal(row) {
             this.selectedUserId = row.id;
             this.selectedUserName = row.data ? row.data.name : row.name;
