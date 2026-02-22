@@ -114,10 +114,10 @@
                             @if(!$row->ujian->is_paid)
                             <span class="px-2 py-1 bg-blue-50 text-blue-600 rounded-full font-bold text-[10px] uppercase border border-blue-200">Gratis</span>
                             @elseif($row->payment_status == 1)
-                            <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full font-bold text-[10px] uppercase border border-green-200">✓ Lunas</span>
+                            <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full font-bold text-[10px] uppercase border border-green-200">Lunas</span>
                             @else
                             <div>
-                                <span class="px-2 py-1 bg-orange-100 text-orange-700 rounded-full font-bold text-[10px] uppercase border border-orange-200">Belum Bayar</span>
+                                <span class="px-2 py-1 bg-orange-100 text-orange-700 rounded-full font-bold text-[10px] uppercase border border-orange-200">Belum</span>
                                 <div class="text-[10px] text-gray-400 mt-0.5">Rp {{ number_format($row->ujian->harga, 0, ',', '.') }}</div>
                             </div>
                             @endif
