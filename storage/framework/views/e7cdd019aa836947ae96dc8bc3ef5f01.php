@@ -122,4 +122,4 @@
 <?php echo $__env->yieldPushContent('script'); ?>
 
 </html>
-<?php /**PATH E:\project\breskul\web\resources\views/base/layout.blade.php ENDPATH**/ ?>
+<?php /**PATH /home/franken/breskull/resources/views/base/layout.blade.php ENDPATH**/ ?>

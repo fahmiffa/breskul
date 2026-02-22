@@ -74,4 +74,4 @@
         </span> Exam
     </li>
 </a>
-<?php endif; ?><?php /**PATH E:\project\breskul\web\resources\views/base/home.blade.php ENDPATH**/ ?>
+<?php endif; ?><?php /**PATH /home/franken/breskull/resources/views/base/home.blade.php ENDPATH**/ ?>

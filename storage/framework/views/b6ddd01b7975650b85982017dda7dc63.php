@@ -39,4 +39,4 @@
         <?php endif; ?>
     </nav>
 </aside>
-<?php /**PATH E:\project\breskul\web\resources\views/base/side.blade.php ENDPATH**/ ?>
+<?php /**PATH /home/franken/breskull/resources/views/base/side.blade.php ENDPATH**/ ?>
