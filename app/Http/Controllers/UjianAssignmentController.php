@@ -35,8 +35,22 @@ class UjianAssignmentController extends Controller
 
         $items = $query->with(['ujian', 'student.Kelas'])
             ->latest()
-            ->paginate(20)
-            ->withQueryString();
+            ->get()
+            ->map(function ($row) {
+                return [
+                    'id' => $row->id,
+                    'ujian_nama' => $row->ujian->nama ?? '-',
+                    'student_name' => $row->student->name ?? '-',
+                    'class_names' => $row->student->Kelas->pluck('name')->toArray(),
+                    'class_ids' => $row->student->Kelas->pluck('id')->toArray(),
+                    'status' => (int)$row->status,
+                    'is_paid' => (bool)($row->ujian->is_paid ?? false),
+                    'payment_status' => (int)$row->payment_status,
+                    'harga' => (int)($row->ujian->harga ?? 0),
+                    'score' => $row->score,
+                    'can_verify' => $row->ujian->is_paid && $row->payment_status == 0,
+                ];
+            });
 
         $classes = Classes::where('app', $teach->app)->get();
         $title = "Daftar Exam";

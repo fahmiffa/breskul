@@ -291,8 +291,9 @@ export const dataTable = (data) => {
             console.log(this.selectedItems);
         },
         paginatedData() {
-            const start = (this.currentPage - 1) * this.perPage;
-            return this.filteredData().slice(start, start + this.perPage);
+            const perPage = parseInt(this.perPage);
+            const start = (this.currentPage - 1) * perPage;
+            return this.filteredData().slice(start, start + perPage);
         },
         totalPages() {
             return Math.ceil(this.filteredData().length / this.perPage);
@@ -1179,6 +1180,145 @@ export function accountManagement(data) {
                 console.error(error);
                 alert("Terjadi kesalahan koneksi");
             }
+        },
+    };
+}
+
+export function ujianAssignmentTable(initialData, classes = []) {
+    return {
+        ...dataTable(initialData),
+        classes: classes,
+        selectedClass: "",
+
+        filteredData() {
+            let temp = this.rows.filter((row) => {
+                const searchLower = this.search.toLowerCase();
+                const matchesSearch =
+                    row.ujian_nama.toLowerCase().includes(searchLower) ||
+                    row.student_name.toLowerCase().includes(searchLower);
+
+                const matchesClass =
+                    this.selectedClass === "" ||
+                    row.class_ids.includes(parseInt(this.selectedClass));
+
+                return matchesSearch && matchesClass;
+            });
+
+            temp.sort((a, b) => {
+                let valA = a[this.sortColumn];
+                let valB = b[this.sortColumn];
+
+                if (typeof valA === "string") valA = valA.toLowerCase();
+                if (typeof valB === "string") valB = valB.toLowerCase();
+
+                if (valA < valB) return this.sortAsc ? -1 : 1;
+                if (valA > valB) return this.sortAsc ? 1 : -1;
+                return 0;
+            });
+
+            return temp;
+        },
+
+        confirmDelete(id) {
+            if (confirm("Hapus penugasan ini?")) {
+                const form = document.getElementById("deleteForm");
+                form.action = `/dashboard/penjadwalan-ujian/${id}`;
+                form.submit();
+            }
+        },
+
+        toggleAll() {
+            const currentData = this.paginatedData();
+            const verifiableIds = currentData
+                .filter((row) => row.can_verify)
+                .map((row) => row.id);
+
+            const allSelectedInPage = verifiableIds.every((id) =>
+                this.selectedItems.includes(id),
+            );
+
+            if (allSelectedInPage) {
+                this.selectedItems = this.selectedItems.filter(
+                    (id) => !verifiableIds.includes(id),
+                );
+            } else {
+                verifiableIds.forEach((id) => {
+                    if (!this.selectedItems.includes(id)) {
+                        this.selectedItems.push(id);
+                    }
+                });
+            }
+        },
+
+        // Detail Modal Logic
+        detailModalOpen: false,
+        detailData: null,
+        detailLoading: false,
+
+        async showDetail(id) {
+            this.detailModalOpen = true;
+            this.detailLoading = true;
+            this.detailData = null;
+
+            try {
+                const res = await fetch(`/dashboard/penjadwalan-ujian/${id}`);
+                const result = await res.json();
+                if (result.success) {
+                    this.detailData = result.data;
+                }
+            } catch (err) {
+                console.error(err);
+            } finally {
+                this.detailLoading = false;
+            }
+        },
+
+        closeDetailModal() {
+            this.detailModalOpen = false;
+        },
+
+        stripHtml(html) {
+            let tmp = document.createElement("DIV");
+            tmp.innerHTML = html;
+            return tmp.textContent || tmp.innerText || "";
+        },
+
+        getScoreColor(isCorrect) {
+            return isCorrect ? "text-green-700" : "text-red-700";
+        },
+
+        getScoreBg(isCorrect) {
+            return isCorrect
+                ? "bg-green-100 border-green-200"
+                : "bg-red-100 border-red-200";
+        },
+
+        isAnswerCorrect(soal, studentKey) {
+            if (!this.detailData || !this.detailData.answers) return false;
+            const correctValue = this.stripHtml(soal.jawaban).trim();
+
+            let studentValue = studentKey;
+            if (["A", "B", "C", "D", "E"].includes(studentKey)) {
+                const optKey = "opsi_" + studentKey.toLowerCase();
+                studentValue = soal[optKey]
+                    ? this.stripHtml(soal[optKey])
+                    : studentKey;
+            }
+
+            return (
+                this.stripHtml(studentValue).trim().toLowerCase() ===
+                    correctValue.toLowerCase() ||
+                studentKey.toString().toLowerCase() ===
+                    correctValue.toLowerCase()
+            );
+        },
+
+        getStudentValue(soal, studentKey) {
+            if (["A", "B", "C", "D", "E"].includes(studentKey)) {
+                const optKey = "opsi_" + studentKey.toLowerCase();
+                return soal[optKey] ? this.stripHtml(soal[optKey]) : studentKey;
+            }
+            return studentKey || "-";
         },
     };
 }
