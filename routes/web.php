@@ -44,8 +44,10 @@ Route::prefix('dashboard')->middleware('auth')->name('dashboard.')->group(functi
     Route::prefix('master')->name('master.')->middleware('checkMaster')->group(function () {
         Route::resource('kelas', App\Http\Controllers\ClassesController::class);
         Route::get('/akun', [Home::class, 'akun'])->name('akun.index');
+        Route::get('/akun/export', [Home::class, 'exportAkun'])->name('akun.export');
         Route::post('/akun/password', [Home::class, 'updateAccountPassword'])->name('akun.password');
         Route::post('/akun/status', [Home::class, 'updateAccountStatus'])->name('akun.status');
+        Route::get('murid/template', [App\Http\Controllers\StudentsController::class, 'template'])->name('murid.template');
         Route::resource('murid', App\Http\Controllers\StudentsController::class);
         Route::get('murid/{id}/qrcode', [App\Http\Controllers\StudentsController::class, 'qrcode'])->name('murid.qrcode');
         Route::get('murid/{id}/qrcode/download', [App\Http\Controllers\StudentsController::class, 'downloadQrcode'])->name('murid.qrcode.download');

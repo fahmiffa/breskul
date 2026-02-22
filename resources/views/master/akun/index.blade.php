@@ -8,18 +8,42 @@
 </style>
 @endpush
 @section('content')
+<script>
+    var config_school_mode = {
+        {
+            config('app.school_mode') ? 'true' : 'false'
+        }
+    };
+</script>
 <div class="flex flex-col bg-white rounded-lg shadow-md p-6" x-data="accountManagement({{ json_encode($items) }})">
 
-    <div class="mb-4 flex justify-between items-center gap-2">
-        <div class="flex gap-2 w-full md:w-1/2">
+    <div class="mb-4 flex flex-wrap justify-between items-center gap-2">
+        <div class="flex flex-wrap gap-2 w-full md:w-3/4">
             <input type="text" x-model="search" placeholder="Cari Nama"
-                class="w-full border border-gray-300  ring-0 rounded-xl px-3 py-2 focus:outline-[#177245]" />
+                class="w-full md:w-1/3 border border-gray-300  ring-0 rounded-xl px-3 py-2 focus:outline-[#177245]" />
             <select x-model="filterRole"
                 class="border border-gray-300 ring-0 rounded-xl px-3 py-2 focus:outline-[#177245]">
                 <option value="">Semua Tipe</option>
                 <option value="Guru">Guru</option>
                 <option value="Siswa">Siswa</option>
             </select>
+            <select x-model="filterKelas" x-show="filterRole === 'Siswa' || filterRole === ''"
+                class="border border-gray-300 ring-0 rounded-xl px-3 py-2 focus:outline-[#177245]">
+                <option value="">Semua {{ config('app.school_mode') ? 'Kelas' : 'Prodi' }}</option>
+                @foreach($classes as $c)
+                <option value="{{ $c->id }}">{{ $c->name }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="flex gap-2">
+            <a :href="'{{ route('dashboard.master.akun.export') }}?kelas=' + filterKelas"
+                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl text-sm flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Export Siswa
+            </a>
         </div>
     </div>
 
@@ -30,6 +54,7 @@
                     <th class="px-4 py-2">No</th>
                     <th @click="sortBy('name')" class="cursor-pointer px-4 py-2">Nama</th>
                     <th class="px-4 py-2">Username</th>
+                    <th class="px-4 py-2">Kelas/Prodi</th>
                     <th class="px-4 py-2">Tipe</th>
                     <th class="px-4 py-2">Status</th>
                     <th class="px-4 py-2">Opsi</th>
@@ -41,6 +66,9 @@
                         <td class="px-4 py-2" x-text="((currentPage - 1) * perPage) + index + 1"></td>
                         <td class="px-4 py-2" x-text="row.data ? row.data.name : row.name"></td>
                         <td class="px-4 py-2" x-text="row.username"></td>
+                        <td class="px-4 py-2">
+                            <span x-text="row.student_data && row.student_data.reg ? (row.student_data.reg.kelas ? row.student_data.reg.kelas.name : (row.student_data.reg.prodi ? row.student_data.reg.prodi.name : '-')) : '-'"></span>
+                        </td>
                         <td class="px-4 py-2" x-text="row.roles"></td>
                         <td class="px-4 py-2">
                             <span :class="row.status == 1 ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100'"
@@ -63,7 +91,7 @@
                     </tr>
                 </template>
                 <tr x-show="filteredData().length === 0">
-                    <td colspan="6" class="text-center px-4 py-2 text-gray-500">No results found.</td>
+                    <td colspan="7" class="text-center px-4 py-2 text-gray-500">No results found.</td>
                 </tr>
             </tbody>
         </table>

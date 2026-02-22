@@ -1044,6 +1044,7 @@ export function accountManagement(data) {
         newPassword: "",
         isLoading: false,
         filterRole: "",
+        filterKelas: "",
 
         filteredData() {
             let temp = this.rows.filter((row) => {
@@ -1056,7 +1057,16 @@ export function accountManagement(data) {
                 const matchesRole =
                     this.filterRole === "" || row.roles === this.filterRole;
 
-                return matchesSearch && matchesRole;
+                const matchesKelas =
+                    this.filterKelas === "" ||
+                    (row.student_data &&
+                        row.student_data.reg &&
+                        (config_school_mode
+                            ? row.student_data.reg.class_id == this.filterKelas
+                            : row.student_data.reg.prodi_id ==
+                              this.filterKelas));
+
+                return matchesSearch && matchesRole && matchesKelas;
             });
 
             temp.sort((a, b) => {

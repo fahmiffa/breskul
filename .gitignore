@@ -24,3 +24,7 @@ Homestead.yaml
 Thumbs.db
 docker-compose.yaml
 Dockerfile
+/storage/framework/cache/data/
+/storage/framework/sessions/
+/storage/framework/views/
+/storage/framework/testing/

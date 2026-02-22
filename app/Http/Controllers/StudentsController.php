@@ -83,6 +83,32 @@ class StudentsController extends Controller
             ->header('Content-Disposition', 'attachment; filename="qrcode-' . $student->nis . '.png"');
     }
 
+    public function template()
+    {
+        $headers = [
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=template_murid.csv",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $columns = ['No', 'Nama', 'NIS', 'Jenis Kelamin (L/P)', 'Alamat', 'No HP Siswa', 'No HP Orang Tua'];
+
+        $callback = function () use ($columns) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $columns);
+
+            // Example row
+            fputcsv($file, ['1', 'Budi Santoso', '12345678', 'L', 'Jl. Merdeka No. 1', '081234567890', '081234567891']);
+            fputcsv($file, ['2', 'Siti Aminah', '12345679', 'P', 'Jl. Mawar No. 2', '081234567892', '081234567893']);
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
     public function import(Request $request)
     {
         $request->validate([

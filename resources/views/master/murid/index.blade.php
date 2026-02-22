@@ -134,6 +134,20 @@
             <h2 class="text-lg font-semibold mb-4">Import Data {{ config('app.school_mode') ? 'Murid' : 'Mahasiswa' }}</h2>
 
             <div x-data="generateStudentsImport()">
+                <div class="bg-blue-50 rounded-xl p-4 border border-blue-100 flex items-start gap-3 mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-500 shrink-0 mt-0.5">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M12 16v-4" />
+                        <path d="M12 8h.01" />
+                    </svg>
+                    <div class="text-xs text-blue-700 leading-relaxed">
+                        Nama dan NIS wajib diisi. Kolom lainnya opsional.
+                        Pastikan format file sesuai dengan template.
+                        <br>
+                        <a href="{{ route('dashboard.master.murid.template') }}" class="font-bold underline hover:text-blue-800">Download Template di sini</a>
+                    </div>
+                </div>
+
                 <div class="mb-4">
                     <input type="file" accept=".xlsx,.xls,.csv" @change="file = $event.target.files[0]"
                         class="border border-gray-300 rounded px-3 py-2 w-full" />

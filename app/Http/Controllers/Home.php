@@ -21,6 +21,7 @@ use App\Models\Classes;
 use App\Models\Mapel;
 use App\Models\Teach;
 use App\Models\Extracurricular;
+use App\Models\Prodi;
 
 class Home extends Controller
 {
@@ -121,10 +122,83 @@ class Home extends Controller
                     });
                 });
             })
-            ->with(['teacherData', 'studentData'])
+            ->with(['teacherData', 'studentData.reg.kelas', 'studentData.reg.prodi'])
             ->get();
 
-        return view('master.akun.index', compact('items'));
+        $classes = [];
+        if (config('app.school_mode')) {
+            $classes = Classes::when($isAppUser, function ($q) use ($appId) {
+                $q->where('app', $appId);
+            })->get();
+        } else {
+            $classes = Prodi::when($isAppUser, function ($q) use ($appId) {
+                $q->where('app', $appId);
+            })->get();
+        }
+
+        return view('master.akun.index', compact('items', 'classes'));
+    }
+
+    public function exportAkun(Request $request)
+    {
+        $appId = auth()->user()->app->id ?? null;
+        $isAppUser = auth()->user()->role == 1 && $appId;
+        $filterKelas = $request->get('kelas');
+
+        $items = User::latest()
+            ->where('role', 2) // Role 2 is Siswa
+            ->when($isAppUser, function ($query) use ($appId) {
+                $query->whereHas('studentData', function ($q) use ($appId) {
+                    $q->where('app', $appId);
+                });
+            })
+            ->when($filterKelas, function ($query) use ($filterKelas) {
+                $query->whereHas('studentData.reg', function ($q) use ($filterKelas) {
+                    if (config('app.school_mode')) {
+                        $q->where('class_id', $filterKelas);
+                    } else {
+                        $q->where('prodi_id', $filterKelas);
+                    }
+                });
+            })
+            ->with(['studentData.reg.kelas', 'studentData.reg.prodi'])
+            ->get();
+
+        $headers = [
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=data_akun_siswa.csv",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $columns = ['No', 'Nama', 'Username', 'Kelas/Prodi', 'Password Default'];
+
+        $callback = function () use ($items, $columns) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $columns);
+
+            foreach ($items as $index => $item) {
+                $kelas = '-';
+                if ($item->studentData && $item->studentData->reg) {
+                    $kelas = config('app.school_mode')
+                        ? ($item->studentData->reg->kelas->name ?? '-')
+                        : ($item->studentData->reg->prodi->name ?? '-');
+                }
+
+                fputcsv($file, [
+                    $index + 1,
+                    $item->name,
+                    $item->username,
+                    $kelas,
+                    'breskul'
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 
     public function index(Request $request)
