@@ -62,4 +62,4 @@
             </button>
         </div>
     </div>
-</div><?php /**PATH E:\project\breskul\web\resources\views/base/header.blade.php ENDPATH**/ ?>
+</div><?php /**PATH /home/franken/breskull/resources/views/base/header.blade.php ENDPATH**/ ?>

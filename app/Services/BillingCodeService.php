@@ -57,7 +57,7 @@ class BillingCodeService
      */
     public function generateUniqueCode($billId): string
     {
-        // $this->ensurePoolIsReady();
+        $this->ensurePoolIsReady();
         $today = now()->toDateString();
         $code = null;
 
