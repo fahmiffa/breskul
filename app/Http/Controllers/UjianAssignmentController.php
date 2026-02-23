@@ -107,7 +107,7 @@ class UjianAssignmentController extends Controller
         return back()->with('success', 'Penugasan berhasil dihapus.');
     }
 
-    public function bulkVerify(Request $request)
+    public function bulkVerify(Request $request, \App\Services\PaymentWebhookService $paymentService)
     {
         $teach = Teach::where('user_id', Auth::id())->first();
         if (!$teach) return abort(403);
@@ -117,11 +117,20 @@ class UjianAssignmentController extends Controller
             'ids.*' => 'exists:ujian_students,id',
         ]);
 
-        UjianStudent::whereIn('id', $request->ids)
+        $exams = UjianStudent::whereIn('id', $request->ids)
             ->whereHas('ujian', function ($q) use ($teach) {
                 $q->where('teach_id', $teach->id);
-            })
-            ->update(['payment_status' => 1]);
+            })->get();
+
+        foreach ($exams as $exam) {
+            if ($exam->payment_status == 0) {
+                $exam->payment_status = 1;
+                $exam->save();
+
+                // Send FCM Notification
+                $paymentService->sendExamPaymentNotification($exam);
+            }
+        }
 
         return back()->with('success', count($request->ids) . ' pembayaran berhasil diverifikasi.');
     }

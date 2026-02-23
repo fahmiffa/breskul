@@ -91,7 +91,7 @@ class PaymentWebhookService
     /**
      * Send notification for exam payment success.
      */
-    private function sendExamPaymentNotification(UjianStudent $exam): void
+    public function sendExamPaymentNotification(UjianStudent $exam): void
     {
         if ($exam->student && $exam->student->users) {
             $user = $exam->student->users;
