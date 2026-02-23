@@ -48,6 +48,7 @@ class UjianAssignmentController extends Controller
                     'payment_status' => (int)$row->payment_status,
                     'harga' => (int)($row->ujian->harga ?? 0),
                     'score' => $row->score,
+                    'unique_code' => $row->unique_code,
                     'can_verify' => $row->ujian->is_paid && $row->payment_status == 0,
                 ];
             });

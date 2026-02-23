@@ -83,6 +83,7 @@
                         <th class="px-6 py-4 font-bold uppercase tracking-wider text-[11px]">Kelas</th>
                         <th class="px-6 py-4 font-bold uppercase tracking-wider text-[11px] cursor-pointer" @click="sortBy('status')">Status</th>
                         <th class="px-6 py-4 font-bold uppercase tracking-wider text-[11px] cursor-pointer" @click="sortBy('payment_status')">Bayar</th>
+                        <th class="px-6 py-4 font-bold uppercase tracking-wider text-[11px] cursor-pointer" @click="sortBy('unique_code')">Kode Unik</th>
                         <th class="px-6 py-4 font-bold uppercase tracking-wider text-[11px] cursor-pointer" @click="sortBy('score')">Skor</th>
                         <th class="px-6 py-4 font-bold uppercase tracking-wider text-[11px]">Action</th>
                     </tr>
@@ -129,6 +130,7 @@
                                     </div>
                                 </template>
                             </td>
+                            <td class="px-6 py-4 font-bold text-gray-700" x-text="row.unique_code || '-'"></td>
                             <td class="px-6 py-4 font-bold text-gray-800" x-text="row.score || '-'"></td>
                             <td class="px-6 py-4 text-center">
                                 <div class="flex items-center gap-1 justify-center">
