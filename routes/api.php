@@ -11,7 +11,7 @@ Route::post('/status', function () {
     return response()->json([
         'status' => true,
         'message' => 'Mohon maaf, aplikasi sedang dalam perbaikan.\nSilahkan coba lagi secara berkala',
-        'version' => '1.0.0'
+        'version' => '1.0.0+17'
     ], 200);
 });
 

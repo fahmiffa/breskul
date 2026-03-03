@@ -8,14 +8,7 @@
 </style>
 @endpush
 @section('content')
-<script>
-    var config_school_mode = {
-        {
-            config('app.school_mode') ? 'true' : 'false'
-        }
-    };
-</script>
-<div class="flex flex-col bg-white rounded-lg shadow-md p-6" x-data="accountManagement({{ json_encode($items) }})">
+<div class="flex flex-col bg-white rounded-lg shadow-md p-6" x-data="accountManagement({{ json_encode($items) }}, @json(config('app.school_mode') ? true : false))">
 
     <div class="mb-4 flex flex-wrap justify-between items-center gap-2">
         <div class="flex flex-wrap gap-2 w-full md:w-3/4">

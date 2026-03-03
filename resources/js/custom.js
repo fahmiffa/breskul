@@ -1036,7 +1036,7 @@ export function verificationPayment(data) {
     };
 }
 
-export function accountManagement(data) {
+export function accountManagement(data, schoolMode = false) {
     return {
         ...dataTable(data),
         passwordModalOpen: false,
@@ -1046,26 +1046,41 @@ export function accountManagement(data) {
         isLoading: false,
         filterRole: "",
         filterKelas: "",
+        schoolMode: schoolMode,
+
+        init() {
+            this.$watch("filterRole", (val) => {
+                if (val === "Guru") {
+                    this.filterKelas = "";
+                }
+            });
+        },
 
         filteredData() {
             let temp = this.rows.filter((row) => {
-                const matchesSearch = Object.values(row).some((val) => {
-                    return String(val)
-                        .toLowerCase()
-                        .includes(this.search.toLowerCase());
-                });
+                const searchLower = this.search.toLowerCase();
+                const rowName = row.data
+                    ? (row.data.name || "").toLowerCase()
+                    : (row.name || "").toLowerCase();
+                const rowUsername = (row.username || "").toLowerCase();
+                const matchesSearch =
+                    searchLower === "" ||
+                    rowName.includes(searchLower) ||
+                    rowUsername.includes(searchLower);
 
                 const matchesRole =
                     this.filterRole === "" || row.roles === this.filterRole;
 
-                const matchesKelas =
-                    this.filterKelas === "" ||
-                    (row.student_data &&
-                        row.student_data.reg &&
-                        (config_school_mode
+                let matchesKelas = true;
+                if (this.filterKelas !== "") {
+                    if (row.student_data && row.student_data.reg) {
+                        matchesKelas = this.schoolMode
                             ? row.student_data.reg.class_id == this.filterKelas
-                            : row.student_data.reg.prodi_id ==
-                              this.filterKelas));
+                            : row.student_data.reg.prodi_id == this.filterKelas;
+                    } else {
+                        matchesKelas = false;
+                    }
+                }
 
                 return matchesSearch && matchesRole && matchesKelas;
             });
