@@ -1047,6 +1047,14 @@ class ApiController extends Controller
 
         if (!$assign) return response()->json(['error' => 'Exam not found'], 404);
 
+        if ($assign->status == 2) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'already_submitted',
+                'message' => 'Ujian ini sudah selesai dikerjakan dan tidak dapat diakses kembali.',
+            ], 403);
+        }
+
         // Cek payment gate: jika ujian berbayar tapi belum bayar, tolak akses
         if ($assign->ujian && $assign->ujian->is_paid && $assign->payment_status == 0) {
             return response()->json([

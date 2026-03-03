@@ -163,7 +163,11 @@
                 <td>: {{ $item->ujian->guru->name ?? '-' }}</td>
             </tr>
             <tr>
-                <td class="info-label">Tanggal Selesai</td>
+                <td class="info-label">Waktu Mulai</td>
+                <td>: {{ $item->started_at ? \Carbon\Carbon::parse($item->started_at)->format('d M Y, H:i') : '-' }}</td>
+            </tr>
+            <tr>
+                <td class="info-label">Waktu Selesai</td>
                 <td>: {{ $item->finished_at ? \Carbon\Carbon::parse($item->finished_at)->format('d M Y, H:i') : '-' }}</td>
             </tr>
         </table>
