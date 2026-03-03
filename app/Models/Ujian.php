@@ -45,4 +45,9 @@ class Ujian extends Model
         // We can simulate the collection.
         return Soal::whereIn('id', $this->soal_id ?? []);
     }
+
+    public function assignedStudents()
+    {
+        return $this->hasMany(UjianStudent::class, 'ujian_id');
+    }
 }

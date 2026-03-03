@@ -1232,34 +1232,73 @@ class ApiController extends Controller
             'assignment_id' => 'required|exists:ujian_students,id',
             'answers' => 'required|array', // [soal_id => answer_key]
         ]);
+        $id = $request->id;
+        $answers = $request->answers;
 
-        if ($validator->fails()) return response()->json(['errors' => $validator->errors()], 400);
+        $assign = UjianStudent::find($id);
+        if (!$assign) return response()->json(['error' => 'Exam not found'], 404);
 
-        $user = Auth::user();
-        $student = $user->studentData;
-        $assign = UjianStudent::where('id', $request->assignment_id)
-            ->where('student_id', $student->id)
-            ->first();
-
-        if (!$assign) return response()->json(['error' => 'Assignment not found'], 404);
-        if ($assign->status == 2) return response()->json(['error' => 'Exam already submitted'], 400);
-
-        // Hitung score menggunakan logic di Model Soal
-        $score = Soal::calculateScore($assign->ujian->soal_id ?? [], $request->answers);
-
-        $assign->score = $score;
-        $assign->answers = $request->answers;
-        $assign->status = 2;
+        $assign->status = 2; // Selesai
+        $assign->answers = $answers;
         $assign->finished_at = now();
+
+        // Hitung skor
+        $ujian = $assign->ujian;
+        $soals = Soal::whereIn('id', $ujian->soal_id ?? [])->get();
+        $correctCount = 0;
+        foreach ($soals as $soal) {
+            $studentAnswer = $answers[$soal->id] ?? null;
+            if ($studentAnswer == $soal->jawaban) {
+                $correctCount++;
+            }
+        }
+        $assign->score = $correctCount > 0 ? ($correctCount / count($soals)) * 100 : 0;
         $assign->save();
 
-        // Generate PDF evaluasi via queue
+        // Dispatch PDF Job
         \App\Jobs\GenerateExamPdf::dispatch($assign->id);
 
         return response()->json([
             'success' => true,
-            'message' => 'Ujian selesai dikerjakan.',
-            'score' => $score
+            'message' => 'Exam submitted successfully',
+            'score'   => $assign->score
+        ]);
+    }
+
+    public function teacherExamList()
+    {
+        $user = Auth::user();
+        $teacher = $user->teacherData;
+        if (!$teacher) return response()->json(['error' => 'Not a teacher'], 403);
+
+        $exams = Ujian::where('teach_id', $teacher->id)
+            ->with(['mapel'])
+            ->withCount('assignedStudents')
+            ->latest()
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $exams
+        ]);
+    }
+
+    public function teacherExamDetail($id)
+    {
+        $user = Auth::user();
+        $teacher = $user->teacherData;
+        if (!$teacher) return response()->json(['error' => 'Not a teacher'], 403);
+
+        $exam = Ujian::where('id', $id)
+            ->where('teach_id', $teacher->id)
+            ->with(['mapel', 'assignedStudents.student'])
+            ->first();
+
+        if (!$exam) return response()->json(['error' => 'Exam not found'], 404);
+
+        return response()->json([
+            'success' => true,
+            'data' => $exam
         ]);
     }
 }
