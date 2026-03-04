@@ -1301,10 +1301,11 @@ class ApiController extends Controller
         ]);
     }
 
-    public function teacherExamDetail($id)
+    public function teacherExamDetail(Request $request, $id)
     {
         $user = Auth::user();
         $teacher = $user->teacherData;
+        $classId = $request->query('class_id');
 
         if (!$teacher && $user->role == 3) {
             $teacher = \App\Models\Teach::where('user_id', $user->id)->first();
@@ -1314,14 +1315,27 @@ class ApiController extends Controller
 
         $exam = Ujian::where('id', $id)
             ->where('teach_id', $teacher->id)
-            ->with(['mapel', 'assignedStudents.student.users'])
+            ->with(['mapel', 'assignedStudents' => function ($query) use ($classId) {
+                if ($classId) {
+                    $query->whereHas('student.head', function ($q) use ($classId) {
+                        $q->where('class_id', $classId)->where('status', 1);
+                    });
+                }
+                $query->with('student.users');
+            }])
             ->first();
 
         if (!$exam) return response()->json(['error' => 'Exam not found'], 404);
 
+        // Fetch classes associated with this teacher/app to provide filter options
+        $classes = \App\Models\Classes::whereHas('jadwal.time', function ($q) use ($teacher) {
+            $q->where('teacher_id', $teacher->id);
+        })->get();
+
         return response()->json([
             'success' => true,
-            'data' => $exam
+            'data' => $exam,
+            'classes' => $classes
         ]);
     }
 }
