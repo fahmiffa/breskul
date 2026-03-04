@@ -1275,7 +1275,14 @@ class ApiController extends Controller
             $teacher = \App\Models\Teach::where('user_id', $user->id)->first();
         }
 
-        if (!$teacher) return response()->json(['error' => 'Not a teacher'], 403);
+        if (!$teacher) return response()->json([
+            'success' => false,
+            'error' => 'Not a teacher',
+            'debug' => [
+                'user_id' => $user->id,
+                'role' => $user->role
+            ]
+        ], 403);
 
         $exams = Ujian::where('teach_id', $teacher->id)
             ->with(['mapel'])
@@ -1285,7 +1292,12 @@ class ApiController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $exams
+            'data' => $exams,
+            'debug' => [
+                'teacher_id' => $teacher->id,
+                'exam_count' => $exams->count(),
+                'all_exams_count' => \App\Models\Ujian::count(),
+            ]
         ]);
     }
 
