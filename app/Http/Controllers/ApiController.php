@@ -1226,20 +1226,45 @@ class ApiController extends Controller
         ]);
     }
 
+    public function saveProgress(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'assignment_id' => 'required|exists:ujian_students,id',
+            'answers' => 'required|array',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'message' => $validator->errors()->first()], 422);
+        }
+
+        $assign = UjianStudent::find($request->assignment_id);
+        if (!$assign) return response()->json(['success' => false, 'message' => 'Exam not found'], 404);
+
+        if ($assign->status == 2) {
+            return response()->json(['success' => false, 'message' => 'Ujian sudah selesai'], 403);
+        }
+
+        $assign->answers = $request->answers;
+        $assign->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Progress saved'
+        ]);
+    }
+
     public function submitExam(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'assignment_id' => 'required|exists:ujian_students,id',
             'answers' => 'required|array', // [soal_id => answer_key]
         ]);
-        $id = $request->id;
-        $answers = $request->answers;
 
-        $assign = UjianStudent::find($id);
+        $assign = UjianStudent::find($request->assignment_id);
         if (!$assign) return response()->json(['error' => 'Exam not found'], 404);
 
         $assign->status = 2; // Selesai
-        $assign->answers = $answers;
+        $assign->answers = $request->answers;
         $assign->finished_at = now();
 
         // Hitung skor
@@ -1247,7 +1272,7 @@ class ApiController extends Controller
         $soals = Soal::whereIn('id', $ujian->soal_id ?? [])->get();
         $correctCount = 0;
         foreach ($soals as $soal) {
-            $studentAnswer = $answers[$soal->id] ?? null;
+            $studentAnswer = $request->answers[$soal->id] ?? null;
             if ($studentAnswer == $soal->jawaban) {
                 $correctCount++;
             }
