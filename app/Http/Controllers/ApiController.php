@@ -1269,6 +1269,12 @@ class ApiController extends Controller
     {
         $user = Auth::user();
         $teacher = $user->teacherData;
+
+        // Fallback: If teacherData relationship is not set but user is role 3, try to find by user_id
+        if (!$teacher && $user->role == 3) {
+            $teacher = \App\Models\Teach::where('user_id', $user->id)->first();
+        }
+
         if (!$teacher) return response()->json(['error' => 'Not a teacher'], 403);
 
         $exams = Ujian::where('teach_id', $teacher->id)
@@ -1287,11 +1293,16 @@ class ApiController extends Controller
     {
         $user = Auth::user();
         $teacher = $user->teacherData;
+
+        if (!$teacher && $user->role == 3) {
+            $teacher = \App\Models\Teach::where('user_id', $user->id)->first();
+        }
+
         if (!$teacher) return response()->json(['error' => 'Not a teacher'], 403);
 
         $exam = Ujian::where('id', $id)
             ->where('teach_id', $teacher->id)
-            ->with(['mapel', 'assignedStudents.student'])
+            ->with(['mapel', 'assignedStudents.student.users'])
             ->first();
 
         if (!$exam) return response()->json(['error' => 'Exam not found'], 404);
