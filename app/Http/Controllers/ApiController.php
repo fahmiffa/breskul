@@ -1321,15 +1321,24 @@ class ApiController extends Controller
                         $q->where('class_id', $classId)->where('status', 1);
                     });
                 }
-                $query->with('student.users');
+                $query->with(['student.users', 'student.head' => function ($q) {
+                    $q->where('status', 1)->with('kelas');
+                }]);
             }])
             ->first();
 
         if (!$exam) return response()->json(['error' => 'Exam not found'], 404);
 
-        // Fetch classes associated with this teacher/app to provide filter options
-        $classes = \App\Models\Classes::whereHas('jadwal.time', function ($q) use ($teacher) {
-            $q->where('teacher_id', $teacher->id);
+        // Fetch unique classes from students who are actually assigned to this exam
+        $classes = \App\Models\Classes::whereIn('id', function ($query) use ($exam) {
+            $query->select('class_id')
+                ->from('heads')
+                ->whereIn('student_id', function ($q) use ($exam) {
+                    $q->select('student_id')
+                        ->from('ujian_students')
+                        ->where('ujian_id', $exam->id);
+                })
+                ->where('status', 1);
         })->get();
 
         return response()->json([
