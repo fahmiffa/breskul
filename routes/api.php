@@ -44,6 +44,10 @@ Route::middleware('jwt')->group(function () {
 
     // Exam API
     Route::prefix('exam')->group(function () {
+        // More specific routes first
+        Route::get('/teacher/list', [ApiController::class, 'teacherExamList']);
+        Route::get('/teacher/detail/{id}', [ApiController::class, 'teacherExamDetail']);
+
         Route::get('/', [ApiController::class, 'listExam']);
         Route::get('/{id}', [ApiController::class, 'detailExam']);
         Route::post('/submit', [ApiController::class, 'submitExam']);
