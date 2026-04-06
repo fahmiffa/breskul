@@ -305,6 +305,7 @@ class Home extends Controller
         if ($user->role == 3) {
             $teach = $user->teacherData;
             if ($teach) {
+                // Ringkasan Ujian
                 $examSummary = \App\Models\UjianStudent::whereHas('ujian', function ($q) use ($teach) {
                     $q->where('teach_id', $teach->id);
                 })
@@ -318,25 +319,24 @@ class Home extends Controller
                     ->where('heads.status', 1)
                     ->groupBy('classes.name')
                     ->get();
+
+                // Ringkasan Pembayaran Ujian
+                $totalPaymentPaid = \App\Models\UjianStudent::where('payment_status', 1)
+                    ->whereHas('ujian', function ($q) use ($teach) {
+                        $q->where('teach_id', $teach->id);
+                    })
+                    ->with('ujian')
+                    ->get()
+                    ->sum(fn($u) => $u->ujian->harga ?? 0);
+
+                $totalPaymentUnpaid = \App\Models\UjianStudent::where('payment_status', 0)
+                    ->whereHas('ujian', function ($q) use ($teach) {
+                        $q->where('teach_id', $teach->id);
+                    })
+                    ->with('ujian')
+                    ->get()
+                    ->sum(fn($u) => ($u->ujian->harga ?? 0) + ($u->unique_code ?? 0));
             }
-
-            $totalPaymentPaid = Bill::where('status', 1)
-                ->when($appId, function ($query) use ($appId) {
-                    $query->whereHas('head.murid', function ($q) use ($appId) {
-                        $q->where('app', $appId);
-                    });
-                })
-                ->get()
-                ->sum(fn($b) => $b->payment->nominal ?? 0);
-
-            $totalPaymentUnpaid = Bill::where('status', 0)
-                ->when($appId, function ($query) use ($appId) {
-                    $query->whereHas('head.murid', function ($q) use ($appId) {
-                        $q->where('app', $appId);
-                    });
-                })
-                ->get()
-                ->sum(fn($b) => $b->payment->nominal ?? 0);
         }
 
         return view('home.index', compact(
