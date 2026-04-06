@@ -267,30 +267,94 @@ class Home extends Controller
         }
 
         // Summary Counts
-        $appId = auth()->user()->app->id ?? null;
-        $isAppUser = auth()->user()->role == 1 && $appId;
+        $user = auth()->user();
+        $appId = null;
+        if ($user->role == 1) {
+            $appId = $user->app->id ?? null;
+        } elseif ($user->role == 3) {
+            $appId = $user->teacherData->app ?? null;
+        }
+        
+        $isAppUser = $user->role == 1 && $appId; // Keep existing behavior for Admin
+        $isTeacherUser = $user->role == 3 && $appId;
 
-        $totalMurid = Students::when($isAppUser, function ($q) use ($appId) {
+        $totalMurid = Students::when($appId, function ($q) use ($appId) {
             $q->where('app', $appId);
         })->count();
-        $totalGuru = Teach::when($isAppUser, function ($q) use ($appId) {
+        $totalGuru = Teach::when($appId, function ($q) use ($appId) {
             $q->where('app', $appId);
         })->count();
-        $totalKelas = Classes::when($isAppUser, function ($q) use ($appId) {
+        $totalKelas = Classes::when($appId, function ($q) use ($appId) {
             $q->where('app', $appId);
         })->count();
-        $totalMapel = Mapel::when($isAppUser, function ($q) use ($appId) {
+        $totalMapel = Mapel::when($appId, function ($q) use ($appId) {
             $q->where('app', $appId);
         })->count();
-        $totalEkskul = Extracurricular::when($isAppUser, function ($q) use ($appId) {
-            $q->where('app', $appId);
-        })->count();
-
-        $totalProdi = \App\Models\Prodi::when($isAppUser, function ($q) use ($appId) {
+        $totalEkskul = Extracurricular::when($appId, function ($q) use ($appId) {
             $q->where('app', $appId);
         })->count();
 
-        return view('home.index', compact('paymentData', 'unpaidPaymentData', 'attendanceData', 'attendanceLabels', 'year', 'totalMurid', 'totalGuru', 'totalKelas', 'totalMapel', 'totalEkskul', 'totalProdi'));
+        $totalProdi = \App\Models\Prodi::when($appId, function ($q) use ($appId) {
+            $q->where('app', $appId);
+        })->count();
+
+        $examSummary = [];
+        $totalPaymentPaid = 0;
+        $totalPaymentUnpaid = 0;
+
+        if ($user->role == 3) {
+            $teach = $user->teacherData;
+            if ($teach) {
+                $examSummary = \App\Models\UjianStudent::whereHas('ujian', function ($q) use ($teach) {
+                    $q->where('teach_id', $teach->id);
+                })
+                    ->join('heads', 'ujian_students.student_id', '=', 'heads.student_id')
+                    ->join('classes', 'heads.class_id', '=', 'classes.id')
+                    ->select(
+                        'classes.name as class_name',
+                        DB::raw('COUNT(CASE WHEN ujian_students.status = 2 THEN 1 END) as sudah'),
+                        DB::raw('COUNT(CASE WHEN ujian_students.status != 2 THEN 1 END) as belum')
+                    )
+                    ->where('heads.status', 1)
+                    ->groupBy('classes.name')
+                    ->get();
+            }
+
+            $totalPaymentPaid = Bill::where('status', 1)
+                ->when($appId, function ($query) use ($appId) {
+                    $query->whereHas('head.murid', function ($q) use ($appId) {
+                        $q->where('app', $appId);
+                    });
+                })
+                ->get()
+                ->sum(fn($b) => $b->payment->nominal ?? 0);
+
+            $totalPaymentUnpaid = Bill::where('status', 0)
+                ->when($appId, function ($query) use ($appId) {
+                    $query->whereHas('head.murid', function ($q) use ($appId) {
+                        $q->where('app', $appId);
+                    });
+                })
+                ->get()
+                ->sum(fn($b) => $b->payment->nominal ?? 0);
+        }
+
+        return view('home.index', compact(
+            'paymentData',
+            'unpaidPaymentData',
+            'attendanceData',
+            'attendanceLabels',
+            'year',
+            'totalMurid',
+            'totalGuru',
+            'totalKelas',
+            'totalMapel',
+            'totalEkskul',
+            'totalProdi',
+            'examSummary',
+            'totalPaymentPaid',
+            'totalPaymentUnpaid'
+        ));
     }
 
     public function pembayaran()

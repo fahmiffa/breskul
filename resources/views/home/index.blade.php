@@ -57,22 +57,116 @@
     </div>
 </div>
 @else
-<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center flex flex-col items-center justify-center space-y-4">
-    <div class="p-4 bg-green-50 text-green-600 rounded-full">
-        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
-            <path d="M6 12v5c3 3 9 3 12 0v-5" />
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+    <!-- Payment Summary Card -->
+    <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl shadow-lg p-6 text-white relative overflow-hidden">
+        <div class="relative z-10">
+            <h3 class="text-lg font-semibold opacity-90 mb-1">Total Pembayaran Masuk</h3>
+            <div class="text-3xl font-bold mb-4">Rp {{ number_format($totalPaymentPaid, 0, ',', '.') }}</div>
+            <div class="flex items-center gap-2 text-sm bg-white/20 w-fit px-3 py-1 rounded-full border border-white/30">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                    <polyline points="22 4 12 14.01 9 11.01" />
+                </svg>
+                Sudah Terverifikasi
+            </div>
+        </div>
+        <svg class="absolute -right-8 -bottom-8 text-white/10 w-40 h-40" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="1" x2="12" y2="23"></line>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
         </svg>
     </div>
-    <h2 class="text-2xl font-bold text-gray-800">Selamat Datang, {{ auth()->user()->name }}</h2>
-    <p class="text-gray-500 max-w-sm">Anda masuk sebagai Guru. Gunakan menu Exam di samping untuk mengelola ujian dan penugasan murid.</p>
-    <a href="{{ route('dashboard.penjadwalan-ujian.index') }}" class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-lg shadow-green-100">
-        Mulai Kelola Ujian
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M5 12h14" />
-            <path d="m12 5 7 7-7 7" />
+
+    <!-- Unpaid Summary Card -->
+    <div class="bg-gradient-to-br from-red-500 to-red-600 rounded-2xl shadow-lg p-6 text-white relative overflow-hidden">
+        <div class="relative z-10">
+            <h3 class="text-lg font-semibold opacity-90 mb-1">Total Belum Dibayar</h3>
+            <div class="text-3xl font-bold mb-4">Rp {{ number_format($totalPaymentUnpaid, 0, ',', '.') }}</div>
+            <div class="flex items-center gap-2 text-sm bg-white/20 w-fit px-3 py-1 rounded-full border border-white/30">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                Menunggu Pembayaran
+            </div>
+        </div>
+        <svg class="absolute -right-8 -bottom-8 text-white/10 w-40 h-40" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="5" width="20" height="14" rx="2" ry="2"></rect>
+            <line x1="2" y1="10" x2="22" y2="10"></line>
         </svg>
-    </a>
+    </div>
+</div>
+
+<div class="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden mb-8">
+    <div class="p-6 border-b border-gray-50 flex justify-between items-center">
+        <div>
+            <h3 class="text-xl font-bold text-gray-800">Ringkasan Pengerjaan Ujian</h3>
+            <p class="text-sm text-gray-500">Statistik per kelas untuk ujian yang Anda kelola</p>
+        </div>
+        <a href="{{ route('dashboard.penjadwalan-ujian.index') }}" class="text-sm text-green-600 font-semibold hover:text-green-700 flex items-center gap-1 transition-colors">
+            Lihat Detail
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14" />
+                <path d="m12 5 7 7-7 7" />
+            </svg>
+        </a>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-left">
+            <thead>
+                <tr class="bg-gray-50/50">
+                    <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Kelas</th>
+                    <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Sudah Mengerjakan</th>
+                    <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Belum Mengerjakan</th>
+                    <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-center">Progress</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                @forelse($examSummary as $row)
+                @php
+                $total = $row->sudah + $row->belum;
+                $percent = $total > 0 ? round(($row->sudah / $total) * 100) : 0;
+                @endphp
+                <tr class="hover:bg-gray-50/80 transition-colors">
+                    <td class="px-6 py-4 whitespace-nowrap font-semibold text-gray-700">{{ $row->class_name }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-50 text-green-700 text-sm font-medium">
+                            <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                            {{ $row->sudah }} Siswa
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-sm font-medium">
+                            <span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+                            {{ $row->belum }} Siswa
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden max-w-[120px]">
+                                <div class="bg-green-500 h-full rounded-full transition-all duration-500" style="width: {{ $percent }}%"></div>
+                            </div>
+                            <span class="text-sm font-bold text-gray-600 min-w-[40px]">{{ $percent }}%</span>
+                        </div>
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="4" class="px-6 py-12 text-center text-gray-400">
+                        <div class="flex flex-col items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="opacity-20">
+                                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                                <polyline points="14 2 14 8 20 8" />
+                            </svg>
+                            <span>Belum ada data penugasan ujian.</span>
+                        </div>
+                    </td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
 </div>
 @endif
 @endsection
