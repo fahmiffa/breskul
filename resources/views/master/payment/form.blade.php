@@ -32,6 +32,16 @@
                     <p class="text-red-500 text-xs italic mt-2">{{ $message }}</p>
                 @enderror
             </div>
+
+            <div class="mb-5">
+                <label class="flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" name="auto_renew" value="1"
+                        {{ old('auto_renew', $items->auto_renew ?? false) ? 'checked' : '' }}
+                        class="rounded border-gray-300 text-green-600 focus:ring-green-500 w-4 h-4 cursor-pointer">
+                    <span class="text-gray-700 text-sm font-semibold">Generate otomatis perbulan (Auto Renew)</span>
+                </label>
+                <p class="text-gray-500 text-xs mt-1">Centang opsi ini jika pembayaran ini digenerate secara otomatis setiap bulan.</p>
+            </div>
             <div class="flex items-center">
                 <button type="submit"
                     class="cursor-pointer bg-green-500 text-sm hover:bg-green-700 text-white font-bold py-2 px-3 rounded-2xl focus:outline-none focus:shadow-outline">

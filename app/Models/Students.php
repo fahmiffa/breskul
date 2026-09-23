@@ -9,17 +9,48 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Students extends Model
 {
     use SoftDeletes;
-    protected $appends = ['age', 'jenis'];
+    protected $guarded = ['id'];
+
+    protected $casts = [
+        'boarding' => 'boolean',
+    ];
+
+    protected $appends = ['age', 'jenis', 'pesantren'];
     protected $hidden  = ['created_at', 'updated_at', 'deleted_at'];
+
+    public function getPesantrenAttribute()
+    {
+        return $this->boarding ? 'Pesantren' : 'Bukan Pesantren';
+    }
 
     public function getageAttribute()
     {
-        return Carbon::parse($this->bith)->age;
+        return Carbon::parse($this->birth ?? $this->bith)->age;
     }
 
     public function head()
     {
         return $this->hasMany(Head::class, 'student_id', 'id');
+    }
+
+    public function saldo()
+    {
+        return $this->hasOne(Saldo::class, 'students_id', 'id');
+    }
+
+    public function saldoLogs()
+    {
+        return $this->hasMany(LogSaldo::class, 'students_id', 'id')->latest();
+    }
+
+    public function logSaldo()
+    {
+        return $this->hasMany(LogSaldo::class, 'students_id', 'id')->latest();
+    }
+
+    public function topups()
+    {
+        return $this->hasMany(Topup::class, 'student_id', 'id')->latest();
     }
 
     public function users()
@@ -85,5 +116,20 @@ class Students extends Model
     public function getjenisAttribute()
     {
         return $this->gender == 1 ? "laki-laki" : "Perempuan";
+    }
+
+    public function halaqahStudents()
+    {
+        return $this->hasMany(HalaqahStudent::class, 'students_id', 'id');
+    }
+
+    public function halaqahs()
+    {
+        return $this->belongsToMany(
+            Halaqah::class,
+            'halaqah_students',
+            'students_id',
+            'halaqah_id'
+        )->withPivot('id', 'present_at', 'catatan')->withTimestamps();
     }
 }

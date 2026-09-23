@@ -13,4 +13,14 @@ class Classes extends Model
     {
         return $this->hasMany(MapelDay::class, 'class_id', 'id');
     }
+
+    public function students()
+    {
+        return $this->belongsToMany(
+            Students::class,
+            'heads',
+            'class_id',
+            'student_id'
+        )->wherePivot('status', 1);
+    }
 }

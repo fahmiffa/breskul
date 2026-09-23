@@ -18,10 +18,16 @@ use App\Models\StudentExtracurricular;
 use App\Models\Students;
 use App\Models\AttendanceConfig;
 use App\Models\User;
+use App\Models\Saldo;
+use App\Models\LogSaldo;
+use App\Models\Topup;
 use App\Rules\NumberWa;
 use App\Models\Soal;
 use App\Models\Ujian;
 use App\Models\UjianStudent;
+use App\Models\Halaqah;
+use App\Models\HalaqahStudent;
+use App\Models\Teach;
 use App\Services\Firebase\FirebaseMessage;
 use App\Services\PaymentWebhookService;
 use Illuminate\Support\Facades\DB;
@@ -224,6 +230,49 @@ class ApiController extends Controller
 
             $be = Students::where('uuid', $request->uid)->first();
             if ($be) {
+                Log::channel('absensi')->info('Data cek diterima', [
+                    'device_id' => $deviceId,
+                    'payload'   => $request->uid,
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'msg'     => "Saldo Anda : Rp " . number_format($be->saldo?->nominal ?? 0, 0, ',', '.'),
+                ], 200);
+            } else {
+                Log::channel('absensi')->info('Data kartu ditolak', [
+                    'device_id' => $deviceId,
+                    'payload'   => $request->uid,
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'msg'     => 'Kartu error',
+                ], 400);
+            }
+        } else {
+
+            Log::channel('absensi')->info('Data cek ditolak', [
+                'device_id' => $deviceId,
+                'payload'   => $request->uid,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'msg'     => 'Perangkat error',
+            ], 400);
+        }
+    }
+
+    public function rfidAbsen(Request $request)
+    {
+        $deviceId = $request->header('Device-ID', 'UNKNOWN_DEVICE');
+        $device   = ApiKey::where('name', $deviceId)->first();
+        $body     = $request->all();
+        if ($device) {
+
+            $be = Students::where('uuid', $request->uid)->first();
+            if ($be) {
                 Log::channel('absensi')->info('Data absensi diterima', [
                     'device_id' => $deviceId,
                     'payload'   => $request->uid,
@@ -277,6 +326,154 @@ class ApiController extends Controller
                 'success' => false,
                 'msg'     => 'Perangkat error',
             ], 400);
+        }
+    }
+
+    public function rfidRiwayatSaldo(Request $request)
+    {
+        $deviceId = $request->header('Device-ID', $request->device_id ?? $request->header('X-Device-ID', 'UNKNOWN_DEVICE'));
+        $device   = ApiKey::where('name', $deviceId)->orWhere('key', $deviceId)->first();
+
+        if (!$device) {
+            Log::channel('absensi')->info('Data transaksi saldo ditolak', [
+                'device_id' => $deviceId,
+                'payload'   => $request->all(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'msg'     => 'Perangkat error',
+            ], 400);
+        }
+
+        $uid = $request->uid ?? $request->uuid;
+        if (empty($uid)) {
+            return response()->json([
+                'success' => false,
+                'msg'     => 'Kartu error: UID/UUID wajib diisi',
+            ], 400);
+        }
+
+        $be = Students::where('uuid', $uid)->first();
+        if (!$be) {
+            Log::channel('absensi')->info('Data kartu ditolak', [
+                'device_id' => $deviceId,
+                'payload'   => $uid,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'msg'     => 'Kartu error',
+            ], 400);
+        }
+
+        $nominal = (float) ($request->nominal ?? $request->amount ?? $request->saldo ?? 0);
+        if ($nominal <= 0) {
+            return response()->json([
+                'success' => false,
+                'msg'     => 'Nominal tidak valid',
+            ], 400);
+        }
+
+        $tipeInput = strtolower($request->input('tipe', 'debit'));
+        $tipe = in_array($tipeInput, ['kredit', 'topup', 'credit', 'tambah', 'masuk']) ? 'kredit' : 'debit';
+        $keterangan = $request->keterangan ?: ($tipe === 'kredit' ? 'Top up saldo' : 'Transaksi pembelian');
+
+        DB::beginTransaction();
+        try {
+            $saldo = Saldo::firstOrCreate(
+                ['students_id' => $be->id],
+                [
+                    'nominal' => 0,
+                    'app_id'  => $be->app ?? ($device->app ?? null),
+                ]
+            );
+
+            if ($tipe === 'debit') {
+                if ($saldo->nominal < $nominal) {
+                    DB::rollBack();
+                    Log::channel('absensi')->info('Data transaksi saldo ditolak - Saldo tidak cukup', [
+                        'device_id'  => $deviceId,
+                        'student_id' => $be->id,
+                        'nominal'    => $nominal,
+                        'saldo'      => $saldo->nominal,
+                    ]);
+
+                    return response()->json([
+                        'success' => false,
+                        'msg'     => 'Saldo tidak mencukupi. Sisa saldo: Rp ' . number_format($saldo->nominal, 0, ',', '.'),
+                    ], 400);
+                }
+                $saldo->nominal -= $nominal;
+            } else {
+                $saldo->nominal += $nominal;
+            }
+
+            $saldo->save();
+
+            $log = LogSaldo::create([
+                'saldo_id'    => $saldo->id,
+                'students_id' => $be->id,
+                'tipe'        => $tipe,
+                'nominal'     => $nominal,
+                'keterangan'  => $keterangan,
+            ]);
+
+            DB::commit();
+
+            Log::channel('absensi')->info('Data transaksi saldo diterima', [
+                'device_id'  => $deviceId,
+                'student_id' => $be->id,
+                'tipe'       => $tipe,
+                'nominal'    => $nominal,
+                'saldo'      => $saldo->nominal,
+            ]);
+
+            if ($be->users?->fcm) {
+                $title = $tipe === 'kredit' ? 'Saldo Masuk (Top Up)' : 'Transaksi Berhasil';
+                $message = [
+                    "topic" => "user_" . $be->users->id,
+                    "title" => $title,
+                    "body"  => ($tipe === 'kredit' ? 'Top up Rp ' : 'Pembayaran Rp ') .
+                               number_format($nominal, 0, ',', '.') . ' berhasil. Sisa saldo: Rp ' .
+                               number_format($saldo->nominal, 0, ',', '.'),
+                ];
+                ProcessFcm::dispatch($message);
+            }
+
+            return response()->json([
+                'success' => true,
+                'msg'     => ($tipe === 'kredit' ? 'Top up Berhasil' : 'Transaksi Berhasil') .
+                             " | Sisa Saldo: Rp " . number_format($saldo->nominal, 0, ',', '.'),
+                'data'    => [
+                    'student'           => [
+                        'id'   => $be->id,
+                        'name' => $be->name,
+                        'nis'  => $be->nis,
+                        'uuid' => $be->uuid,
+                    ],
+                    'tipe'              => $tipe,
+                    'nominal'           => $nominal,
+                    'nominal_rupiah'    => 'Rp ' . number_format($nominal, 0, ',', '.'),
+                    'sisa_saldo'        => (float) $saldo->nominal,
+                    'sisa_saldo_rupiah' => 'Rp ' . number_format($saldo->nominal, 0, ',', '.'),
+                    'keterangan'        => $keterangan,
+                    'log_id'            => $log->id,
+                    'waktu'             => $log->created_at->format('Y-m-d H:i:s'),
+                ]
+            ], 200);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::channel('absensi')->error('Data transaksi saldo error', [
+                'device_id' => $deviceId,
+                'error'     => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'msg'     => 'Terjadi kesalahan sistem: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
@@ -516,6 +713,464 @@ class ApiController extends Controller
         } catch (\Throwable $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
+    }
+
+    /**
+     * Endpoint Saldo untuk User Siswa (Role 2)
+     * Model User -> Model Students (student) -> Model Saldo
+     */
+    public function getSaldo(Request $request)
+    {
+        if ($request->filled('uuid')) {
+            return $this->getSaldoByUuid($request->uuid);
+        }
+
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User tidak terautentikasi',
+            ], 401);
+        }
+
+        if ($user->role != 2) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akses ditolak. Fitur saldo hanya diperuntukkan bagi user siswa (role 2).',
+            ], 403);
+        }
+
+        $student = $user->studentData ?? $user->student;
+        if (!$student) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data siswa tidak ditemukan untuk akun ini.',
+            ], 404);
+        }
+
+        $saldo = $student->saldo;
+        $nominal = $saldo ? (float) $saldo->nominal : 0.0;
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Berhasil mengambil data saldo',
+            'data'    => [
+                'nominal'           => $nominal,
+                'nominal_rupiah'    => 'Rp ' . number_format($nominal, 0, ',', '.'),
+                'formatted_nominal' => number_format($nominal, 0, ',', '.'),
+                'student'           => [
+                    'id'        => $student->id,
+                    'name'      => $student->name,
+                    'nis'       => $student->nis,
+                    'uuid'      => $student->uuid,
+                    'boarding'  => (bool) $student->boarding,
+                    'pesantren' => $student->pesantren ?? ($student->boarding ? 'Pesantren' : 'Bukan Pesantren'),
+                ],
+                'updated_at'        => $saldo?->updated_at ? $saldo->updated_at->format('Y-m-d H:i:s') : null,
+            ],
+        ], 200);
+    }
+
+    public function saldo(Request $request)
+    {
+        return $this->getSaldo($request);
+    }
+
+    /**
+     * Endpoint Saldo berdasarkan field uuid dari Model Students
+     */
+    public function getSaldoByUuid($uuid)
+    {
+        if (empty($uuid)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Parameter UUID tidak boleh kosong.',
+            ], 400);
+        }
+
+        $student = Students::where('uuid', $uuid)->first();
+        if (!$student) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data siswa dengan UUID tersebut tidak ditemukan.',
+            ], 404);
+        }
+
+        $saldo = $student->saldo;
+        $nominal = $saldo ? (float) $saldo->nominal : 0.0;
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Berhasil mengambil data saldo berdasarkan UUID',
+            'data'    => [
+                'nominal'           => $nominal,
+                'nominal_rupiah'    => 'Rp ' . number_format($nominal, 0, ',', '.'),
+                'formatted_nominal' => number_format($nominal, 0, ',', '.'),
+                'student'           => [
+                    'id'        => $student->id,
+                    'name'      => $student->name,
+                    'nis'       => $student->nis,
+                    'uuid'      => $student->uuid,
+                    'boarding'  => (bool) $student->boarding,
+                    'pesantren' => $student->pesantren ?? ($student->boarding ? 'Pesantren' : 'Bukan Pesantren'),
+                ],
+                'updated_at'        => $saldo?->updated_at ? $saldo->updated_at->format('Y-m-d H:i:s') : null,
+            ],
+        ], 200);
+    }
+
+    /**
+     * Endpoint Riwayat Saldo by Login (Role 2) dari Model LogSaldo
+     * Berdasarkan filter bulan, default data tanpa filter bulan saat ini berjalan
+     */
+    public function riwayatSaldo(Request $request)
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User tidak terautentikasi',
+            ], 401);
+        }
+
+        if ($user->role != 2) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akses ditolak. Fitur riwayat saldo hanya diperuntukkan bagi user siswa (role 2).',
+            ], 403);
+        }
+
+        $student = $user->studentData ?? $user->student;
+        if (!$student) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data siswa tidak ditemukan untuk akun ini.',
+            ], 404);
+        }
+
+        $filterBulan = $request->query('bulan', $request->query('month'));
+        $filterTahun = $request->query('tahun', $request->query('year'));
+
+        $isAll = ($filterBulan === 'all');
+        $year = $filterTahun ? (int) $filterTahun : Carbon::now()->year;
+        $month = Carbon::now()->month;
+
+        if (!$isAll) {
+            if ($filterBulan) {
+                if (preg_match('/^(\d{4})-(\d{1,2})$/', $filterBulan, $matches)) {
+                    $year = (int) $matches[1];
+                    $month = (int) $matches[2];
+                } else {
+                    $month = (int) $filterBulan;
+                }
+            }
+        }
+
+        $query = LogSaldo::where('students_id', $student->id);
+
+        if (!$isAll) {
+            $query->whereYear('created_at', $year)
+                  ->whereMonth('created_at', $month);
+        }
+
+        $logs = $query->latest('id')->get();
+
+        $monthNames = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+        ];
+
+        $totalKredit = 0;
+        $totalDebit = 0;
+
+        $items = $logs->map(function ($log) use (&$totalKredit, &$totalDebit) {
+            $nominal = (float) $log->nominal;
+            if ($log->tipe === 'kredit') {
+                $totalKredit += $nominal;
+            } else {
+                $totalDebit += $nominal;
+            }
+
+            return [
+                'id'             => $log->id,
+                'tipe'           => $log->tipe,
+                'nominal'        => $nominal,
+                'nominal_rupiah' => 'Rp ' . number_format($nominal, 0, ',', '.'),
+                'keterangan'     => $log->keterangan,
+                'created_at'     => $log->created_at ? $log->created_at->format('Y-m-d H:i:s') : null,
+                'tanggal'        => $log->created_at ? $log->created_at->format('d M Y') : null,
+                'waktu'          => $log->created_at ? $log->created_at->format('H:i') : null,
+            ];
+        });
+
+        $saldo = $student->saldo;
+        $nominalSaldo = $saldo ? (float) $saldo->nominal : 0.0;
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Berhasil mengambil riwayat saldo',
+            'data'    => [
+                'saldo_saat_ini'        => $nominalSaldo,
+                'saldo_saat_ini_rupiah' => 'Rp ' . number_format($nominalSaldo, 0, ',', '.'),
+                'filter'                => [
+                    'bulan'        => $isAll ? 'all' : $month,
+                    'tahun'        => $isAll ? 'all' : $year,
+                    'periode'      => $isAll ? 'Semua' : sprintf('%04d-%02d', $year, $month),
+                    'nama_periode' => $isAll ? 'Semua Riwayat' : (($monthNames[$month] ?? '') . ' ' . $year),
+                ],
+                'summary'               => [
+                    'total_kredit'        => $totalKredit,
+                    'total_kredit_rupiah' => 'Rp ' . number_format($totalKredit, 0, ',', '.'),
+                    'total_debit'         => $totalDebit,
+                    'total_debit_rupiah'  => 'Rp ' . number_format($totalDebit, 0, ',', '.'),
+                ],
+                'riwayat'               => $items,
+            ],
+        ], 200);
+    }
+
+    public function riwayat(Request $request)
+    {
+        return $this->riwayatSaldo($request);
+    }
+
+    /**
+     * Generate Topup Saldo Siswa (JWT Protected)
+     * POST /api/topup
+     */
+    public function generateTopup(Request $request)
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User tidak terautentikasi',
+            ], 401);
+        }
+
+        if ($user->role != 2) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akses ditolak. Fitur top up hanya diperuntukkan bagi user siswa (role 2).',
+            ], 403);
+        }
+
+        $student = $user->studentData ?? $user->student;
+        if (!$student) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data siswa tidak ditemukan untuk akun ini.',
+            ], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'nominal' => 'required|numeric|min:1000',
+        ], [
+            'nominal.required' => 'Nominal top up wajib diisi.',
+            'nominal.numeric'  => 'Nominal top up harus berupa angka.',
+            'nominal.min'      => 'Nominal top up minimal Rp 1.000.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first(),
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+
+        $nominal = (float) $request->nominal;
+
+        // Generate 3 digit random unique code (100 - 999)
+        // Ensure no collision with currently pending, unexpired topups
+        $attempts = 0;
+        do {
+            $kodeUnik = rand(100, 999);
+            $exists = Topup::where('kode_unik', $kodeUnik)
+                ->where('status', 'pending')
+                ->where('expired_at', '>', Carbon::now())
+                ->exists();
+            $attempts++;
+        } while ($exists && $attempts < 50);
+
+        $totalNominal = $nominal + $kodeUnik;
+        $expiredAt = Carbon::now()->addHours(24);
+
+        $topup = Topup::create([
+            'student_id'    => $student->id,
+            'nominal'       => $nominal,
+            'kode_unik'     => $kodeUnik,
+            'total_nominal' => $totalNominal,
+            'status'        => 'pending',
+            'expired_at'    => $expiredAt,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Permintaan top up berhasil dibuat.',
+            'data'    => [
+                'id'                => $topup->id,
+                'student_id'        => $student->id,
+                'student_name'      => $student->name,
+                'nominal'           => (float) $topup->nominal,
+                'nominal_rupiah'    => 'Rp ' . number_format($topup->nominal, 0, ',', '.'),
+                'kode_unik'         => $topup->kode_unik,
+                'total_nominal'     => (float) $topup->total_nominal,
+                'total_rupiah'      => 'Rp ' . number_format($topup->total_nominal, 0, ',', '.'),
+                'status'            => $topup->status,
+                'is_expired'        => $topup->is_expired,
+                'expired_at'        => $topup->expired_at?->format('Y-m-d H:i:s'),
+                'created_at'        => $topup->created_at?->format('Y-m-d H:i:s'),
+                'instruksi'         => 'Silakan transfer tepat sejumlah Rp ' . number_format($topup->total_nominal, 0, ',', '.') . ' sebelum batas waktu berakhir.',
+            ],
+        ], 201);
+    }
+
+    /**
+     * Get Riwayat / Daftar Topup Siswa (JWT Protected)
+     * GET /api/topup
+     */
+    public function getTopup(Request $request)
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User tidak terautentikasi',
+            ], 401);
+        }
+
+        if ($user->role != 2) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akses ditolak. Fitur top up hanya diperuntukkan bagi user siswa (role 2).',
+            ], 403);
+        }
+
+        $student = $user->studentData ?? $user->student;
+        if (!$student) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data siswa tidak ditemukan untuk akun ini.',
+            ], 404);
+        }
+
+        // Auto update expired status for pending topups past expired_at
+        Topup::where('student_id', $student->id)
+            ->where('status', 'pending')
+            ->where('expired_at', '<', Carbon::now())
+            ->update(['status' => 'expired']);
+
+        $query = Topup::where('student_id', $student->id);
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $topups = $query->latest('id')->get();
+
+        $items = $topups->map(function ($t) {
+            return [
+                'id'                => $t->id,
+                'student_id'        => $t->student_id,
+                'nominal'           => (float) $t->nominal,
+                'nominal_rupiah'    => 'Rp ' . number_format($t->nominal, 0, ',', '.'),
+                'kode_unik'         => $t->kode_unik,
+                'total_nominal'     => (float) $t->total_nominal,
+                'total_rupiah'      => 'Rp ' . number_format($t->total_nominal, 0, ',', '.'),
+                'status'            => $t->status,
+                'is_expired'        => $t->is_expired,
+                'expired_at'        => $t->expired_at?->format('Y-m-d H:i:s'),
+                'created_at'        => $t->created_at?->format('Y-m-d H:i:s'),
+            ];
+        });
+
+        // Current active/pending topup if any
+        $activeTopup = $topups->firstWhere('status', 'pending');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data riwayat top up berhasil diambil.',
+            'data'    => [
+                'active_topup' => $activeTopup ? [
+                    'id'            => $activeTopup->id,
+                    'nominal'       => (float) $activeTopup->nominal,
+                    'kode_unik'     => $activeTopup->kode_unik,
+                    'total_nominal' => (float) $activeTopup->total_nominal,
+                    'total_rupiah'  => 'Rp ' . number_format($activeTopup->total_nominal, 0, ',', '.'),
+                    'expired_at'    => $activeTopup->expired_at?->format('Y-m-d H:i:s'),
+                ] : null,
+                'topups'       => $items,
+            ],
+        ], 200);
+    }
+
+    /**
+     * Get Detail Topup Siswa (JWT Protected)
+     * GET /api/topup/{id}
+     */
+    public function detailTopup($id)
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User tidak terautentikasi',
+            ], 401);
+        }
+
+        $student = $user->studentData ?? $user->student;
+        if (!$student && $user->role != 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data siswa tidak ditemukan untuk akun ini.',
+            ], 404);
+        }
+
+        $topupQuery = Topup::query()->where('id', $id);
+        if ($user->role == 2 && $student) {
+            $topupQuery->where('student_id', $student->id);
+        }
+
+        $topup = $topupQuery->first();
+        if (!$topup) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data top up tidak ditemukan.',
+            ], 404);
+        }
+
+        // Check if expired
+        if ($topup->status === 'pending' && $topup->expired_at && Carbon::now()->greaterThan($topup->expired_at)) {
+            $topup->status = 'expired';
+            $topup->save();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Detail top up berhasil diambil.',
+            'data'    => [
+                'id'                => $topup->id,
+                'student_id'        => $topup->student_id,
+                'student_name'      => $topup->student?->name,
+                'nominal'           => (float) $topup->nominal,
+                'nominal_rupiah'    => 'Rp ' . number_format($topup->nominal, 0, ',', '.'),
+                'kode_unik'         => $topup->kode_unik,
+                'total_nominal'     => (float) $topup->total_nominal,
+                'total_rupiah'      => 'Rp ' . number_format($topup->total_nominal, 0, ',', '.'),
+                'status'            => $topup->status,
+                'is_expired'        => $topup->is_expired,
+                'expired_at'        => $topup->expired_at?->format('Y-m-d H:i:s'),
+                'created_at'        => $topup->created_at?->format('Y-m-d H:i:s'),
+                'instruksi'         => 'Silakan transfer tepat sejumlah Rp ' . number_format($topup->total_nominal, 0, ',', '.') . ' sebelum batas waktu berakhir.',
+            ],
+        ], 200);
     }
 
     public function jadwal()
@@ -1371,5 +2026,429 @@ class ApiController extends Controller
             'data' => $exam,
             'classes' => $classes
         ]);
+    }
+
+    /**
+     * Get Halaqah data for Siswa (Role 2) or Guru (Role 3)
+     */
+    public function getHalaqah(Request $request)
+    {
+        $user = Auth::user();
+
+        if ($user->role == 2) {
+            // SISWA
+            $student = $user->studentData ?? Students::where('user', $user->id)->first();
+            if (!$student) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data siswa tidak ditemukan',
+                ], 404);
+            }
+
+            $halaqahs = Halaqah::whereHas('students', function ($query) use ($student) {
+                    $query->where('students_id', $student->id);
+                })
+                ->with([
+                    'teach:id,name,nomor,image,gender',
+                    'students' => function ($query) {
+                        $query->with(['student' => function ($q) {
+                            $q->select('id', 'name', 'nis', 'gender', 'user')
+                              ->with(['Kelas:id,name', 'users:id,image']);
+                        }]);
+                    }
+                ])
+                ->latest()
+                ->get();
+
+            $data = $halaqahs->map(function ($halaqah) use ($student) {
+                $myRecord = $halaqah->students->firstWhere('students_id', $student->id);
+
+                return [
+                    'id'             => $halaqah->id,
+                    'nama'           => $halaqah->nama,
+                    'hari'           => $halaqah->hari,
+                    'waktu'          => $halaqah->waktu,
+                    'status'         => (bool) $halaqah->status,
+                    'keterangan'     => $halaqah->keterangan,
+                    'guru'           => $halaqah->teach ? [
+                        'id'     => $halaqah->teach->id,
+                        'name'   => $halaqah->teach->name,
+                        'nomor'  => $halaqah->teach->nomor,
+                        'gender' => $halaqah->teach->jenis ?? null,
+                        'image'  => $halaqah->teach->image ? asset('storage/' . $halaqah->teach->image) : null,
+                    ] : null,
+                    'my_record'      => $myRecord ? [
+                        'id'          => $myRecord->id,
+                        'present_at'  => $myRecord->present_at ? Carbon::parse($myRecord->present_at)->format('Y-m-d H:i:s') : null,
+                        'catatan'     => $myRecord->catatan,
+                    ] : null,
+                    'total_students' => $halaqah->students->count(),
+                    'students'       => $halaqah->students->map(function ($hs) {
+                        $s = $hs->student;
+                        return [
+                            'id'          => $hs->id,
+                            'students_id' => $hs->students_id,
+                            'name'        => $s?->name,
+                            'nis'         => $s?->nis,
+                            'gender'      => $s?->jenis,
+                            'kelas'       => $s?->Kelas?->first()?->name ?? null,
+                            'image'       => $s?->users?->image ? asset('storage/' . $s->users->image) : null,
+                            'present_at'  => $hs->present_at ? Carbon::parse($hs->present_at)->format('Y-m-d H:i:s') : null,
+                            'catatan'     => $hs->catatan,
+                        ];
+                    }),
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'data'    => $data,
+            ], 200);
+
+        } elseif ($user->role == 3) {
+            // GURU
+            $teacher = $user->teacherData ?? Teach::where('user_id', $user->id)->first();
+            if (!$teacher) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data guru tidak ditemukan',
+                ], 404);
+            }
+
+            $halaqahs = Halaqah::where('teach_id', $teacher->id)
+                ->with([
+                    'students' => function ($query) {
+                        $query->with(['student' => function ($q) {
+                            $q->select('id', 'name', 'nis', 'gender', 'user')
+                              ->with(['Kelas:id,name', 'users:id,image']);
+                        }]);
+                    }
+                ])
+                ->latest()
+                ->get();
+
+            $data = $halaqahs->map(function ($halaqah) {
+                return [
+                    'id'             => $halaqah->id,
+                    'nama'           => $halaqah->nama,
+                    'hari'           => $halaqah->hari,
+                    'waktu'          => $halaqah->waktu,
+                    'status'         => (bool) $halaqah->status,
+                    'keterangan'     => $halaqah->keterangan,
+                    'total_students' => $halaqah->students->count(),
+                    'students'       => $halaqah->students->map(function ($hs) {
+                        $s = $hs->student;
+                        return [
+                            'id'          => $hs->id,
+                            'students_id' => $hs->students_id,
+                            'name'        => $s?->name,
+                            'nis'         => $s?->nis,
+                            'gender'      => $s?->jenis,
+                            'kelas'       => $s?->Kelas?->first()?->name ?? null,
+                            'image'       => $s?->users?->image ? asset('storage/' . $s->users->image) : null,
+                            'present_at'  => $hs->present_at ? Carbon::parse($hs->present_at)->format('Y-m-d H:i:s') : null,
+                            'catatan'     => $hs->catatan,
+                        ];
+                    }),
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'data'    => $data,
+            ], 200);
+
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'Role tidak memiliki akses ke data halaqah',
+            ], 403);
+        }
+    }
+
+    /**
+     * Get Detail Halaqah by ID
+     */
+    public function getHalaqahDetail(Request $request, $id)
+    {
+        $user = Auth::user();
+
+        $halaqah = Halaqah::with([
+            'teach:id,name,nomor,image,gender',
+            'students' => function ($query) {
+                $query->with(['student' => function ($q) {
+                    $q->select('id', 'name', 'nis', 'gender', 'user')
+                      ->with(['Kelas:id,name', 'users:id,image']);
+                }]);
+            }
+        ])->find($id);
+
+        if (!$halaqah) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Halaqah tidak ditemukan',
+            ], 404);
+        }
+
+        if ($user->role == 2) {
+            $student = $user->studentData ?? Students::where('user', $user->id)->first();
+            if (!$student || !$halaqah->students->contains('students_id', $student->id)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak terdaftar dalam halaqah ini',
+                ], 403);
+            }
+        } elseif ($user->role == 3) {
+            $teacher = $user->teacherData ?? Teach::where('user_id', $user->id)->first();
+            if (!$teacher || $halaqah->teach_id != $teacher->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda bukan pengajar halaqah ini',
+                ], 403);
+            }
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'Role tidak memiliki akses',
+            ], 403);
+        }
+
+        $formattedStudents = $halaqah->students->map(function ($hs) {
+            $s = $hs->student;
+            return [
+                'id'          => $hs->id,
+                'students_id' => $hs->students_id,
+                'name'        => $s?->name,
+                'nis'         => $s?->nis,
+                'gender'      => $s?->jenis,
+                'kelas'       => $s?->Kelas?->first()?->name ?? null,
+                'image'       => $s?->users?->image ? asset('storage/' . $s->users->image) : null,
+                'present_at'  => $hs->present_at ? Carbon::parse($hs->present_at)->format('Y-m-d H:i:s') : null,
+                'catatan'     => $hs->catatan,
+            ];
+        });
+
+        $data = [
+            'id'             => $halaqah->id,
+            'nama'           => $halaqah->nama,
+            'hari'           => $halaqah->hari,
+            'waktu'          => $halaqah->waktu,
+            'status'         => (bool) $halaqah->status,
+            'keterangan'     => $halaqah->keterangan,
+            'guru'           => $halaqah->teach ? [
+                'id'     => $halaqah->teach->id,
+                'name'   => $halaqah->teach->name,
+                'nomor'  => $halaqah->teach->nomor,
+                'gender' => $halaqah->teach->jenis ?? null,
+                'image'  => $halaqah->teach->image ? asset('storage/' . $halaqah->teach->image) : null,
+            ] : null,
+            'total_students' => $halaqah->students->count(),
+            'students'       => $formattedStudents,
+        ];
+
+        return response()->json([
+            'success' => true,
+            'data'    => $data,
+        ], 200);
+    }
+
+    /**
+     * Submit / Update HalaqahStudent for Guru (Role 3)
+     */
+    public function postHalaqahStudent(Request $request)
+    {
+        $user = Auth::user();
+
+        if ($user->role != 3) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya guru (role 3) yang diizinkan mengisi data halaqah siswa',
+            ], 403);
+        }
+
+        $teacher = $user->teacherData ?? Teach::where('user_id', $user->id)->first();
+        if (!$teacher) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data guru tidak ditemukan',
+            ], 404);
+        }
+
+        // Check if batch submission (students or items array)
+        $items = $request->input('students') ?? $request->input('items');
+
+        if (is_array($items) && count($items) > 0) {
+            $validator = Validator::make($request->all(), [
+                'halaqah_id' => 'required|exists:halaqahs,id',
+                'students'   => 'nullable|array',
+                'items'      => 'nullable|array',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'errors'  => $validator->errors(),
+                ], 400);
+            }
+
+            $halaqah = Halaqah::find($request->halaqah_id);
+            if ($halaqah->teach_id != $teacher->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki hak akses untuk mengelola halaqah ini',
+                ], 403);
+            }
+
+            DB::beginTransaction();
+            try {
+                $updatedRecords = [];
+                foreach ($items as $item) {
+                    $studentId = $item['students_id'] ?? $item['student_id'] ?? null;
+                    $hsId = $item['id'] ?? $item['halaqah_student_id'] ?? null;
+
+                    $halaqahStudent = null;
+                    if ($hsId) {
+                        $halaqahStudent = HalaqahStudent::where('id', $hsId)
+                            ->where('halaqah_id', $halaqah->id)
+                            ->first();
+                    } elseif ($studentId) {
+                        $halaqahStudent = HalaqahStudent::firstOrNew([
+                            'halaqah_id'  => $halaqah->id,
+                            'students_id' => $studentId,
+                        ]);
+                    }
+
+                    if ($halaqahStudent) {
+                        if (array_key_exists('present_at', $item)) {
+                            $p = $item['present_at'];
+                            if ($p === true || $p === 'true' || $p === 1 || $p === '1' || $p === 'now') {
+                                $halaqahStudent->present_at = Carbon::now();
+                            } elseif ($p === false || $p === 'false' || $p === 0 || $p === '0' || $p === null || $p === '') {
+                                $halaqahStudent->present_at = null;
+                            } else {
+                                $halaqahStudent->present_at = Carbon::parse($p);
+                            }
+                        } elseif (isset($item['is_present'])) {
+                            $halaqahStudent->present_at = $item['is_present'] ? Carbon::now() : null;
+                        }
+
+                        if (array_key_exists('catatan', $item)) {
+                            $halaqahStudent->catatan = $item['catatan'];
+                        }
+
+                        $halaqahStudent->save();
+                        $updatedRecords[] = $halaqahStudent;
+                    }
+                }
+
+                DB::commit();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Data halaqah siswa berhasil disimpan',
+                    'data'    => $updatedRecords,
+                ], 200);
+
+            } catch (\Throwable $e) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal menyimpan data: ' . $e->getMessage(),
+                ], 500);
+            }
+        }
+
+        // Single student submission
+        $validator = Validator::make($request->all(), [
+            'id'          => 'nullable|exists:halaqah_students,id',
+            'halaqah_id'  => 'required_without:id|nullable|exists:halaqahs,id',
+            'students_id' => 'required_without:id|nullable|exists:students,id',
+            'student_id'  => 'nullable|exists:students,id',
+            'catatan'     => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors'  => $validator->errors(),
+            ], 400);
+        }
+
+        try {
+            $halaqahStudent = null;
+
+            if ($request->has('id') && $request->id) {
+                $halaqahStudent = HalaqahStudent::with('halaqah')->find($request->id);
+                if (!$halaqahStudent) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Data halaqah siswa tidak ditemukan',
+                    ], 404);
+                }
+                if ($halaqahStudent->halaqah && $halaqahStudent->halaqah->teach_id != $teacher->id) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Anda tidak memiliki hak akses untuk halaqah ini',
+                    ], 403);
+                }
+            } else {
+                $studentId = $request->input('students_id') ?? $request->input('student_id');
+                if (!$studentId) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Parameter students_id wajib diisi',
+                    ], 400);
+                }
+
+                $halaqah = Halaqah::find($request->halaqah_id);
+                if (!$halaqah || $halaqah->teach_id != $teacher->id) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Anda tidak memiliki hak akses untuk halaqah ini',
+                    ], 403);
+                }
+
+                $halaqahStudent = HalaqahStudent::firstOrNew([
+                    'halaqah_id'  => $request->halaqah_id,
+                    'students_id' => $studentId,
+                ]);
+            }
+
+            // Handle present_at
+            if ($request->has('present_at')) {
+                $p = $request->input('present_at');
+                if ($p === true || $p === 'true' || $p === 1 || $p === '1' || $p === 'now') {
+                    $halaqahStudent->present_at = Carbon::now();
+                } elseif ($p === false || $p === 'false' || $p === 0 || $p === '0' || $p === null || $p === '') {
+                    $halaqahStudent->present_at = null;
+                } else {
+                    $halaqahStudent->present_at = Carbon::parse($p);
+                }
+            } elseif ($request->has('is_present')) {
+                $halaqahStudent->present_at = $request->is_present ? Carbon::now() : null;
+            } elseif (!$halaqahStudent->exists) {
+                // Default to now() if creating a new record without explicit present_at
+                $halaqahStudent->present_at = Carbon::now();
+            }
+
+            // Handle catatan
+            if ($request->has('catatan')) {
+                $halaqahStudent->catatan = $request->input('catatan');
+            }
+
+            $halaqahStudent->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data halaqah siswa berhasil disimpan',
+                'data'    => $halaqahStudent->load(['student:id,name,nis']),
+            ], 200);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menyimpan data: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }

@@ -27,6 +27,19 @@
             </svg>
         </span> Pembayaran
     </li>
+<a href="{{ route('dashboard.saldo.index') }}">
+    <li
+        class="flex items-center px-4 py-3 border-b border-green-300 hover:bg-green-100 {{ Route::is('dashboard.saldo.*') ? 'bg-green-100' : null }}">
+        <span class="text-green-500 mr-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="lucide lucide-wallet-cards">
+                <rect width="18" height="18" x="3" y="3" rx="2" />
+                <path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2" />
+                <path d="M3 11h3c.8 0 1.6.3 2.1.9l1.1 1.2c.5.5 1.2.9 2 .9h7.8" />
+            </svg>
+        </span> Saldo
+    </li>
 </a>
 <a href="{{ route('dashboard.absensi') }}">
     <li
@@ -42,7 +55,7 @@
         </span> Absensi
     </li>
 </a>
-<a href="{{ route('dashboard.ekstrakurikuler.index') }}">
+{{-- <a href="{{ route('dashboard.ekstrakurikuler.index') }}">
     <li
         class="flex items-center px-4 py-3 border-b border-green-300 hover:bg-green-100 {{ Route::is('dashboard.ekstrakurikuler.*') ? 'bg-green-100' : null }}">
         <span class="text-green-500 mr-2">
@@ -56,7 +69,7 @@
             </svg>
         </span> {{ config('app.school_mode') ? 'Ekstrakurikuler' : 'UKM' }}
     </li>
-</a>
+</a> --}}
 @endif
 
 @if(auth()->user()->role == 3)

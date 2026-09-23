@@ -357,11 +357,107 @@ class Home extends Controller
         ));
     }
 
-    public function pembayaran()
+    public function pembayaran(Request $request)
     {
         $title = "Pembayaran";
         $appId = auth()->user()->app->id ?? null;
         $isAppUser = auth()->user()->role == 1 && $appId;
+
+        if ($request->ajax() || $request->wantsJson()) {
+            $query = Students::query()
+                ->when($isAppUser, function ($query) use ($appId) {
+                    $query->where('app', $appId);
+                })
+                ->has('reg');
+
+            // Search Filter
+            if ($request->filled('search')) {
+                $search = trim($request->search);
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                      ->orWhere('nis', 'like', "%{$search}%");
+                });
+            }
+
+            // Filter Kelas / Prodi
+            if ($request->filled('kelas')) {
+                $kelas = $request->kelas;
+                $query->whereHas('reg', function ($q) use ($kelas) {
+                    if (config('app.school_mode')) {
+                        $q->whereHas('kelas', function ($k) use ($kelas) {
+                            $k->where('name', $kelas)->orWhere('id', $kelas);
+                        });
+                    } else {
+                        $q->whereHas('prodi', function ($p) use ($kelas) {
+                            $p->where('name', $kelas)->orWhere('id', $kelas);
+                        });
+                    }
+                });
+            }
+
+            // Sorting
+            $sortBy = $request->get('sort_by', 'id');
+            $sortDir = strtolower($request->get('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+            if (in_array($sortBy, ['nis', 'name', 'id'])) {
+                $query->orderBy($sortBy, $sortDir);
+            } else {
+                $query->latest('id');
+            }
+
+            // Eager Load reg and bills filtered by month
+            $monthInput = $request->get('month', date('Y-m'));
+            $query->with([
+                'reg.kelas',
+                'reg.prodi',
+                'reg.bill' => function ($billQuery) use ($monthInput) {
+                    if (!empty($monthInput)) {
+                        $parts = explode('-', $monthInput);
+                        if (count($parts) === 2) {
+                            $billQuery->whereYear('created_at', $parts[0])
+                                      ->whereMonth('created_at', $parts[1]);
+                        }
+                    }
+                    $billQuery->with('payment')->latest();
+                }
+            ]);
+
+            $perPage = (int) $request->get('per_page', 10);
+            if ($perPage <= 0) $perPage = 10;
+            $paginated = $query->paginate($perPage);
+
+            $items = $paginated->getCollection()->map(function ($q) {
+                $bills = collect($q->reg->bill ?? [])->map(function ($bill) {
+                    return [
+                        'bill'    => $bill->id ?? null,
+                        'status'  => $bill->state ?? ($bill->status == 1 ? 'Lunas' : 'Tagihan'),
+                        'via'     => $bill->via ?? null,
+                        'name'    => $bill->payment->name ?? null,
+                        'nominal' => isset($bill->payment->nominal) ? number_format($bill->payment->nominal, 0, ',', '.') : null,
+                    ];
+                });
+
+                return [
+                    'id'    => $q->id,
+                    'head'  => $q->reg->id ?? null,
+                    'nis'   => $q->nis,
+                    'name'  => $q->name,
+                    'kelas' => config('app.school_mode')
+                        ? ($q->reg->kelas->name ?? null)
+                        : ($q->reg->prodi->name ?? null),
+                    'bill'  => $bills,
+                ];
+            });
+
+            return response()->json([
+                'data'         => $items,
+                'current_page' => $paginated->currentPage(),
+                'last_page'    => $paginated->lastPage(),
+                'per_page'     => $paginated->perPage(),
+                'total'        => $paginated->total(),
+                'from'         => $paginated->firstItem() ?? 0,
+                'to'           => $paginated->lastItem() ?? 0,
+            ]);
+        }
 
         if (config('app.school_mode')) {
             $classes = Classes::when($isAppUser, function ($q) use ($appId) {
@@ -373,36 +469,9 @@ class Home extends Controller
             })->get();
         }
 
-        $items = Students::latest()
-            ->when($isAppUser, function ($query) use ($appId) {
-                $query->where('app', $appId);
-            })
-            ->has('reg')
-            ->get()
-            ->map(function ($q) {
+        $defaultMonth = date('Y-m');
 
-                $bills = $q->reg->bill->map(function ($bill) {
-                    return [
-                        'bill'    => $bill->id ?? null,
-                        'status'  => $bill->state ?? null,
-                        'via'     => $bill->via ?? null,
-                        'name'    => $bill->payment->name ?? null,
-                        'nominal' => number_format($bill->payment->nominal, 0, ',', '.') ?? null,
-                    ];
-                });
-
-                return [
-                    'id'    => $q->id,
-                    'head'  => $q->reg->id,
-                    'nis'   => $q->nis,
-                    'name'  => $q->name,
-                    'kelas' => config('app.school_mode')
-                        ? ($q->reg->kelas->name ?? null)
-                        : ($q->reg->prodi->name ?? null),
-                    'bill'  => $bills,
-                ];
-            });
-        return view('home.pay.index', compact('items', 'title', 'classes'));
+        return view('home.pay.index', compact('title', 'classes', 'defaultMonth'));
     }
 
     public function assignPay(Request $request)

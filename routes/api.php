@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/webhook', [Home::class, 'midtransHook']);
 Route::post('/push', [ApiController::class, 'rfid']);
+Route::post('/saldo/transaksi', [ApiController::class, 'rfidRiwayatSaldo']);
+Route::post('/rfid-absen', [ApiController::class, 'rfidAbsen']);
 
 Route::post('/status', function () {
     return response()->json([
@@ -16,12 +18,15 @@ Route::post('/status', function () {
 });
 
 Route::post('/payment', [ApiController::class, 'paymentWebhook']);
+Route::get('/saldo/uuid/{uuid}', [ApiController::class, 'getSaldoByUuid']);
+
 Route::prefix('fire')->group(function () {
     Route::post('/refresh', [ApiController::class, 'refresh']);
     Route::post('/login', [ApiController::class, 'login']);
     Route::post('/fcm', [ApiController::class, 'fcm']);
     Route::post('/forget', [ApiController::class, 'forget']);
 });
+
 Route::middleware('jwt')->group(function () {
     Route::get('/topic', [ApiController::class, 'topic']);
     Route::post('/pass', [ApiController::class, 'upass']);
@@ -42,6 +47,18 @@ Route::middleware('jwt')->group(function () {
     Route::get('/pengumuman/{id}', [ApiController::class, 'pengumuman']);
     Route::post('/upload-image', [ApiController::class, 'uploadImage']);
 
+    // Saldo & Riwayat API (Role 2 / Siswa)
+    Route::get('/saldo', [ApiController::class, 'getSaldo']);
+    Route::get('/saldo/riwayat', [ApiController::class, 'riwayatSaldo']);
+    Route::get('/saldo/history', [ApiController::class, 'riwayatSaldo']);
+    Route::get('/saldo/uuid/{uuid}', [ApiController::class, 'getSaldoByUuid']);
+    Route::get('/saldo/{uuid}', [ApiController::class, 'getSaldoByUuid']);
+
+    // Topup API (Role 2 / Siswa)
+    Route::post('/topup', [ApiController::class, 'generateTopup']);
+    Route::get('/topup', [ApiController::class, 'getTopup']);
+    Route::get('/topup/{id}', [ApiController::class, 'detailTopup']);
+
     // Exam API
     Route::prefix('exam')->group(function () {
         // More specific routes first
@@ -55,4 +72,16 @@ Route::middleware('jwt')->group(function () {
         Route::post('/pay/generate', [ApiController::class, 'generateExamQris']);
         // Route::post('/pay/simulate', [ApiController::class, 'payExamSimulation']);
     });
+
+    // Halaqah API (Role 2 / Siswa & Role 3 / Guru)
+    Route::get('/halaqah', [ApiController::class, 'getHalaqah']);
+    Route::get('/halaqah/{id}', [ApiController::class, 'getHalaqahDetail']);
+    Route::post('/halaqah', [ApiController::class, 'postHalaqahStudent']);
+    Route::post('/halaqah/student', [ApiController::class, 'postHalaqahStudent']);
+
+    // Alias routes for halaqoh
+    Route::get('/halaqoh', [ApiController::class, 'getHalaqah']);
+    Route::get('/halaqoh/{id}', [ApiController::class, 'getHalaqahDetail']);
+    Route::post('/halaqoh', [ApiController::class, 'postHalaqahStudent']);
+    Route::post('/halaqoh/student', [ApiController::class, 'postHalaqahStudent']);
 });

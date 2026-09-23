@@ -47,7 +47,7 @@
                     <th class="px-4 py-2">No</th>
                     <th @click="sortBy('name')" class="cursor-pointer px-4 py-2">Nama</th>
                     <th class="px-4 py-2">Username</th>
-                    <th class="px-4 py-2">Kelas/Prodi</th>
+                    <th class="px-4 py-2">Kelas</th>
                     <th class="px-4 py-2">Tipe</th>
                     <th class="px-4 py-2">Status</th>
                     <th class="px-4 py-2">Opsi</th>

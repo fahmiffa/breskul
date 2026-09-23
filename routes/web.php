@@ -24,6 +24,7 @@ Route::prefix('dashboard')->middleware('auth')->name('dashboard.')->group(functi
     Route::get('/pembayaran', [Home::class, 'pembayaran'])->name('pay');
     Route::post('/pembayaran', [Home::class, 'assignPay']);
     Route::post('/pembayaran/verifikasi', [Home::class, 'manualVerify'])->name('pay.verify');
+    Route::resource('saldo', App\Http\Controllers\SaldoController::class);
     Route::get('/absensi', [Home::class, 'absensi'])->name('absensi');
     Route::get('setting', [Home::class, 'setting'])->name('setting');
     Route::post('/pass', [Home::class, 'pass'])->name('pass');
@@ -63,6 +64,8 @@ Route::prefix('dashboard')->middleware('auth')->name('dashboard.')->group(functi
         Route::resource('prodi', App\Http\Controllers\ProdiController::class);
         Route::resource('mapel', App\Http\Controllers\MapelController::class);
         Route::resource('jadwal', App\Http\Controllers\MapelDayController::class);
+        Route::get('halaqah/students-by-class', [App\Http\Controllers\HalaqahController::class, 'getStudentsByClass'])->name('halaqah.students-by-class');
+        Route::resource('halaqah', App\Http\Controllers\HalaqahController::class);
         Route::resource('absensi', App\Http\Controllers\AttendanceConfigController::class);
         Route::resource('ekstrakurikuler', App\Http\Controllers\ExtracurricularController::class);
         Route::post('soal/import', [App\Http\Controllers\SoalController::class, 'import'])->name('soal.import');

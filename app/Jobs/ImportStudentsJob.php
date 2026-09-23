@@ -61,16 +61,41 @@ class ImportStudentsJob implements ShouldQueue
         }
 
         $processed = 0;
+        $isSchoolMode = config('app.school_mode', true);
 
         DB::beginTransaction();
         try {
             foreach ($dataRows as $row) {
-                // Expecting: [0]=no, [1]=name, [2]=gender L/P, [3]=nis
-                $name = $row[1] ?? null;
-                $genderRaw = $row[2] ?? null;
-                $nis = $row[3] ?? null;
+                // Template order:
+                // [0]=No, [1]=Nama, [2]=NIS, [3]=Jenis Kelamin (L/P), [4]=Alamat, [5]=No HP Siswa, [6]=No HP Orang Tua
+                $name = isset($row[1]) && trim((string) $row[1]) !== '' ? trim((string) $row[1]) : null;
 
-                if ($name && $genderRaw && $nis) {
+                $col2 = isset($row[2]) ? trim((string) $row[2]) : '';
+                $col3 = isset($row[3]) ? trim((string) $row[3]) : '';
+
+                // Deteksi otomatis jika file masih menggunakan urutan kolom lama (Gender di kolom 2, NIS di kolom 3)
+                if (in_array(strtoupper($col2), ['L', 'P']) && !in_array(strtoupper($col3), ['L', 'P'])) {
+                    $genderRaw = $col2;
+                    $nis = $col3 !== '' ? $col3 : null;
+                } else {
+                    $nis = $col2 !== '' ? $col2 : null;
+                    $genderRaw = $col3 !== '' ? $col3 : null;
+                }
+
+                $alamat = isset($row[4]) && trim((string) $row[4]) !== '' ? trim((string) $row[4]) : null;
+                $hpSiswa = isset($row[5]) && trim((string) $row[5]) !== '' ? trim((string) $row[5]) : null;
+                $hpParent = isset($row[6]) && trim((string) $row[6]) !== '' ? trim((string) $row[6]) : null;
+
+                if ($name && $nis) {
+                    $genderUpper = strtoupper((string) $genderRaw);
+                    if ($genderUpper === 'L' || $genderUpper === '1' || strtolower($genderUpper) === 'laki-laki') {
+                        $gender = 1;
+                    } elseif ($genderUpper === 'P' || $genderUpper === '2' || strtolower($genderUpper) === 'perempuan') {
+                        $gender = 2;
+                    } else {
+                        $gender = null;
+                    }
+
                     $username = self::usernameFromName($name);
 
                     $userId = DB::table('users')->insertGetId([
@@ -87,8 +112,12 @@ class ImportStudentsJob implements ShouldQueue
                         'name'       => $name,
                         'user'       => $userId,
                         'app'        => $this->appId,
-                        'gender'     => ($genderRaw === 'L') ? 1 : 0,
+                        'gender'     => $gender,
                         'nis'        => $nis,
+                        'alamat'     => $alamat,
+                        'hp_siswa'   => $hpSiswa,
+                        'hp_parent'  => $hpParent,
+                        'boarding'   => false,
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
@@ -97,7 +126,8 @@ class ImportStudentsJob implements ShouldQueue
                         'student_id'  => $studentId,
                         'app'         => $this->appId,
                         'academic_id' => $akademik->id,
-                        'class_id'    => $this->classId,
+                        'class_id'    => $isSchoolMode ? $this->classId : null,
+                        'prodi_id'    => ! $isSchoolMode ? $this->classId : null,
                         'status'      => 1,
                         'created_at'  => now(),
                         'updated_at'  => now(),

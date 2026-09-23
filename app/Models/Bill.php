@@ -13,6 +13,7 @@ class Bill extends Model
         if ($this->status == 0) {
             return "Tagihan";
         }
+        return "Lunas";
     }
 
     public function head()

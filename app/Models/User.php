@@ -58,6 +58,16 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasOne(Students::class, 'user', 'id'); // pastikan foreign key benar
     }
 
+    public function student()
+    {
+        return $this->hasOne(Students::class, 'user', 'id');
+    }
+
+    public function saldo()
+    {
+        return $this->hasOneThrough(Saldo::class, Students::class, 'user', 'students_id', 'id', 'id');
+    }
+
     /**
      * The attributes that are mass assignable.
      *

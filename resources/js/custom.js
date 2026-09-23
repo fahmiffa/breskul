@@ -1,4 +1,5 @@
 import md5 from "blueimp-md5";
+import Swal from "sweetalert2";
 
 export function jadwalForm(initialJadwals = null) {
     const processInitialData = (data) => {
@@ -215,7 +216,7 @@ export const dataTable = (data) => {
         sortColumn: "name",
         sortAsc: true,
         currentPage: 1,
-        perPage: 20,
+        perPage: 10,
         rows: data,
         selectedRow: null,
         open: false,
@@ -291,12 +292,19 @@ export const dataTable = (data) => {
             console.log(this.selectedItems);
         },
         paginatedData() {
-            const perPage = parseInt(this.perPage);
+            if (this.perPage === "all") {
+                return this.filteredData();
+            }
+            const perPage = parseInt(this.perPage) || 10;
             const start = (this.currentPage - 1) * perPage;
             return this.filteredData().slice(start, start + perPage);
         },
         totalPages() {
-            return Math.ceil(this.filteredData().length / this.perPage);
+            if (this.perPage === "all") {
+                return 1;
+            }
+            const perPage = parseInt(this.perPage) || 10;
+            return Math.ceil(this.filteredData().length / perPage) || 1;
         },
         nextPage() {
             if (this.currentPage < this.totalPages()) this.currentPage++;
@@ -305,9 +313,22 @@ export const dataTable = (data) => {
             if (this.currentPage > 1) this.currentPage--;
         },
         deleteRow(e) {
-            if (confirm("Yakin ingin menghapus data?")) {
-                e.target.submit();
-            }
+            const form = e.target.tagName === "FORM" ? e.target : e.target.closest("form");
+            Swal.fire({
+                title: "Apakah Anda yakin?",
+                text: "Data yang dihapus beserta relasinya tidak dapat dikembalikan!",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#ef4444",
+                cancelButtonColor: "#6b7280",
+                confirmButtonText: "Ya, Hapus!",
+                cancelButtonText: "Batal",
+                reverseButtons: true,
+            }).then((result) => {
+                if (result.isConfirmed && form) {
+                    form.submit();
+                }
+            });
         },
         formatNumber(number) {
             return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
@@ -970,67 +991,246 @@ export function extraForm(students = [], extras = []) {
     };
 }
 
-export function verificationPayment(data) {
+export function verificationPayment(defaultMonth = "") {
     return {
-        ...dataTable(data),
+        rows: [],
+        search: "",
         selectedKelas: "",
-        filteredData() {
-            let temp = this.rows.filter((row) => {
-                const matchesSearch = Object.values(row).some((val) => {
-                    return String(val)
-                        .toLowerCase()
-                        .includes(this.search.toLowerCase());
-                });
-                const matchesKelas =
-                    this.selectedKelas === "" ||
-                    row.kelas === this.selectedKelas;
-                return matchesSearch && matchesKelas;
-            });
+        selectedMonth: defaultMonth || new Date().toISOString().slice(0, 7),
+        sortColumn: "id",
+        sortAsc: false,
+        currentPage: 1,
+        perPage: 10,
+        totalPages: 1,
+        totalRows: 0,
+        from: 0,
+        to: 0,
+        isLoading: false,
+        selectedItems: [],
+        selectedClass: "",
+        showTambahKelas: false,
+        message: "",
+        error: "",
+        searchTimer: null,
 
-            temp.sort((a, b) => {
-                let valA = a[this.sortColumn];
-                let valB = b[this.sortColumn];
-
-                if (typeof valA === "string") valA = valA.toLowerCase();
-                if (typeof valB === "string") valB = valB.toLowerCase();
-
-                if (valA < valB) return this.sortAsc ? -1 : 1;
-                if (valA > valB) return this.sortAsc ? 1 : -1;
-                return 0;
-            });
-
-            return temp;
+        init() {
+            this.fetchData();
         },
-        async verifyBill(id) {
-            if (!confirm("Verifikasi pembayaran ini secara manual?")) return;
+
+        handleSearch() {
+            if (this.searchTimer) clearTimeout(this.searchTimer);
+            this.searchTimer = setTimeout(() => {
+                this.currentPage = 1;
+                this.fetchData();
+            }, 350);
+        },
+
+        handleFilterChange() {
+            this.currentPage = 1;
+            this.fetchData();
+        },
+
+        async fetchData() {
+            this.isLoading = true;
+            try {
+                const params = new URLSearchParams({
+                    page: this.currentPage,
+                    per_page: this.perPage,
+                    search: this.search || "",
+                    kelas: this.selectedKelas || "",
+                    month: this.selectedMonth || "",
+                    sort_by: this.sortColumn || "id",
+                    sort_dir: this.sortAsc ? "asc" : "desc",
+                });
+
+                const res = await fetch(`/dashboard/pembayaran?${params.toString()}`, {
+                    headers: {
+                        "Accept": "application/json",
+                        "X-Requested-With": "XMLHttpRequest",
+                    },
+                });
+
+                if (!res.ok) throw new Error("Gagal mengambil data pembayaran");
+                const json = await res.json();
+
+                this.rows = json.data || [];
+                this.currentPage = json.current_page || 1;
+                this.totalPages = json.last_page || 1;
+                this.totalRows = json.total || 0;
+                this.from = json.from || 0;
+                this.to = json.to || 0;
+            } catch (err) {
+                console.error("Error fetching payment data:", err);
+            } finally {
+                this.isLoading = false;
+            }
+        },
+
+        sortBy(column) {
+            if (this.sortColumn === column) {
+                this.sortAsc = !this.sortAsc;
+            } else {
+                this.sortColumn = column;
+                this.sortAsc = true;
+            }
+            this.currentPage = 1;
+            this.fetchData();
+        },
+
+        prevPage() {
+            if (this.currentPage > 1) {
+                this.currentPage--;
+                this.fetchData();
+            }
+        },
+
+        nextPage() {
+            if (this.currentPage < this.totalPages) {
+                this.currentPage++;
+                this.fetchData();
+            }
+        },
+
+        goToPage(page) {
+            if (page >= 1 && page <= this.totalPages && page !== this.currentPage) {
+                this.currentPage = page;
+                this.fetchData();
+            }
+        },
+
+        selectAll() {
+            const pageHeads = this.rows.map((i) => i.head).filter(Boolean);
+            const allSelected = pageHeads.length > 0 && pageHeads.every((h) => this.selectedItems.includes(h));
+
+            if (allSelected) {
+                this.selectedItems = this.selectedItems.filter((i) => !pageHeads.includes(i));
+            } else {
+                pageHeads.forEach((h) => {
+                    if (!this.selectedItems.includes(h)) {
+                        this.selectedItems.push(h);
+                    }
+                });
+            }
+        },
+
+        isAllSelected() {
+            const pageHeads = this.rows.map((i) => i.head).filter(Boolean);
+            return pageHeads.length > 0 && pageHeads.every((h) => this.selectedItems.includes(h));
+        },
+
+        toggleItem(id, event) {
+            if (event.target.checked) {
+                if (!this.selectedItems.includes(id)) {
+                    this.selectedItems.push(id);
+                }
+            } else {
+                this.selectedItems = this.selectedItems.filter((i) => i !== id);
+            }
+        },
+
+        async assignPay() {
+            this.isLoading = true;
+            this.message = "";
+            this.error = "";
+
+            const token = document.querySelector('meta[name="csrf-token"]').getAttribute("content");
 
             try {
-                const token = document
-                    .querySelector('meta[name="csrf-token"]')
-                    .getAttribute("content");
-                const response = await fetch(
-                    "/dashboard/pembayaran/verifikasi",
-                    {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "X-CSRF-TOKEN": token,
-                        },
-                        body: JSON.stringify({ id: id }),
+                const res = await fetch("/dashboard/pembayaran", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": token,
+                        "Accept": "application/json",
                     },
-                );
+                    body: JSON.stringify({
+                        student_ids: this.selectedItems,
+                        class_id: this.selectedClass,
+                    }),
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || "Terjadi kesalahan.");
+
+                this.message = data.message || "Pembayaran berhasil ditambahkan.";
+                this.selectedItems = [];
+                this.selectedClass = "";
+
+                await Swal.fire({
+                    title: "Berhasil!",
+                    text: this.message,
+                    icon: "success",
+                    confirmButtonColor: "#22c55e",
+                });
+
+                this.showTambahKelas = false;
+                this.fetchData();
+            } catch (err) {
+                this.error = err.message || "Gagal menambahkan pembayaran.";
+                Swal.fire({
+                    title: "Gagal!",
+                    text: this.error,
+                    icon: "error",
+                    confirmButtonColor: "#ef4444",
+                });
+            } finally {
+                this.isLoading = false;
+            }
+        },
+
+        async verifyBill(id) {
+            const confirmResult = await Swal.fire({
+                title: "Verifikasi Pembayaran?",
+                text: "Apakah Anda yakin ingin memverifikasi pembayaran ini secara manual?",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#22c55e",
+                cancelButtonColor: "#6b7280",
+                confirmButtonText: "Ya, Verifikasi!",
+                cancelButtonText: "Batal",
+                reverseButtons: true,
+            });
+
+            if (!confirmResult.isConfirmed) return;
+
+            try {
+                const token = document.querySelector('meta[name="csrf-token"]').getAttribute("content");
+                const response = await fetch("/dashboard/pembayaran/verifikasi", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": token,
+                        "Accept": "application/json",
+                    },
+                    body: JSON.stringify({ id: id }),
+                });
 
                 const result = await response.json();
 
                 if (response.ok) {
-                    alert(result.message);
-                    window.location.reload();
+                    await Swal.fire({
+                        title: "Berhasil!",
+                        text: result.message || "Pembayaran berhasil diverifikasi.",
+                        icon: "success",
+                        confirmButtonColor: "#22c55e",
+                    });
+                    this.fetchData();
                 } else {
-                    alert(result.message || "Gagal verifikasi");
+                    Swal.fire({
+                        title: "Gagal!",
+                        text: result.message || "Gagal verifikasi pembayaran.",
+                        icon: "error",
+                        confirmButtonColor: "#ef4444",
+                    });
                 }
             } catch (error) {
                 console.error(error);
-                alert("Terjadi kesalahan koneksi");
+                Swal.fire({
+                    title: "Error!",
+                    text: "Terjadi kesalahan koneksi.",
+                    icon: "error",
+                    confirmButtonColor: "#ef4444",
+                });
             }
         },
     };
@@ -1235,11 +1435,25 @@ export function ujianAssignmentTable(initialData, classes = []) {
         },
 
         confirmDelete(id) {
-            if (confirm("Hapus penugasan ini?")) {
-                const form = document.getElementById("deleteForm");
-                form.action = `/dashboard/penjadwalan-ujian/${id}`;
-                form.submit();
-            }
+            Swal.fire({
+                title: "Apakah Anda yakin?",
+                text: "Hapus penugasan ini?",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#ef4444",
+                cancelButtonColor: "#6b7280",
+                confirmButtonText: "Ya, Hapus!",
+                cancelButtonText: "Batal",
+                reverseButtons: true,
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const form = document.getElementById("deleteForm");
+                    if (form) {
+                        form.action = `/dashboard/penjadwalan-ujian/${id}`;
+                        form.submit();
+                    }
+                }
+            });
         },
 
         toggleAll() {
@@ -1337,3 +1551,151 @@ export function ujianAssignmentTable(initialData, classes = []) {
         },
     };
 }
+
+export function halaqahForm(config = {}) {
+    return {
+        // Teach (Guru)
+        teaches: config.teaches || [],
+        teachSearch: config.defaultTeachName || "",
+        selectedTeachId: config.defaultTeachId || "",
+        showTeachDropdown: false,
+
+        get filteredTeaches() {
+            if (!this.teachSearch) return this.teaches;
+            const search = this.teachSearch.toLowerCase();
+            return this.teaches.filter((t) =>
+                t.name && t.name.toLowerCase().includes(search)
+            );
+        },
+
+        selectTeach(teach) {
+            this.selectedTeachId = teach.id;
+            this.teachSearch = teach.name;
+            this.showTeachDropdown = false;
+        },
+
+        // Student selection
+        allStudents: config.allStudents || [],
+        selectedStudents: config.selectedStudents || [],
+        selectMode: "siswa",
+        studentSearch: "",
+        showStudentDropdown: false,
+
+        // Per Kelas state
+        selectedClassId: "",
+        classStudents: [],
+        selectedClassStudentIds: [],
+        isLoadingClassStudents: false,
+        classLoaded: false,
+
+        get filteredStudents() {
+            const selectedIds = this.selectedStudents.map((s) => s.id);
+            let filtered = this.allStudents.filter((s) => !selectedIds.includes(s.id));
+            if (this.studentSearch) {
+                const search = this.studentSearch.toLowerCase();
+                filtered = filtered.filter((s) =>
+                    s.name && s.name.toLowerCase().includes(search)
+                );
+            }
+            return filtered;
+        },
+
+        addStudent(student) {
+            if (!this.selectedStudents.find((s) => s.id === student.id)) {
+                this.selectedStudents.push(student);
+            }
+            this.studentSearch = "";
+            this.showStudentDropdown = false;
+        },
+
+        removeStudent(index) {
+            this.selectedStudents.splice(index, 1);
+        },
+
+        async loadStudentsByClass(classId) {
+            this.selectedClassId = classId;
+            this.classStudents = [];
+            this.selectedClassStudentIds = [];
+            this.classLoaded = false;
+
+            if (!classId) return;
+
+            this.isLoadingClassStudents = true;
+            try {
+                const res = await fetch(`/dashboard/master/halaqah/students-by-class?class_id=${classId}`);
+                if (!res.ok) throw new Error("Gagal mengambil data siswa kelas");
+                const data = await res.json();
+                this.classStudents = data;
+                this.classLoaded = true;
+
+                // Default check all students from this class who are not yet added
+                const alreadySelectedIds = this.selectedStudents.map((s) => s.id);
+                this.selectedClassStudentIds = data
+                    .filter((s) => !alreadySelectedIds.includes(s.id))
+                    .map((s) => s.id);
+            } catch (e) {
+                console.error("Gagal memuat siswa:", e);
+                if (window.Swal) {
+                    Swal.fire({
+                        icon: "error",
+                        title: "Error",
+                        text: "Gagal memuat daftar siswa per kelas.",
+                    });
+                }
+            } finally {
+                this.isLoadingClassStudents = false;
+            }
+        },
+
+        isClassStudentAlreadyAdded(studentId) {
+            return this.selectedStudents.some((s) => s.id === studentId);
+        },
+
+        toggleAllClassStudents(event) {
+            if (event.target.checked) {
+                const alreadySelectedIds = this.selectedStudents.map((s) => s.id);
+                this.selectedClassStudentIds = this.classStudents
+                    .filter((s) => !alreadySelectedIds.includes(s.id))
+                    .map((s) => s.id);
+            } else {
+                this.selectedClassStudentIds = [];
+            }
+        },
+
+        isAllClassStudentsChecked() {
+            const selectable = this.classStudents.filter(
+                (s) => !this.isClassStudentAlreadyAdded(s.id)
+            );
+            return (
+                selectable.length > 0 &&
+                selectable.every((s) => this.selectedClassStudentIds.includes(s.id))
+            );
+        },
+
+        addAllClassStudents() {
+            let addedCount = 0;
+            this.classStudents.forEach((student) => {
+                if (this.selectedClassStudentIds.includes(student.id)) {
+                    if (!this.selectedStudents.find((s) => s.id === student.id)) {
+                        this.selectedStudents.push(student);
+                        addedCount++;
+                    }
+                }
+            });
+
+            // Refresh selectedClassStudentIds
+            this.selectedClassStudentIds = [];
+
+            if (window.Swal && addedCount > 0) {
+                Swal.fire({
+                    icon: "success",
+                    title: "Berhasil",
+                    text: `${addedCount} siswa boarding berhasil ditambahkan ke daftar!`,
+                    timer: 1500,
+                    showConfirmButton: false,
+                });
+            }
+        },
+    };
+}
+

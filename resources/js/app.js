@@ -1,7 +1,10 @@
 import Alpine from "alpinejs";
+import Swal from "sweetalert2";
 import "trix";
 import "trix/dist/trix.css";
 import "./alignment-elements.js";
+
+window.Swal = Swal;
 
 window.Trix = Trix; // Don't need to bind to the window, but useful for debugging.
 Trix.config.toolbar.getDefaultHTML = toolbarDefaultHTML;
@@ -80,6 +83,7 @@ import {
     verificationPayment,
     accountManagement,
     ujianAssignmentTable,
+    halaqahForm,
 } from "./custom.js";
 
 window.Alpine = Alpine;
@@ -98,4 +102,5 @@ Alpine.data("extraForm", extraForm);
 Alpine.data("verificationPayment", verificationPayment);
 Alpine.data("accountManagement", accountManagement);
 Alpine.data("ujianAssignmentTable", ujianAssignmentTable);
+Alpine.data("halaqahForm", halaqahForm);
 Alpine.start();

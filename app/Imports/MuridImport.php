@@ -35,11 +35,25 @@ class MuridImport implements ToCollection
         }
         
         foreach ($dataExceptFirstRow as $row) {
-            if($row[1] && $row[2] && $row[3])
-            {
-               $userId =  DB::table('users')->insertGetId([
-                    'name'        => $row[1],
-                    'username'    => UserName($row[1]),
+            $name = isset($row[1]) && trim((string) $row[1]) !== '' ? trim((string) $row[1]) : null;
+            $col2 = isset($row[2]) ? trim((string) $row[2]) : '';
+            $col3 = isset($row[3]) ? trim((string) $row[3]) : '';
+
+            if (in_array(strtoupper($col2), ['L', 'P']) && !in_array(strtoupper($col3), ['L', 'P'])) {
+                $genderRaw = $col2;
+                $nis = $col3 !== '' ? $col3 : null;
+            } else {
+                $nis = $col2 !== '' ? $col2 : null;
+                $genderRaw = $col3 !== '' ? $col3 : null;
+            }
+
+            if ($name && $nis) {
+                $genderUpper = strtoupper((string) $genderRaw);
+                $gender = ($genderUpper === 'L' || $genderUpper === '1') ? 1 : 2;
+
+                $userId = DB::table('users')->insertGetId([
+                    'name'        => $name,
+                    'username'    => UserName($name),
                     'password'    => Hash::make('breskul'),
                     'role'        => 2,
                     'status'      => 1,
@@ -48,11 +62,11 @@ class MuridImport implements ToCollection
                 ]);
 
                 $studentId = DB::table('students')->insertGetId([
-                    'name'       => $row[1],
+                    'name'       => $name,
                     'user'       => $userId,
                     'app'        => auth()->user()->app->id,
-                    'gender'     => $row[2] == "L" ? 1 : 0,
-                    'nis'        => $row[3],
+                    'gender'     => $gender,
+                    'nis'        => $nis,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);

@@ -115,6 +115,18 @@
                 @enderror
             </div>
             <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-semibold mb-2">Keterangan Pesantren</label>
+                <select name="boarding"
+                    class="block border border-gray-300 ring-0 rounded-xl px-3 py-2 w-full focus:outline-[#177245]">
+                    <option value="0" @selected(old('boarding', isset($items) ? ($items->boarding ? '1' : '0') : '0') == '0')>Bukan Pesantren</option>
+                    <option value="1" @selected(old('boarding', isset($items) ? ($items->boarding ? '1' : '0') : '0') == '1')>Pesantren</option>
+                </select>
+
+                @error('boarding')
+                <p class="text-red-500 text-xs italic mt-2">{{ $message }}</p>
+                @enderror
+            </div>
+            <div class="mb-4">
                 <label class="block text-gray-700 text-sm font-semibold mb-2">Tempat, Tanggal lahir</label>
                 <div class="flex items-center gap-2">
                     <input type="text" name="place" placeholder="Tempat lahir"

@@ -30,4 +30,9 @@ class Teach extends Model
     {
         return $this->hasOne(App::class, 'id', 'app');
     }
+
+    public function halaqahs()
+    {
+        return $this->hasMany(Halaqah::class, 'teach_id', 'id');
+    }
 }

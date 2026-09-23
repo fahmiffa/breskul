@@ -43,6 +43,8 @@ class AuthController extends Controller
             'password'  => $request->password,
         ];
 
+        // dd($credentials, Auth::attempt($credentials));
+
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
 

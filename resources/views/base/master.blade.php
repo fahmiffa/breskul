@@ -88,6 +88,22 @@
         </span> Jadwal
     </li>
 </a>
+<a href="{{ route('dashboard.master.halaqah.index') }}">
+    <li
+        class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 {{ Route::is('dashboard.master.halaqah.*') ? 'bg-green-100' : null }}">
+        <span class="text-green-500 mr-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="lucide lucide-book-open-text-icon lucide-book-open-text">
+                <path d="M12 7v14" />
+                <path d="M16 12h2" />
+                <path d="M16 8h2" />
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+            </svg>
+        </span> Halaqah
+    </li>
+</a>
 <a href="{{ route('dashboard.master.absensi.index') }}">
     <li
         class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 {{ Route::is('dashboard.master.absensi.*') ? 'bg-green-100' : null }}">
@@ -157,7 +173,7 @@
         Akademik
     </li>
 </a>
-<a href="{{ route('dashboard.master.ekstrakurikuler.index') }}">
+{{-- <a href="{{ route('dashboard.master.ekstrakurikuler.index') }}">
     <li
         class="flex items-center px-4 py-3 border-b border-gray-300 hover:bg-green-100 cursor-pointer  {{ Route::is('dashboard.master.ekstrakurikuler.*') ? 'bg-green-100' : null }}">
         <span class="text-green-500 mr-2">
@@ -171,7 +187,7 @@
             </svg></span>
         {{ config('app.school_mode') ? 'Ekstrakurikuler' : 'UKM' }}
     </li>
-</a>
+</a> --}}
 @endif @if (auth()->user()->role == 3)
 <a href="{{ route('dashboard.master.soal.index') }}">
     <li

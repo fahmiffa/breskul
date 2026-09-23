@@ -43,10 +43,11 @@ class PaymentController extends Controller
             'required' => 'Field Wajib disi',
         ]);
 
-        $item          = new Payment;
-        $item->name    = $request->name;
-        $item->nominal = $request->nominal;
-        $item->app     = auth()->user()->app->id;
+        $item             = new Payment;
+        $item->name       = $request->name;
+        $item->nominal    = $request->nominal;
+        $item->auto_renew = $request->boolean('auto_renew');
+        $item->app        = auth()->user()->app->id;
         $item->save();
 
         return redirect()->route('dashboard.master.pembayaran.index');
@@ -83,9 +84,10 @@ class PaymentController extends Controller
             'required' => 'Field Wajib disi',
         ]);
 
-        $item          = $pembayaran;
-        $item->name    = $request->name;
-        $item->nominal = $request->nominal;
+        $item             = $pembayaran;
+        $item->name       = $request->name;
+        $item->nominal    = $request->nominal;
+        $item->auto_renew = $request->boolean('auto_renew');
         $item->save();
 
         return redirect()->route('dashboard.master.pembayaran.index');

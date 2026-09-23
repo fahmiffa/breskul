@@ -8,3 +8,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 \Illuminate\Support\Facades\Schedule::command('billing:reset')->dailyAt('23:30');
+\Illuminate\Support\Facades\Schedule::command('topup:clean-expired --queue')->everyMinute();

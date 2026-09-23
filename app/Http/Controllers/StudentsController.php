@@ -23,14 +23,15 @@ class StudentsController extends Controller
 
     public function index()
     {
-        $items = Students::latest()
+        $items = Students::with(['reg.kelas', 'reg.prodi'])
+            ->latest()
             ->when(auth()->user()->role == 1 && auth()->user()->app, function ($query) {
                 $query->where('app', auth()->user()->app->id);
             })
             ->get();
 
         $title = "Master " . (config('app.school_mode') ? 'Murid' : 'Mahasiswa');
-        $kelas = Classes::latest()
+        $kelas = (config('app.school_mode') ? Classes::class : Prodi::class)::latest()
             ->when(auth()->user()->role == 1 && auth()->user()->app, function ($query) {
                 $query->where('app', auth()->user()->app->id);
             })
@@ -113,7 +114,7 @@ class StudentsController extends Controller
     {
         $request->validate([
             'file'  => 'required|file|mimes:xlsx,xls,csv',
-            'kelas' => 'required|integer|exists:classes,id',
+            'kelas' => config('app.school_mode') ? 'required|integer|exists:classes,id' : 'required|integer|exists:prodis,id',
         ]);
 
         try {
@@ -184,6 +185,7 @@ class StudentsController extends Controller
         $validated = $request->validate(
             [
                 'gender'        => 'nullable|in:1,2',
+                'boarding'      => 'nullable|boolean',
                 'place'         => 'nullable|string',
                 'birth'         => 'nullable|date',
                 'dad'           => 'nullable|string',
@@ -240,6 +242,7 @@ class StudentsController extends Controller
             $siswa->momJob    = $request->momJob;
             $siswa->hp_parent = $request->hp_parent;
             $siswa->gender    = $request->gender;
+            $siswa->boarding  = $request->boolean('boarding');
             $siswa->save();
 
             $head              = new Head;
@@ -295,6 +298,7 @@ class StudentsController extends Controller
             [
                 // Wajib diisi
                 'gender'        => 'nullable|in:1,2',
+                'boarding'      => 'nullable|boolean',
                 'place'         => 'nullable|string',
                 'birth'         => 'nullable|date',
                 'dad'           => 'nullable|string',
@@ -341,6 +345,7 @@ class StudentsController extends Controller
             $siswa->momJob    = $request->momJob;
             $siswa->hp_parent = $request->hp_parent;
             $siswa->gender    = $request->gender;
+            $siswa->boarding  = $request->boolean('boarding');
             $siswa->save();
 
             // Update Head (active head)
