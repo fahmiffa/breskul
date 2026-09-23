@@ -649,17 +649,26 @@ class ApiController extends Controller
         $user = Auth::user();
 
         if (Auth::user()->role == 2) {
+            $student = $user->studentData;
             return response()->json([
                 'success' => true,
                 'data'    => [
                     'user' => [
-                        'id'     => $user->id,
-                        'name'   => $user->name,
-                        'role'   => $user->role,
-                        'status' => $user->status,
-                        'image'  => $user->image ? asset('storage/' . $user->image) : null,
-                        'induk'  => $user->studentData->nis,
-                        'app'    => $user->studentData->apps->name,
+                        'id'       => $user->id,
+                        'name'     => $user->name,
+                        'role'     => $user->role,
+                        'status'   => $user->status,
+                        'image'    => $user->image ? asset('storage/' . $user->image) : null,
+                        'induk'    => $student?->nis,
+                        'app'      => $student?->apps?->name ?? '-',
+                        'boarding' => (int) ($student?->boarding ? 1 : 0),
+                        'student'  => $student ? [
+                            'id'       => $student->id,
+                            'name'     => $student->name,
+                            'nis'      => $student->nis,
+                            'boarding' => (int) ($student->boarding ? 1 : 0),
+                            'gender'   => $student->gender,
+                        ] : null,
                     ],
                 ],
             ]);
@@ -2228,6 +2237,18 @@ class ApiController extends Controller
             ];
         });
 
+        $myRecord = null;
+        if ($user->role == 2 && isset($student)) {
+            $hs = $halaqah->students->firstWhere('students_id', $student->id);
+            if ($hs) {
+                $myRecord = [
+                    'id'          => $hs->id,
+                    'present_at'  => $hs->present_at ? Carbon::parse($hs->present_at)->format('Y-m-d H:i:s') : null,
+                    'catatan'     => $hs->catatan,
+                ];
+            }
+        }
+
         $data = [
             'id'             => $halaqah->id,
             'nama'           => $halaqah->nama,
@@ -2242,6 +2263,7 @@ class ApiController extends Controller
                 'gender' => $halaqah->teach->jenis ?? null,
                 'image'  => $halaqah->teach->image ? asset('storage/' . $halaqah->teach->image) : null,
             ] : null,
+            'my_record'      => $myRecord,
             'total_students' => $halaqah->students->count(),
             'students'       => $formattedStudents,
         ];
