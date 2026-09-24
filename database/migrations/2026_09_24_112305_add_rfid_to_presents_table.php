@@ -11,9 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('mapel_days', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+        Schema::table('presents', function (Blueprint $table) {
+            $table->bigInteger('rfid')->nullable()->after('id');
         });
     }
 
@@ -22,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('mapel_days');
+        Schema::table('presents', function (Blueprint $table) {
+            $table->dropColumn('rfid');
+        });
     }
 };

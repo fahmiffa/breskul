@@ -174,7 +174,7 @@ class StudentsController extends Controller
         ]);
 
         $murid       = Students::findOrFail($id);
-        $murid->uuid = $request->rfid;
+        $murid->rfid = $request->rfid;
         $murid->save();
 
         return redirect()->back()->with('success', 'RFID berhasil disimpan.');

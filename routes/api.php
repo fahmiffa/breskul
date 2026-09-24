@@ -18,7 +18,7 @@ Route::post('/status', function () {
 });
 
 Route::post('/payment', [ApiController::class, 'paymentWebhook']);
-Route::get('/saldo/uuid/{uuid}', [ApiController::class, 'getSaldoByUuid']);
+Route::get('/saldo/rfid/{rfid}', [ApiController::class, 'getSaldoByRfid']);
 
 Route::prefix('fire')->group(function () {
     Route::post('/refresh', [ApiController::class, 'refresh']);
@@ -51,8 +51,8 @@ Route::middleware('jwt')->group(function () {
     Route::get('/saldo', [ApiController::class, 'getSaldo']);
     Route::get('/saldo/riwayat', [ApiController::class, 'riwayatSaldo']);
     Route::get('/saldo/history', [ApiController::class, 'riwayatSaldo']);
-    Route::get('/saldo/uuid/{uuid}', [ApiController::class, 'getSaldoByUuid']);
-    Route::get('/saldo/{uuid}', [ApiController::class, 'getSaldoByUuid']);
+    Route::get('/saldo/rfid/{rfid}', [ApiController::class, 'getSaldoByRfid']);
+    Route::get('/saldo/{rfid}', [ApiController::class, 'getSaldoByRfid']);
 
     // Topup API (Role 2 / Siswa)
     Route::post('/topup', [ApiController::class, 'generateTopup']);

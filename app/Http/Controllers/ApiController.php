@@ -228,7 +228,7 @@ class ApiController extends Controller
         $body     = $request->all();
         if ($device) {
 
-            $be = Students::where('uuid', $request->uid)->first();
+            $be = Students::where('rfid', $request->uid)->first();
             if ($be) {
                 Log::channel('absensi')->info('Data cek diterima', [
                     'device_id' => $deviceId,
@@ -271,7 +271,7 @@ class ApiController extends Controller
         $body     = $request->all();
         if ($device) {
 
-            $be = Students::where('uuid', $request->uid)->first();
+            $be = Students::where('rfid', $request->uid)->first();
             if ($be) {
                 Log::channel('absensi')->info('Data absensi diterima', [
                     'device_id' => $deviceId,
@@ -346,15 +346,15 @@ class ApiController extends Controller
             ], 400);
         }
 
-        $uid = $request->uid ?? $request->uuid;
+        $uid = $request->uid ?? $request->rfid;
         if (empty($uid)) {
             return response()->json([
                 'success' => false,
-                'msg'     => 'Kartu error: UID/UUID wajib diisi',
+                'msg'     => 'Kartu error: UID/RFID wajib diisi',
             ], 400);
         }
 
-        $be = Students::where('uuid', $uid)->first();
+        $be = Students::where('rfid', $uid)->first();
         if (!$be) {
             Log::channel('absensi')->info('Data kartu ditolak', [
                 'device_id' => $deviceId,
@@ -450,7 +450,7 @@ class ApiController extends Controller
                         'id'   => $be->id,
                         'name' => $be->name,
                         'nis'  => $be->nis,
-                        'uuid' => $be->uuid,
+                        'rfid' => $be->rfid,
                     ],
                     'tipe'              => $tipe,
                     'nominal'           => $nominal,
@@ -730,8 +730,8 @@ class ApiController extends Controller
      */
     public function getSaldo(Request $request)
     {
-        if ($request->filled('uuid')) {
-            return $this->getSaldoByUuid($request->uuid);
+        if ($request->filled('rfid')) {
+            return $this->getSaldoByRfid($request->rfid);
         }
 
         $user = Auth::user();
@@ -772,7 +772,7 @@ class ApiController extends Controller
                     'id'        => $student->id,
                     'name'      => $student->name,
                     'nis'       => $student->nis,
-                    'uuid'      => $student->uuid,
+                    'rfid'      => $student->rfid,
                     'boarding'  => (bool) $student->boarding,
                     'pesantren' => $student->pesantren ?? ($student->boarding ? 'Pesantren' : 'Bukan Pesantren'),
                 ],
@@ -787,22 +787,22 @@ class ApiController extends Controller
     }
 
     /**
-     * Endpoint Saldo berdasarkan field uuid dari Model Students
+     * Endpoint Saldo berdasarkan field rfid dari Model Students
      */
-    public function getSaldoByUuid($uuid)
+    public function getSaldoByRfid($rfid)
     {
-        if (empty($uuid)) {
+        if (empty($rfid)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Parameter UUID tidak boleh kosong.',
+                'message' => 'Parameter RFID tidak boleh kosong.',
             ], 400);
         }
 
-        $student = Students::where('uuid', $uuid)->first();
+        $student = Students::where('rfid', $rfid)->first();
         if (!$student) {
             return response()->json([
                 'success' => false,
-                'message' => 'Data siswa dengan UUID tersebut tidak ditemukan.',
+                'message' => 'Data siswa dengan RFID tersebut tidak ditemukan.',
             ], 404);
         }
 
@@ -811,7 +811,7 @@ class ApiController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Berhasil mengambil data saldo berdasarkan UUID',
+            'message' => 'Berhasil mengambil data saldo berdasarkan RFID',
             'data'    => [
                 'nominal'           => $nominal,
                 'nominal_rupiah'    => 'Rp ' . number_format($nominal, 0, ',', '.'),
@@ -820,7 +820,7 @@ class ApiController extends Controller
                     'id'        => $student->id,
                     'name'      => $student->name,
                     'nis'       => $student->nis,
-                    'uuid'      => $student->uuid,
+                    'rfid'      => $student->rfid,
                     'boarding'  => (bool) $student->boarding,
                     'pesantren' => $student->pesantren ?? ($student->boarding ? 'Pesantren' : 'Bukan Pesantren'),
                 ],
