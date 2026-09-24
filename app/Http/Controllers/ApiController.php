@@ -2532,7 +2532,7 @@ class ApiController extends Controller
     public function postAbsensiApiKey(Request $request)
     {
         $deviceId = $request->header('Device-ID', 'UNKNOWN_DEVICE');
-        $device   = ApiKey::where('Absensi', $deviceId)->first();
+        $device   = ApiKey::where('key', $deviceId)->first();
 
         if (!$device) {
             return response()->json([
