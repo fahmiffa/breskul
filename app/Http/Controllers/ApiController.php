@@ -2571,8 +2571,16 @@ class ApiController extends Controller
             ], 404);
         }
 
-        // Simpan gambar ke storage public
-        $imgPath = $request->file('img')->store('absensi', 'public');
+        // Simpan gambar dan compress
+        $image = $request->file('img');
+        $filename = 'absensi/' . time() . '_' . $request->rfid . '.jpg';
+        
+        $imgManager = new \Intervention\Image\ImageManager(new \Intervention\Image\Drivers\Gd\Driver());
+        $processedImage = $imgManager->read($image->getRealPath())
+            ->scale(width: 800) // Scale to max width 800
+            ->toJpeg(quality: 60); // Compress with 60% quality
+
+        Storage::disk('public')->put($filename, $processedImage->toString());
 
         $present = new Present();
         $present->student_id = $student->id;
@@ -2580,7 +2588,7 @@ class ApiController extends Controller
         $present->app        = $student->app ?? null;
         $present->waktu      = Carbon::parse($request->waktu)->format('Y-m-d H:i:s');
         $present->status     = $request->status;
-        $present->img        = $imgPath;
+        $present->img        = $filename;
         $present->save();
 
         return response()->json([
