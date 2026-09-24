@@ -306,10 +306,23 @@
         <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md" @click.away="showRfidModal = false">
             <h2 class="text-lg font-semibold mb-4">RFID</h2>
 
+            <!-- Status RFID saat ini -->
+            <div class="mb-4 p-3 rounded-lg" :class="rfid ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'">
+                <div class="flex items-center gap-2">
+                    <span class="inline-block w-3 h-3 rounded-full" :class="rfid ? 'bg-green-500' : 'bg-red-500'"></span>
+                    <span class="text-sm font-medium" :class="rfid ? 'text-green-700' : 'text-red-700'" x-text="rfid ? 'RFID Terdaftar' : 'RFID Belum Terdaftar'"></span>
+                </div>
+                <template x-if="rfid">
+                    <p class="mt-1 text-sm text-green-600 font-mono ml-5" x-text="rfid"></p>
+                </template>
+            </div>
+
             <form :action="'/dashboard/master/rfid/' + selectedStudentId" method="POST">
                 @csrf
                 <div class="mb-4">
-                    <input type="text" name="rfid" required :value="rfid"
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Kode RFID</label>
+                    <input type="text" name="rfid" required x-model="rfid"
+                        placeholder="Tap kartu RFID atau ketik manual..."
                         class="border border-gray-300 rounded px-3 py-2 w-full focus:outline-[#177245]" />
                 </div>
 
