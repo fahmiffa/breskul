@@ -4,6 +4,7 @@ use App\Http\Controllers\ApiController;
 use App\Http\Controllers\Home;
 use Illuminate\Support\Facades\Route;
 
+Route::post('/absensi-device', [ApiController::class, 'postAbsensiApiKey']);
 Route::post('/webhook', [Home::class, 'midtransHook']);
 Route::post('/push', [ApiController::class, 'rfid']);
 Route::post('/saldo/transaksi', [ApiController::class, 'rfidRiwayatSaldo']);

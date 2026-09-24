@@ -2525,4 +2525,68 @@ class ApiController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Endpoint POST Absensi dengan Proteksi API Key (Device-ID)
+     */
+    public function postAbsensiApiKey(Request $request)
+    {
+        $deviceId = $request->header('Device-ID', 'UNKNOWN_DEVICE');
+        $device   = ApiKey::where('name', $deviceId)->first();
+
+        if (!$device) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Device-ID tidak valid.'
+            ], 401);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'rfid'   => 'required|string',
+            'waktu'  => 'required|date',
+            'status' => 'required|string|in:masuk,pulang',
+            'img'    => 'required|image|mimes:jpeg,png,jpg|max:2048',
+        ], [
+            'required' => 'Field :attribute wajib diisi.',
+            'image'    => 'Field :attribute harus berupa gambar.',
+            'mimes'    => 'Field :attribute harus berformat jpeg, png, atau jpg.',
+            'max'      => 'Ukuran gambar maksimal 2MB.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Semua field wajib diisi dengan benar.',
+                'errors'  => $validator->errors()
+            ], 400);
+        }
+
+        // Cari data murid berdasarkan rfid
+        $student = Students::where('rfid', $request->rfid)->first();
+        
+        if (!$student) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Siswa dengan RFID tersebut tidak ditemukan.'
+            ], 404);
+        }
+
+        // Simpan gambar ke storage public
+        $imgPath = $request->file('img')->store('absensi', 'public');
+
+        $present = new Present();
+        $present->student_id = $student->id;
+        $present->rfid       = $request->rfid;
+        $present->app        = $student->app ?? null;
+        $present->waktu      = Carbon::parse($request->waktu)->format('Y-m-d H:i:s');
+        $present->status     = $request->status;
+        $present->img        = $imgPath;
+        $present->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data absensi berhasil disimpan.',
+            'data'    => $present
+        ], 201);
+    }
 }
