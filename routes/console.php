@@ -9,3 +9,5 @@ Artisan::command('inspire', function () {
 
 \Illuminate\Support\Facades\Schedule::command('billing:reset')->dailyAt('23:30');
 \Illuminate\Support\Facades\Schedule::command('topup:clean-expired --queue')->everyMinute();
+
+\Illuminate\Support\Facades\Schedule::job(new \App\Jobs\ProcessAutoPayBills)->everyMinute();
