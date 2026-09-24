@@ -1036,6 +1036,19 @@ class ApiController extends Controller
             'expired_at'    => $expiredAt,
         ]);
 
+        // Generate Dynamic QRIS from total_nominal
+        $qrisString = null;
+        $qrImageUrl = null;
+        try {
+            $staticQris = env('QRIS');
+            if ($staticQris) {
+                $qrisString = QrisLogic::generateDynamicQris($staticQris, $totalNominal);
+                $qrImageUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' . urlencode($qrisString);
+            }
+        } catch (\Exception $e) {
+            // QRIS generation failed, continue without it
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Permintaan top up berhasil dibuat.',
@@ -1048,6 +1061,8 @@ class ApiController extends Controller
                 'kode_unik'         => $topup->kode_unik,
                 'total_nominal'     => (float) $topup->total_nominal,
                 'total_rupiah'      => 'Rp ' . number_format($topup->total_nominal, 0, ',', '.'),
+                'qris_string'       => $qrisString,
+                'qr_image_url'      => $qrImageUrl,
                 'status'            => $topup->status,
                 'is_expired'        => $topup->is_expired,
                 'expired_at'        => $topup->expired_at?->format('Y-m-d H:i:s'),
