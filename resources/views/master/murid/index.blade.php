@@ -306,7 +306,7 @@
         <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md" @click.away="showRfidModal = false">
             <h2 class="text-lg font-semibold mb-4">RFID</h2>
 
-            <form :action="'/dashboard/master/uuid/' + selectedStudentId" method="POST">
+            <form :action="'/dashboard/master/rfid/' + selectedStudentId" method="POST">
                 @csrf
                 <div class="mb-4">
                     <input type="text" name="rfid" required :value="rfid"

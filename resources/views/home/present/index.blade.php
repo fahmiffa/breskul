@@ -40,13 +40,14 @@
                     <th @click="sortBy('name')" class="cursor-pointer px-4 py-2">Nama</th>
                     <th class="px-4 py-2">Waktu</th>
                     <th class="px-4 py-2 text-center">Status</th>
+                    <th class="px-4 py-2 text-center">Foto</th>
                 </tr>
             </thead>
             <tbody>
                 <template x-for="(row, index) in paginatedData()" :key="row.id">
                     <tr class="border-t border-gray-300 hover:bg-gray-50">
                         <td class="px-4 py-2" x-text="((currentPage - 1) * perPage) + index + 1"></td>
-                        <td class="px-4 py-2 font-medium" x-text="row.murid.name"></td>
+                        <td class="px-4 py-2 font-medium" x-text="row.murid ? row.murid.name : '-'"></td>
                         <td class="px-4 py-2" x-text="row.time"></td>
                         <td class="px-4 py-2 text-center">
                             <template x-if="row.status">
@@ -65,10 +66,18 @@
                                 </span>
                             </template>
                         </td>
+                        <td class="px-4 py-2 text-center">
+                            <template x-if="row.img">
+                                <img :src="'/storage/' + row.img" class="h-12 w-12 object-cover rounded-md shadow-sm mx-auto hover:scale-150 transition-transform duration-200" alt="Foto Absen">
+                            </template>
+                            <template x-if="!row.img">
+                                <span class="text-xs text-gray-400">-</span>
+                            </template>
+                        </td>
                     </tr>
                 </template>
                 <tr x-show="filteredData().length === 0">
-                    <td colspan="4" class="text-center px-4 py-2 text-gray-500">No results found.</td>
+                    <td colspan="5" class="text-center px-4 py-2 text-gray-500">No results found.</td>
                 </tr>
             </tbody>
         </table>

@@ -2532,7 +2532,7 @@ class ApiController extends Controller
     public function postAbsensiApiKey(Request $request)
     {
         $deviceId = $request->header('Device-ID', 'UNKNOWN_DEVICE');
-        $device   = ApiKey::where('Absensi', $deviceId)->first();
+        $device   = ApiKey::where('name', $deviceId)->first();
 
         if (!$device) {
             return response()->json([
@@ -2571,16 +2571,8 @@ class ApiController extends Controller
             ], 404);
         }
 
-        // Simpan gambar dan compress
-        $image = $request->file('img');
-        $filename = 'absensi/' . time() . '_' . $request->rfid . '.jpg';
-        
-        $imgManager = new \Intervention\Image\ImageManager(new \Intervention\Image\Drivers\Gd\Driver());
-        $processedImage = $imgManager->read($image->getRealPath())
-            ->scale(width: 800) // Scale to max width 800
-            ->toJpeg(quality: 60); // Compress with 60% quality
-
-        Storage::disk('public')->put($filename, $processedImage->toString());
+        // Simpan gambar ke storage public
+        $imgPath = $request->file('img')->store('absensi', 'public');
 
         $present = new Present();
         $present->student_id = $student->id;
@@ -2588,7 +2580,7 @@ class ApiController extends Controller
         $present->app        = $student->app ?? null;
         $present->waktu      = Carbon::parse($request->waktu)->format('Y-m-d H:i:s');
         $present->status     = $request->status;
-        $present->img        = $filename;
+        $present->img        = $imgPath;
         $present->save();
 
         return response()->json([
