@@ -200,11 +200,11 @@
                                 </button>
                             </form>
 
-                            @if(config('app.uuid'))
-                            <button @click="showRfidModal = true; selectedStudentId = row.id; rfid = row.uuid"
+                            @if(config('app.rfid'))
+                            <button @click="showRfidModal = true; selectedStudentId = row.id; rfid = row.rfid"
                                 :class="{
-                                        'bg-green-500 hover:bg-green-700': row.uuid,
-                                        'bg-red-500 hover:bg-red-700': !row.uuid
+                                        'bg-green-500 hover:bg-green-700': row.rfid,
+                                        'bg-red-500 hover:bg-red-700': !row.rfid
                                     }"
                                 class="cursor-pointer text-xs text-white font-semibold py-2 px-3 rounded-2xl focus:outline-none focus:shadow-outline">
                                 <div class="flex gap-2 items-center">
