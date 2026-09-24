@@ -977,11 +977,11 @@ class ApiController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'nominal' => 'required|numeric|min:1000',
+            'nominal' => 'required|numeric|min:12000',
         ], [
             'nominal.required' => 'Nominal top up wajib diisi.',
             'nominal.numeric'  => 'Nominal top up harus berupa angka.',
-            'nominal.min'      => 'Nominal top up minimal Rp 1.000.',
+            'nominal.min'      => 'Nominal top up minimal Rp 12.000.',
         ]);
 
         if ($validator->fails()) {
@@ -990,6 +990,24 @@ class ApiController extends Controller
                 'message' => $validator->errors()->first(),
                 'errors'  => $validator->errors(),
             ], 422);
+        }
+
+        // Cek apakah masih ada topup pending yang belum expired
+        $pendingTopup = Topup::where('student_id', $student->id)
+            ->where('status', 'pending')
+            ->where('expired_at', '>', Carbon::now())
+            ->first();
+
+        if ($pendingTopup) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda masih memiliki topup yang belum dibayar. Silakan selesaikan atau tunggu hingga kadaluarsa.',
+                'data'    => [
+                    'id'            => $pendingTopup->id,
+                    'total_rupiah'  => 'Rp ' . number_format($pendingTopup->total_nominal, 0, ',', '.'),
+                    'expired_at'    => $pendingTopup->expired_at?->format('Y-m-d H:i:s'),
+                ],
+            ], 409);
         }
 
         $nominal = (float) $request->nominal;
