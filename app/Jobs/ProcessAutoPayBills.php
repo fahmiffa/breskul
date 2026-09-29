@@ -82,6 +82,17 @@ class ProcessAutoPayBills implements ShouldQueue
                                 'students_id' => $student->id,
                             ]);
 
+                            \App\Models\Kas::create([
+                                'tipe'       => 'pemasukan',
+                                'nominal'    => $nominalTagihan,
+                                'keterangan' => 'Pembayaran otomatis tagihan: ' . ($payment->name ?? 'Tagihan') . ' (Siswa: ' . $student->name . ')',
+                                'kategori'   => 'Pembayaran Otomatis',
+                                'tanggal'    => now()->toDateString(),
+                                'app'        => $student->app ?? null,
+                                'user_id'    => $student->users ? $student->users->id : null,
+                                'referensi'  => 'Bill ID: ' . $bill->id,
+                            ]);
+
                             DB::commit();
                             Log::info("AutoPay: Berhasil bayar tagihan ID {$bill->id} untuk siswa {$student->name}");
 

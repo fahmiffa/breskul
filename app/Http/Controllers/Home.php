@@ -563,6 +563,21 @@ class Home extends Controller
             $bill->status = 1;
             $bill->save();
 
+            // Tambahkan ke Kas
+            $student = $bill->head->murid ?? null;
+            $studentName = $student ? $student->name : '-';
+            
+            \App\Models\Kas::create([
+                'tipe'       => 'pemasukan',
+                'nominal'    => $bill->payment->nominal ?? 0,
+                'keterangan' => 'Verifikasi pembayaran tagihan: ' . ($bill->payment->name ?? 'Tagihan') . ' (Siswa: ' . $studentName . ')',
+                'kategori'   => 'Pembayaran Manual',
+                'tanggal'    => now()->toDateString(),
+                'app'        => $student->app ?? (auth()->user()->app->id ?? null),
+                'user_id'    => auth()->id(),
+                'referensi'  => 'Bill ID: ' . $bill->id,
+            ]);
+
             // Send FCM Notification
             if ($bill->head && $bill->head->murid && $bill->head->murid->users) {
                 $message = [

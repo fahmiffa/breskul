@@ -27,6 +27,10 @@ Route::prefix('dashboard')->middleware('auth')->name('dashboard.')->group(functi
     Route::resource('saldo', App\Http\Controllers\SaldoController::class);
     Route::get('/topup', [App\Http\Controllers\TopupController::class, 'index'])->name('topup.index');
     Route::post('/topup/verifikasi', [App\Http\Controllers\TopupController::class, 'verify'])->name('topup.verify');
+    Route::get('/kas', [App\Http\Controllers\KasController::class, 'index'])->name('kas.index');
+    Route::post('/kas', [App\Http\Controllers\KasController::class, 'store'])->name('kas.store');
+    Route::put('/kas/{id}', [App\Http\Controllers\KasController::class, 'update'])->name('kas.update');
+    Route::delete('/kas/{id}', [App\Http\Controllers\KasController::class, 'destroy'])->name('kas.destroy');
     Route::get('/absensi', [Home::class, 'absensi'])->name('absensi');
     Route::get('setting', [Home::class, 'setting'])->name('setting');
     Route::post('/pass', [Home::class, 'pass'])->name('pass');

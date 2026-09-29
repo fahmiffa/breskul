@@ -201,6 +201,20 @@
         </span> Topup
     </li>
 </a>
+<a href="{{ route('dashboard.kas.index') }}">
+    <li
+        class="flex flex-col justify-center items-center p-2.5 sm:p-4 border border-gray-200 rounded-xl shadow-sm hover:bg-green-100 bg-white text-center h-full text-xs sm:text-sm font-medium transition-colors {{ Route::is('dashboard.kas.*') ? 'bg-green-100' : null }}">
+        <span class="text-green-500 mb-1.5 sm:mb-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="lucide lucide-book-text w-5 h-5 sm:w-6 sm:h-6">
+                <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/>
+                <path d="M8 11h8"/>
+                <path d="M8 7h6"/>
+            </svg>
+        </span> Kas
+    </li>
+</a>
 
 {{-- === PENGATURAN === --}}
 <li class="col-span-full border-b border-gray-200 mt-2 pb-2">
