@@ -5,10 +5,7 @@
                 class="font-light"></span>
         </div>
         <nav class="space-x-6">
-            <a href="{{ route('dashboard.home') }}"
-                class="@if (Route::is('dashboard.home')) font-semibold @endif ">Home</a>
-            <a href="{{ auth()->user()->role == 3 ? route('dashboard.master.soal.index') : route('dashboard.master.index') }}"
-                class="@if (Route::is('dashboard.master.*')) font-semibold @endif ">Master</a>
+            <a href="{{ route('dashboard.home') }}" class="font-semibold">Dashboard</a>
         </nav>
         <div class="flex space-x-4">
             <div class="font-semibold hidden md:flex">{{auth()->user()->name}}</div>
@@ -48,15 +45,7 @@
         </div>
 
         <div class="block md:hidden items-center">
-            <button @click="toggleSidebarMobile" class="text-gray-50 hover:text-black">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                    class="lucide lucide-menu-icon lucide-menu">
-                    <path d="M4 12h16" />
-                    <path d="M4 18h16" />
-                    <path d="M4 6h16" />
-                </svg>
-            </button>
+            <!-- Sidebar toggle removed -->
         </div>
     </div>
 </div>

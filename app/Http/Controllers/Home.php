@@ -92,6 +92,7 @@ class Home extends Controller
     {
         $start = $request->get('start_date', date('Y-m-d'));
         $end   = $request->get('end_date', date('Y-m-d'));
+        $type  = $request->get('type');
 
         $items = Present::query()
             ->whereDate('waktu', '>=', $start)
@@ -99,11 +100,17 @@ class Home extends Controller
             ->when(auth()->user()->role == 1 && auth()->user()->app, function ($query) {
                 $query->where('app', auth()->user()->app->id);
             })
-            ->with('murid')
-            ->latest()
+            ->when($type === 'murid', function ($query) {
+                $query->whereNotNull('student_id');
+            })
+            ->when($type === 'guru', function ($query) {
+                $query->whereNotNull('teacher_id');
+            })
+            ->with(['murid', 'guru'])
+            ->latest('waktu')
             ->get();
 
-        return view('home.present.index', compact('items', 'start', 'end'));
+        return view('home.present.index', compact('items', 'start', 'end', 'type'));
     }
 
     public function akun()

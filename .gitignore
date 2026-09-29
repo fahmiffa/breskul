@@ -28,3 +28,5 @@ Dockerfile
 /storage/framework/sessions/
 /storage/framework/views/
 /storage/framework/testing/
+breskul_api_collection.json
+update_collection.py

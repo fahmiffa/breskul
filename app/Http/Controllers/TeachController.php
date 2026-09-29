@@ -44,6 +44,7 @@ class TeachController extends Controller
                 'gender' => 'nullable|in:1,2',
                 'alamat' => 'required|string',
                 "name"   => "required",
+                "jenjang" => "nullable|in:tk,sd,smp,sma",
             ],
             [
                 'required' => 'Field Wajib disi',
@@ -73,6 +74,7 @@ class TeachController extends Controller
             $items->name    = $request->name;
             $items->alamat  = $request->alamat;
             $items->gender  = $request->gender;
+            $items->jenjang = $request->jenjang;
             $items->app     = auth()->user()->app->id;
             $items->save();
 
@@ -113,6 +115,7 @@ class TeachController extends Controller
                 'gender' => 'nullable|in:1,2',
                 'alamat' => 'required|string',
                 "name"   => "required",
+                "jenjang" => "nullable|in:tk,sd,smp,sma",
             ],
             [
                 'required' => 'Field Wajib disi',
@@ -131,6 +134,7 @@ class TeachController extends Controller
             $items->name   = $request->name;
             $items->alamat = $request->alamat;
             $items->gender = $request->gender;
+            $items->jenjang = $request->jenjang;
             $items->save();
 
             DB::commit();

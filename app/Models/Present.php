@@ -6,14 +6,24 @@ use Illuminate\Database\Eloquent\Model;
 
 class Present extends Model
 {
-    protected $hidden = ['created_at', 'updated_at' , 'deleted_at','waktu'];
-    protected $appends = ['time'];   
+    protected $hidden = ['created_at', 'updated_at', 'deleted_at', 'waktu'];
+    protected $appends = ['time', 'name', 'tipe'];   
 
     public function gettimeAttribute()
     {
-            $date = Carbon::parse($this->waktu)
-                ->locale('id');
-            return $date->translatedFormat('l, d F Y H:i:s');
+        $date = Carbon::parse($this->waktu)
+            ->locale('id');
+        return $date->translatedFormat('l, d F Y H:i:s');
+    }
+
+    public function getNameAttribute()
+    {
+        return $this->murid?->name ?? $this->guru?->name ?? '-';
+    }
+
+    public function getTipeAttribute()
+    {
+        return $this->teacher_id ? 'Guru' : 'Murid';
     }
 
     public function murid()

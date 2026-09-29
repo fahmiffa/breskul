@@ -1,82 +1,11 @@
-@if(auth()->user()->role != 3)
-<a href="{{ route('dashboard.pengumuman.index') }}">
-    <li
-        class="flex items-center px-4 py-3 border-b border-green-300 hover:bg-green-100 {{ Route::is('dashboard.pengumuman.*') ? 'bg-green-100' : null }}">
-        <span class="text-green-500 mr-2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                class="lucide lucide-file-input-icon lucide-file-input">
-                <path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4" />
-                <path d="M14 2v4a2 2 0 0 0 2 2h4" />
-                <path d="M2 15h10" />
-                <path d="m9 18 3-3-3-3" />
-            </svg>
-        </span> Pengumuman
-    </li>
-</a>
-<a href="{{ route('dashboard.pay') }}">
-    <li
-        class="flex items-center px-4 py-3 border-b border-green-300 hover:bg-green-100 {{ Route::is('dashboard.pay') ? 'bg-green-100' : null }}">
-        <span class="text-green-500 mr-2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                class="lucide lucide-banknote-icon lucide-banknote">
-                <rect width="20" height="12" x="2" y="6" rx="2" />
-                <circle cx="12" cy="12" r="2" />
-                <path d="M6 12h.01M18 12h.01" />
-            </svg>
-        </span> Pembayaran
-    </li>
-<a href="{{ route('dashboard.saldo.index') }}">
-    <li
-        class="flex items-center px-4 py-3 border-b border-green-300 hover:bg-green-100 {{ Route::is('dashboard.saldo.*') ? 'bg-green-100' : null }}">
-        <span class="text-green-500 mr-2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                class="lucide lucide-wallet-cards">
-                <rect width="18" height="18" x="3" y="3" rx="2" />
-                <path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2" />
-                <path d="M3 11h3c.8 0 1.6.3 2.1.9l1.1 1.2c.5.5 1.2.9 2 .9h7.8" />
-            </svg>
-        </span> Saldo
-    </li>
-</a>
-<a href="{{ route('dashboard.absensi') }}">
-    <li
-        class="flex items-center px-4 py-3 border-b border-green-300 hover:bg-green-100 {{ Route::is('dashboard.absensi') ? 'bg-green-100' : null }}">
-        <span class="text-green-500 mr-2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                class="lucide lucide-user-round-check-icon lucide-user-round-check">
-                <path d="M2 21a8 8 0 0 1 13.292-6" />
-                <circle cx="10" cy="8" r="5" />
-                <path d="m16 19 2 2 4-4" />
-            </svg>
-        </span> Absensi
-    </li>
-</a>
-{{-- <a href="{{ route('dashboard.ekstrakurikuler.index') }}">
-    <li
-        class="flex items-center px-4 py-3 border-b border-green-300 hover:bg-green-100 {{ Route::is('dashboard.ekstrakurikuler.*') ? 'bg-green-100' : null }}">
-        <span class="text-green-500 mr-2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                class="lucide lucide-users-round-icon lucide-users-round">
-                <path d="M18 20a6 6 0 0 0-12 0" />
-                <circle cx="12" cy="10" r="4" />
-                <circle cx="6" cy="10" r="1" />
-                <circle cx="18" cy="10" r="1" />
-            </svg>
-        </span> {{ config('app.school_mode') ? 'Ekstrakurikuler' : 'UKM' }}
-    </li>
-</a> --}}
-@endif
-
 @if(auth()->user()->role == 3)
+<li class="col-span-full border-b border-gray-200 mt-2 pb-2">
+    <h3 class="text-base sm:text-lg font-semibold text-gray-700">Ujian</h3>
+</li>
 <a href="{{ route('dashboard.penjadwalan-ujian.index') }}">
-    <li class="flex items-center px-4 py-3 border-b border-green-300 hover:bg-green-100 {{ Route::is('dashboard.penjadwalan-ujian.*') ? 'bg-green-100' : null }}">
-        <span class="text-green-500 mr-2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-check">
+    <li class="flex flex-col justify-center items-center p-2.5 sm:p-4 border border-gray-200 rounded-xl shadow-sm hover:bg-green-100 bg-white text-center h-full text-xs sm:text-sm font-medium transition-colors {{ Route::is('dashboard.penjadwalan-ujian.*') ? 'bg-green-100' : null }}">
+        <span class="text-green-500 mb-1.5 sm:mb-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-check w-5 h-5 sm:w-6 sm:h-6">
                 <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
                 <line x1="16" y1="2" x2="16" y2="6" />
                 <line x1="8" y1="2" x2="8" y2="6" />

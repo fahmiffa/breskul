@@ -13,6 +13,7 @@
 </div>
 
 @if(auth()->user()->role != 3)
+{{-- === RINGKASAN INFORMASI (Admin) === --}}
 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
     @if(config('app.school_mode'))
     <div class="bg-white p-4 rounded-xl shadow-md border border-gray-100 flex flex-col items-center justify-center">
@@ -43,20 +44,51 @@
     </div>
 </div>
 
-<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
     <!-- Payment Chart -->
-    <div class="bg-white rounded-xl shadow-md p-6 border border-gray-100">
-        <h3 class="text-lg font-semibold text-gray-700 mb-4">Grafik Pembayaran ({{ $year }})</h3>
-        <canvas id="paymentChart"></canvas>
+    <div class="bg-white rounded-2xl shadow-md p-4 sm:p-6 border border-gray-100 flex flex-col justify-between">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+            <div>
+                <h3 class="text-base sm:text-lg font-bold text-gray-800">Grafik Pembayaran ({{ $year }})</h3>
+                <p class="text-xs text-gray-400">Ringkasan transaksi lunas & tagihan</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 text-xs">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-50 text-green-700 font-medium border border-green-200/60">
+                    <span class="w-2 h-2 rounded-full bg-green-600"></span>
+                    Lunas: Rp {{ number_format(array_sum($paymentData ?? []), 0, ',', '.') }}
+                </span>
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-50 text-red-700 font-medium border border-red-200/60">
+                    <span class="w-2 h-2 rounded-full bg-red-600"></span>
+                    Tagihan: Rp {{ number_format(array_sum($unpaidPaymentData ?? []), 0, ',', '.') }}
+                </span>
+            </div>
+        </div>
+        <div class="relative w-full h-72 sm:h-80">
+            <canvas id="paymentChart"></canvas>
+        </div>
     </div>
 
     <!-- Attendance Chart -->
-    <div class="bg-white rounded-xl shadow-md p-6 border border-gray-100">
-        <h3 class="text-lg font-semibold text-gray-700 mb-4">Grafik Absensi ({{ date('F Y') }})</h3>
-        <canvas id="attendanceChart"></canvas>
+    <div class="bg-white rounded-2xl shadow-md p-4 sm:p-6 border border-gray-100 flex flex-col justify-between">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+            <div>
+                <h3 class="text-base sm:text-lg font-bold text-gray-800">Grafik Absensi ({{ date('F Y') }})</h3>
+                <p class="text-xs text-gray-400">Statistik kehadiran harian bulan ini</p>
+            </div>
+            <div class="flex items-center gap-2 text-xs">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 font-medium border border-blue-200/60">
+                    <span class="w-2 h-2 rounded-full bg-blue-600"></span>
+                    Total: {{ array_sum($attendanceData ?? []) }} Kehadiran
+                </span>
+            </div>
+        </div>
+        <div class="relative w-full h-72 sm:h-80">
+            <canvas id="attendanceChart"></canvas>
+        </div>
     </div>
 </div>
 @else
+{{-- === RINGKASAN INFORMASI (Guru) === --}}
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
     <!-- Payment Summary Card -->
     <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl shadow-lg p-6 text-white relative overflow-hidden">
@@ -169,6 +201,15 @@
     </div>
 </div>
 @endif
+
+{{-- === MENU APLIKASI === --}}
+<div class="mb-8">
+    <h2 class="text-xl font-semibold text-gray-800 mb-4">Menu</h2>
+    <ul class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 sm:gap-4">
+        @include('base.home')
+        @include('base.master')
+    </ul>
+</div>
 @endsection
 
 @if(auth()->user()->role != 3)
@@ -182,34 +223,55 @@
         data: {
             labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
             datasets: [{
-                    label: 'Total Lunas (Rp)',
+                    label: 'Total Lunas',
                     data: @json($paymentData ?? []),
-                    backgroundColor: 'rgba(22, 163, 74, 0.7)', // Green-600
+                    backgroundColor: 'rgba(22, 163, 74, 0.85)', // Green-600
                     borderColor: 'rgba(22, 163, 74, 1)',
                     borderWidth: 1,
                     borderRadius: 4,
-                    barPercentage: 0.5,
+                    barPercentage: 0.7,
                     categoryPercentage: 0.8
                 },
                 {
-                    label: 'Total Tagihan (Rp)',
+                    label: 'Total Tagihan',
                     data: @json($unpaidPaymentData ?? []),
-                    backgroundColor: 'rgba(220, 38, 38, 0.7)', // Red-600
+                    backgroundColor: 'rgba(220, 38, 38, 0.85)', // Red-600
                     borderColor: 'rgba(220, 38, 38, 1)',
                     borderWidth: 1,
                     borderRadius: 4,
-                    barPercentage: 0.5,
+                    barPercentage: 0.7,
                     categoryPercentage: 0.8
                 }
             ]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
             plugins: {
                 legend: {
-                    position: 'bottom'
+                    position: 'bottom',
+                    labels: {
+                        boxWidth: 12,
+                        padding: 12,
+                        font: {
+                            size: 11
+                        }
+                    }
                 },
                 tooltip: {
+                    padding: 10,
+                    cornerRadius: 8,
+                    titleFont: {
+                        size: 12,
+                        weight: 'bold'
+                    },
+                    bodyFont: {
+                        size: 11
+                    },
                     callbacks: {
                         label: function(context) {
                             let label = context.dataset.label || '';
@@ -219,7 +281,8 @@
                             if (context.parsed.y !== null) {
                                 label += new Intl.NumberFormat('id-ID', {
                                     style: 'currency',
-                                    currency: 'IDR'
+                                    currency: 'IDR',
+                                    maximumFractionDigits: 0
                                 }).format(context.parsed.y);
                             }
                             return label;
@@ -234,6 +297,9 @@
                         color: '#f3f4f6'
                     },
                     ticks: {
+                        font: {
+                            size: 10
+                        },
                         callback: function(value) {
                             return new Intl.NumberFormat('id-ID', {
                                 notation: "compact",
@@ -245,6 +311,13 @@
                 x: {
                     grid: {
                         display: false
+                    },
+                    ticks: {
+                        font: {
+                            size: 10
+                        },
+                        maxRotation: 0,
+                        autoSkip: false
                     }
                 }
             }
@@ -258,28 +331,70 @@
         data: {
             labels: @json($attendanceLabels ?? []),
             datasets: [{
-                label: 'Jumlah Kehadiran',
+                label: 'Kehadiran',
                 data: @json($attendanceData ?? []),
-                borderColor: '#3b82f6',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                borderColor: '#2563eb',
+                backgroundColor: 'rgba(37, 99, 235, 0.12)',
                 fill: true,
-                tension: 0.4,
-                pointRadius: 3,
-                pointHoverRadius: 5
+                tension: 0.3,
+                borderWidth: 2.5,
+                pointRadius: 2.5,
+                pointHoverRadius: 6,
+                pointHitRadius: 15,
+                pointBackgroundColor: '#2563eb',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 1.5
             }]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
             plugins: {
                 legend: {
-                    position: 'bottom'
+                    position: 'bottom',
+                    labels: {
+                        boxWidth: 12,
+                        padding: 12,
+                        font: {
+                            size: 11
+                        }
+                    }
+                },
+                tooltip: {
+                    padding: 10,
+                    cornerRadius: 8,
+                    titleFont: {
+                        size: 12,
+                        weight: 'bold'
+                    },
+                    bodyFont: {
+                        size: 11
+                    },
+                    callbacks: {
+                        title: function(context) {
+                            if (context.length > 0) {
+                                return 'Tanggal ' + context[0].label + ' {{ date("F Y") }}';
+                            }
+                            return '';
+                        },
+                        label: function(context) {
+                            return (context.dataset.label || 'Kehadiran') + ': ' + context.parsed.y + ' orang';
+                        }
+                    }
                 }
             },
             scales: {
                 y: {
                     beginAtZero: true,
                     ticks: {
-                        stepSize: 1
+                        precision: 0,
+                        font: {
+                            size: 10
+                        }
                     },
                     grid: {
                         color: '#f3f4f6'
@@ -288,6 +403,14 @@
                 x: {
                     grid: {
                         display: false
+                    },
+                    ticks: {
+                        font: {
+                            size: 10
+                        },
+                        maxRotation: 0,
+                        autoSkip: true,
+                        maxTicksLimit: 10
                     }
                 }
             }

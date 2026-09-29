@@ -1699,3 +1699,103 @@ export function halaqahForm(config = {}) {
     };
 }
 
+export const absensiTable = (data, initialType = "") => {
+    return {
+        ...dataTable(data),
+        filterType: initialType,
+
+        filteredData() {
+            let temp = this.rows.filter((row) => {
+                const searchLower = this.search.toLowerCase();
+                const name = (row.name || (row.murid ? row.murid.name : (row.guru ? row.guru.name : ""))).toLowerCase();
+                const time = (row.time || "").toLowerCase();
+                const status = (row.status || "").toLowerCase();
+                const tipe = (row.tipe || (row.teacher_id ? "guru" : "murid")).toLowerCase();
+
+                const matchesSearch =
+                    searchLower === "" ||
+                    name.includes(searchLower) ||
+                    time.includes(searchLower) ||
+                    status.includes(searchLower);
+
+                let matchesType = true;
+                if (this.filterType === "murid") {
+                    matchesType = row.student_id != null || tipe === "murid";
+                } else if (this.filterType === "guru") {
+                    matchesType = row.teacher_id != null || tipe === "guru";
+                }
+
+                return matchesSearch && matchesType;
+            });
+
+            temp.sort((a, b) => {
+                let valA = a[this.sortColumn] || "";
+                let valB = b[this.sortColumn] || "";
+
+                if (this.sortColumn === "name") {
+                    valA = a.name || (a.murid ? a.murid.name : (a.guru ? a.guru.name : ""));
+                    valB = b.name || (b.murid ? b.murid.name : (b.guru ? b.guru.name : ""));
+                }
+
+                if (typeof valA === "string") valA = valA.toLowerCase();
+                if (typeof valB === "string") valB = valB.toLowerCase();
+
+                if (valA < valB) return this.sortAsc ? -1 : 1;
+                if (valA > valB) return this.sortAsc ? 1 : -1;
+                return 0;
+            });
+
+            return temp;
+        },
+
+        countMurid() {
+            return this.rows.filter((r) => r.student_id != null || (r.tipe && r.tipe.toLowerCase() === "murid")).length;
+        },
+
+        countGuru() {
+            return this.rows.filter((r) => r.teacher_id != null || (r.tipe && r.tipe.toLowerCase() === "guru")).length;
+        },
+
+        photoModalOpen: false,
+        activePhoto: null,
+        zoomLevel: 1,
+
+        openPhotoModal(row) {
+            if (!row || !row.img) return;
+            this.activePhoto = row;
+            this.zoomLevel = 1;
+            this.photoModalOpen = true;
+        },
+
+        closePhotoModal() {
+            this.photoModalOpen = false;
+            this.activePhoto = null;
+            this.zoomLevel = 1;
+        },
+
+        zoomIn() {
+            if (this.zoomLevel < 3.5) {
+                this.zoomLevel = +(this.zoomLevel + 0.25).toFixed(2);
+            }
+        },
+
+        zoomOut() {
+            if (this.zoomLevel > 0.5) {
+                this.zoomLevel = +(this.zoomLevel - 0.25).toFixed(2);
+            }
+        },
+
+        resetZoom() {
+            this.zoomLevel = 1;
+        },
+
+        handleWheel(event) {
+            if (event.deltaY < 0) {
+                this.zoomIn();
+            } else {
+                this.zoomOut();
+            }
+        },
+    };
+};
+

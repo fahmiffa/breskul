@@ -84,11 +84,13 @@ import {
     accountManagement,
     ujianAssignmentTable,
     halaqahForm,
+    absensiTable,
 } from "./custom.js";
 
 window.Alpine = Alpine;
 Alpine.data("layout", layout);
 Alpine.data("dataTable", dataTable);
+Alpine.data("absensiTable", absensiTable);
 Alpine.data("salesChart", salesChart);
 Alpine.data("payChart", payChart);
 Alpine.data("countUp", countUp);

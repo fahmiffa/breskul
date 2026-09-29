@@ -35,13 +35,10 @@
         @include('base.header')
 
         <!-- MAIN CONTENT -->
-        <main class="max-w-7xl mx-auto mt-6 px-6 grid grid-cols-1 md:grid-cols-5 gap-6">
-
-            <!-- SIDEBAR -->
-            @include('base.side')
+        <main class="max-w-7xl mx-auto mt-6 px-6 grid grid-cols-1 gap-6">
 
             <!-- CONTENT -->
-            <section class="col-span-4">
+            <section class="col-span-1">
 
                 @if (session('success'))
                     <div x-data="{ show: true }" x-show="show"

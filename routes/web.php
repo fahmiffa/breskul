@@ -25,6 +25,8 @@ Route::prefix('dashboard')->middleware('auth')->name('dashboard.')->group(functi
     Route::post('/pembayaran', [Home::class, 'assignPay']);
     Route::post('/pembayaran/verifikasi', [Home::class, 'manualVerify'])->name('pay.verify');
     Route::resource('saldo', App\Http\Controllers\SaldoController::class);
+    Route::get('/topup', [App\Http\Controllers\TopupController::class, 'index'])->name('topup.index');
+    Route::post('/topup/verifikasi', [App\Http\Controllers\TopupController::class, 'verify'])->name('topup.verify');
     Route::get('/absensi', [Home::class, 'absensi'])->name('absensi');
     Route::get('setting', [Home::class, 'setting'])->name('setting');
     Route::post('/pass', [Home::class, 'pass'])->name('pass');
