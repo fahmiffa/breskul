@@ -221,10 +221,10 @@ class ApiController extends Controller
         ]);
     }
 
-    public function rfid(Request $request)
+    public function saldoGate(Request $request)
     {
         $deviceId = $request->header('Device-ID', 'UNKNOWN_DEVICE');
-        $device   = ApiKey::where('name', $deviceId)->first();
+        $device   = ApiKey::where('key', $deviceId)->first();
         $body     = $request->all();
         if ($device) {
 
@@ -237,7 +237,7 @@ class ApiController extends Controller
 
                 return response()->json([
                     'success' => true,
-                    'msg'     => "Saldo Anda : Rp " . number_format($be->saldo?->nominal ?? 0, 0, ',', '.'),
+                    'msg'     => "Saldo ". number_format($be->saldo?->nominal ?? 0, 0, ',', '.'),
                 ], 200);
             } else {
                 Log::channel('absensi')->info('Data kartu ditolak', [
@@ -264,10 +264,10 @@ class ApiController extends Controller
         }
     }
 
-    public function rfidAbsen(Request $request)
+    public function absenGate(Request $request)
     {
         $deviceId = $request->header('Device-ID', 'UNKNOWN_DEVICE');
-        $device   = ApiKey::where('name', $deviceId)->first();
+        $device   = ApiKey::where('key', $deviceId)->first();
         $body     = $request->all();
         if ($device) {
 

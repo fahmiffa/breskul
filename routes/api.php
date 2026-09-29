@@ -6,15 +6,21 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/absensi-device', [ApiController::class, 'postAbsensiApiKey']);
 Route::post('/webhook', [Home::class, 'midtransHook']);
-Route::post('/push', [ApiController::class, 'rfid']);
 Route::post('/saldo/transaksi', [ApiController::class, 'rfidRiwayatSaldo']);
-Route::post('/rfid-absen', [ApiController::class, 'rfidAbsen']);
+if(ENV('SALDO'))
+{
+    Route::post('/push', [ApiController::class, 'saldoGate']);
+}
+else
+{
+    Route::post('/push', [ApiController::class, 'absenGate']);
+}
 
 Route::post('/status', function () {
     return response()->json([
         'status' => true,
         'message' => 'Mohon maaf, aplikasi sedang dalam perbaikan.\nSilahkan coba lagi secara berkala',
-        'version' => '1.0.0+22'
+        'version' => '1.0.0+24'
     ], 200);
 });
 

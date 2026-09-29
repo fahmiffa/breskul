@@ -24,10 +24,10 @@ class CleanExpiredTopupsJob implements ShouldQueue
      */
     public function handle(TopupService $topupService): void
     {
-        Log::info('CleanExpiredTopupsJob: Memulai proses auto delete data topup expired via Queue Worker.');
+        // Log::info('CleanExpiredTopupsJob: Memulai proses auto delete data topup expired via Queue Worker.');
 
         $deletedCount = $topupService->deleteExpiredTopups();
 
-        Log::info("CleanExpiredTopupsJob: Selesai. Sebanyak {$deletedCount} data topup telah di-soft-delete.");
+        // Log::info("CleanExpiredTopupsJob: Selesai. Sebanyak {$deletedCount} data topup telah di-soft-delete.");
     }
 }

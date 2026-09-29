@@ -35,8 +35,8 @@ class CleanExpiredTopups extends Command
             return;
         }
 
-        $this->info('Menjalankan pembersihan topup expired secara sinkron...');
+        // $this->info('Menjalankan pembersihan topup expired secara sinkron...');
         $count = $topupService->deleteExpiredTopups();
-        $this->info("Pembersihan selesai: {$count} data topup expired berhasil di-soft-delete.");
+        // $this->info("Pembersihan selesai: {$count} data topup expired berhasil di-soft-delete.");
     }
 }

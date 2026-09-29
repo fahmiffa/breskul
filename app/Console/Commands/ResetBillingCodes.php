@@ -29,7 +29,7 @@ class ResetBillingCodes extends Command
      */
     public function handle()
     {
-        Log::info('START billing:reset: Cleaning up unpaid bills unique codes.');
+        // Log::info('START billing:reset: Cleaning up unpaid bills unique codes.');
         
         // Query bills where status is 0 (Unpaid) and have a unique_code
         // We do typically reset them so they can get a NEW code for the NEW day if they try to pay again.
@@ -42,7 +42,7 @@ class ResetBillingCodes extends Command
             ]);
 
             $this->info("Reset complete. {$count} bills updated.");
-            Log::info("END billing:reset: {$count} bills updated.");
+            // Log::info("END billing:reset: {$count} bills updated.");
             
             $now = now();
             $oneDay = $now->addDay()->toDateString();
@@ -73,6 +73,6 @@ class ResetBillingCodes extends Command
                 }
              });
         }
-        Log::info('reset kode unik');
+        // Log::info('reset kode unik');
     }
 }
