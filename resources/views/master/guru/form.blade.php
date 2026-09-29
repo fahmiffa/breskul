@@ -36,6 +36,21 @@
                     @enderror
                 </div>
                 <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-semibold mb-2">Jenjang</label>
+                    <select name="jenjang"
+                        class="block border border-gray-300 ring-0 rounded-xl px-3 py-2 w-full focus:outline-[#177245]">
+                        <option value="">Pilih Jenjang</option>
+                        <option value="tk" @selected(old('jenjang', $items->jenjang ?? '') == 'tk')>TK</option>
+                        <option value="sd" @selected(old('jenjang', $items->jenjang ?? '') == 'sd')>SD</option>
+                        <option value="smp" @selected(old('jenjang', $items->jenjang ?? '') == 'smp')>SMP</option>
+                        <option value="sma" @selected(old('jenjang', $items->jenjang ?? '') == 'sma')>SMA</option>
+                    </select>
+    
+                    @error('jenjang')
+                        <p class="text-red-500 text-xs italic mt-2">{{ $message }}</p>
+                    @enderror
+                </div>
+                <div class="mb-4">
                     <label class="block text-gray-700 text-sm font-semibold mb-2">Alamat</label>
                     <textarea name="alamat" class="border border-gray-300  ring-0 rounded-xl px-3 py-2 w-full focus:outline-[#177245]">{{ old('alamat', $items->alamat ?? '') }}</textarea>
                     @error('alamat')

@@ -21,6 +21,7 @@
                         <th @click="sortBy('name')" class="cursor-pointer px-4 py-2">Nama</th>
                         <th @click="sortBy('jenis')" class="cursor-pointer px-4 py-2">Jenis Kelamin</th>
                         <th class="cursor-pointer px-4 py-2">Alamat</th>
+                        <th class="cursor-pointer px-4 py-2">Jenjang</th>
                         <th class="px-4 py-2">Action</th>
                     </tr>
                 </thead>
@@ -31,6 +32,7 @@
                             <td class="px-4 py-2" x-text="row.name"></td>
                             <td class="px-4 py-2" x-text="row.jenis"></td>
                             <td class="px-4 py-2" x-text="row.alamat"></td>
+                            <td class="px-4 py-2 uppercase" x-text="row.jenjang"></td>
                             <td class="px-4 py-2 flex items-center gap-1">
                                 <a :href="'/dashboard/master/guru/' + row.id + '/edit'"
                                     class="text-green-600 hover:text-green-700">
@@ -65,7 +67,7 @@
                         </tr>
                     </template>
                     <tr x-show="filteredData().length === 0">
-                        <td colspan="3" class="text-center px-4 py-2 text-gray-500">No results found.</td>
+                        <td colspan="6" class="text-center px-4 py-2 text-gray-500">No results found.</td>
                     </tr>
                 </tbody>
             </table>
