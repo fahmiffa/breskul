@@ -1,7 +1,7 @@
 {{-- === AKADEMIK === --}}
 @if(auth()->user()->role != 3)
 <li class="col-span-full border-b border-gray-200 mt-2 pb-2">
-    <h3 class="text-base sm:text-lg font-semibold text-gray-700">Akademik</h3>
+    <h3 class="text-base sm:text-lg font-semibold text-gray-700">Operasional</h3>
 </li>
 <a href="{{ route('dashboard.pengumuman.index') }}">
     <li
@@ -61,22 +61,6 @@
                 <circle cx="8" cy="11" r="2" />
             </svg></span>
         {{ config('app.school_mode') ? 'Guru' : 'Dosen' }}
-    </li>
-</a>
-<a href="{{ route('dashboard.master.karyawan.index') }}">
-    <li
-        class="flex flex-col justify-center items-center p-2.5 sm:p-4 border border-gray-200 rounded-xl shadow-sm hover:bg-green-100 bg-white text-center h-full cursor-pointer text-xs sm:text-sm font-medium transition-colors {{ Route::is('dashboard.master.karyawan.*') ? 'bg-green-100' : null }}">
-        <span class="text-green-500 mb-1.5 sm:mb-2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                class="lucide lucide-contact-icon lucide-contact w-5 h-5 sm:w-6 sm:h-6">
-                <path d="M16 2v2" />
-                <path d="M7 22v-2a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2" />
-                <path d="M8 2v2" />
-                <circle cx="12" cy="11" r="3" />
-                <rect x="3" y="4" width="18" height="18" rx="2" />
-            </svg></span>
-        Karyawan
     </li>
 </a>
 <a href="{{ route('dashboard.master.jadwal.index') }}">
@@ -236,6 +220,22 @@
 <li class="col-span-full border-b border-gray-200 mt-2 pb-2">
     <h3 class="text-base sm:text-lg font-semibold text-gray-700">Master</h3>
 </li>
+<a href="{{ route('dashboard.master.karyawan.index') }}">
+    <li
+        class="flex flex-col justify-center items-center p-2.5 sm:p-4 border border-gray-200 rounded-xl shadow-sm hover:bg-green-100 bg-white text-center h-full cursor-pointer text-xs sm:text-sm font-medium transition-colors {{ Route::is('dashboard.master.karyawan.*') ? 'bg-green-100' : null }}">
+        <span class="text-green-500 mb-1.5 sm:mb-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="lucide lucide-contact-icon lucide-contact w-5 h-5 sm:w-6 sm:h-6">
+                <path d="M16 2v2" />
+                <path d="M7 22v-2a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2" />
+                <path d="M8 2v2" />
+                <circle cx="12" cy="11" r="3" />
+                <rect x="3" y="4" width="18" height="18" rx="2" />
+            </svg></span>
+        Karyawan
+    </li>
+</a>
 <a href="{{ route('dashboard.master.akun.index') }}">
     <li
         class="flex flex-col justify-center items-center p-2.5 sm:p-4 border border-gray-200 rounded-xl shadow-sm hover:bg-green-100 bg-white text-center h-full cursor-pointer text-xs sm:text-sm font-medium transition-colors {{ Route::is('dashboard.master.akun.*') ? 'bg-green-100' : null }}">

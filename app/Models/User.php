@@ -11,7 +11,7 @@ use Tymon\JWTAuth\Contracts\JWTSubject;
 class User extends Authenticatable implements JWTSubject
 {
 
-    protected $appends = ['state', 'roles', 'data'];
+    protected $appends = ['state', 'roles', 'data', 'jabatan_name'];
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
@@ -26,6 +26,10 @@ class User extends Authenticatable implements JWTSubject
             return "Admin";
         }
 
+        if ($this->role == 1) {
+            return "Admin App";
+        }
+
         if ($this->role == 3) {
             return "Guru";
         }
@@ -33,6 +37,23 @@ class User extends Authenticatable implements JWTSubject
         if ($this->role == 2) {
             return "Siswa";
         }
+
+        if ($this->role == 4) {
+            return "Karyawan";
+        }
+
+        return "User";
+    }
+
+    public function getJabatanNameAttribute()
+    {
+        if ($this->jabatan) {
+            return $this->jabatan->name;
+        }
+        if ($this->employeeData && $this->employeeData->jabatan) {
+            return $this->employeeData->jabatan->name;
+        }
+        return null;
     }
 
     public function app()

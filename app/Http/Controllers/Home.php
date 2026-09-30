@@ -119,19 +119,21 @@ class Home extends Controller
         $isAppUser = auth()->user()->role == 1 && $appId;
 
         $items = User::latest()
-            ->whereIn('role', [2, 3])
+            ->whereIN('role', [2, 3, 4]) // Role 2 is Siswa, Role 3 is Guru, Role 4 is Karyawan
             ->when($isAppUser, function ($query) use ($appId) {
                 $query->where(function ($q) use ($appId) {
                     $q->whereHas('teacherData', function ($q) use ($appId) {
                         $q->where('app', $appId);
                     })->orWhereHas('studentData', function ($q) use ($appId) {
                         $q->where('app', $appId);
-                    })->orwhereHas('employeeData', function ($q) use ($appId) {
+                    })->orWhereHas('employeeData', function ($q) use ($appId) {
                         $q->where('app_id', $appId);
+                    })->orWhereHas('app', function ($q) use ($appId) {
+                        $q->where('id', $appId);
                     });
                 });
             })
-            ->with(['teacherData', 'studentData.reg.kelas', 'studentData.reg.prodi'])
+            ->with(['teacherData', 'studentData.reg.kelas', 'studentData.reg.prodi', 'employeeData.jabatan', 'jabatan'])
             ->get();
 
         $classes = [];
@@ -145,7 +147,9 @@ class Home extends Controller
             })->get();
         }
 
-        return view('master.akun.index', compact('items', 'classes'));
+        $jabatans = \App\Models\Jabatan::orderBy('name', 'asc')->get();
+
+        return view('master.akun.index', compact('items', 'classes', 'jabatans'));
     }
 
     public function exportAkun(Request $request)

@@ -16,9 +16,21 @@
                 class="w-full md:w-1/3 border border-gray-300  ring-0 rounded-xl px-3 py-2 focus:outline-[#177245]" />
             <select x-model="filterRole"
                 class="border border-gray-300 ring-0 rounded-xl px-3 py-2 focus:outline-[#177245]">
-                <option value="">Semua Tipe</option>
-                <option value="Guru">Guru</option>
-                <option value="Siswa">Siswa</option>
+                <option value="">Semua Tipe / Jabatan</option>
+                <optgroup label="Tipe Account">
+                    <option value="Admin">Admin</option>
+                    <option value="Admin App">Admin App</option>
+                    <option value="Guru">Guru</option>
+                    <option value="Siswa">Siswa</option>
+                    <option value="Karyawan">Karyawan</option>
+                </optgroup>
+                @if(isset($jabatans) && count($jabatans) > 0)
+                <optgroup label="Jabatan">
+                    @foreach($jabatans as $j)
+                    <option value="{{ $j->name }}">{{ $j->name }}</option>
+                    @endforeach
+                </optgroup>
+                @endif
             </select>
             <select x-model="filterKelas" x-show="filterRole === 'Siswa' || filterRole === ''"
                 class="border border-gray-300 ring-0 rounded-xl px-3 py-2 focus:outline-[#177245]">
@@ -47,8 +59,8 @@
                     <th class="px-4 py-2">No</th>
                     <th @click="sortBy('name')" class="cursor-pointer px-4 py-2">Nama</th>
                     <th class="px-4 py-2">Username</th>
-                    <th class="px-4 py-2">Kelas</th>
-                    <th class="px-4 py-2">Tipe</th>
+                    <th class="px-4 py-2">{{ config('app.school_mode') ? 'Kelas' : 'Prodi' }}</th>
+                    <th class="px-4 py-2">Tipe / Jabatan</th>
                     <th class="px-4 py-2">Status</th>
                     <th class="px-4 py-2">Opsi</th>
                 </tr>
@@ -62,7 +74,12 @@
                         <td class="px-4 py-2">
                             <span x-text="row.student_data && row.student_data.reg ? (row.student_data.reg.kelas ? row.student_data.reg.kelas.name : (row.student_data.reg.prodi ? row.student_data.reg.prodi.name : '-')) : '-'"></span>
                         </td>
-                        <td class="px-4 py-2" x-text="row.roles"></td>
+                        <td class="px-4 py-2">
+                            <span class="font-medium" x-text="row.roles"></span>
+                            <template x-if="row.jabatan_name || (row.jabatan && row.jabatan.name) || (row.employee_data && row.employee_data.jabatan && row.employee_data.jabatan.name)">
+                                <span class="text-xs text-gray-500 block" x-text="row.jabatan_name || (row.jabatan ? row.jabatan.name : (row.employee_data ? row.employee_data.jabatan.name : ''))"></span>
+                            </template>
+                        </td>
                         <td class="px-4 py-2">
                             <span :class="row.status == 1 ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100'"
                                 class="px-2 py-1 rounded-full text-xs font-medium"

@@ -1250,7 +1250,7 @@ export function accountManagement(data, schoolMode = false) {
 
         init() {
             this.$watch("filterRole", (val) => {
-                if (val === "Guru") {
+                if (val !== "Siswa") {
                     this.filterKelas = "";
                 }
             });
@@ -1268,8 +1268,14 @@ export function accountManagement(data, schoolMode = false) {
                     rowName.includes(searchLower) ||
                     rowUsername.includes(searchLower);
 
+                const rowJabatan = row.jabatan_name ||
+                    (row.jabatan ? row.jabatan.name : null) ||
+                    (row.employee_data && row.employee_data.jabatan ? row.employee_data.jabatan.name : null);
+
                 const matchesRole =
-                    this.filterRole === "" || row.roles === this.filterRole;
+                    this.filterRole === "" ||
+                    row.roles === this.filterRole ||
+                    rowJabatan === this.filterRole;
 
                 let matchesKelas = true;
                 if (this.filterKelas !== "") {

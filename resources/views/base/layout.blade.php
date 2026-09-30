@@ -109,6 +109,20 @@
             </section>
 
         </main>
+
+        @if (!Route::is('dashboard.home'))
+            <!-- Floating Quick Navigation Button to Dashboard -->
+            <a href="{{ route('dashboard.home') }}"
+                title="Kembali ke Dashboard"
+                class="fixed bottom-6 right-6 z-40 bg-green-600 hover:bg-green-700 text-white p-3.5 sm:px-4 sm:py-3 rounded-full shadow-2xl flex items-center gap-2 text-sm font-semibold transition-all duration-200 hover:scale-105 active:scale-95 border-2 border-white">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                    <polyline points="9 22 9 12 15 12 15 22" />
+                </svg>
+                <span class="hidden sm:inline">Kembali</span>
+            </a>
+        @endif
     @else
         @yield('content')
     @endif
