@@ -61,11 +61,14 @@ class EmployeeController extends Controller
         DB::beginTransaction();
 
         try {
+            $jabatan = $request->jabatan_id ? Jabatan::find($request->jabatan_id) : null;
+            $isGuru  = $jabatan && (stripos($jabatan->name, 'guru') !== false || stripos($jabatan->name, 'dosen') !== false);
+
             $userId = DB::table('users')->insertGetId([
                 'name'       => $request->name,
                 'username'   => UserName($request->name),
                 'password'   => Hash::make('binainsantaqwa'),
-                'role'       => 3,
+                'role'       => $isGuru ? 3 : 4,
                 'status'     => 1,
                 'nomor'      => $request->filled('nomor') ? $request->nomor : null,
                 'email'      => $request->filled('email') ? $request->email : null,
@@ -73,6 +76,7 @@ class EmployeeController extends Controller
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+
 
             $employee                = new Employee;
             $employee->app_id        = auth()->user()->app->id ?? null;
@@ -83,8 +87,6 @@ class EmployeeController extends Controller
             $employee->jabatan_id    = $request->jabatan_id;
             $employee->save();
 
-            $jabatan = $request->jabatan_id ? Jabatan::find($request->jabatan_id) : null;
-            $isGuru  = $jabatan && (stripos($jabatan->name, 'guru') !== false || stripos($jabatan->name, 'dosen') !== false);
 
             if ($isGuru) {
                 $teach          = new Teach;
@@ -189,6 +191,7 @@ class EmployeeController extends Controller
                     'name'       => $request->name,
                     'nomor'      => $request->filled('nomor') ? $request->nomor : null,
                     'email'      => $request->filled('email') ? $request->email : null,
+                    'role'       => $isGuru ? 3 : 4,
                     'jabatan_id' => $request->jabatan_id,
                     'updated_at' => now(),
                 ]);

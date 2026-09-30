@@ -578,8 +578,9 @@ class ApiController extends Controller
         $password = $request->input('password');
 
         $user = \App\Models\User::where('email', $login)
+            ->where('status', 1)
             ->orWhere('username', $login)
-            ->whereIn('role', [0, 1, 2, 3])
+            ->whereIn('role', [2, 3, 4])
             ->first();
 
         if (! $user) {
