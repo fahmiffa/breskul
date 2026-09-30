@@ -1442,22 +1442,65 @@ class ApiController extends Controller
         ]);
     }
 
+    private function calculateDistanceInMeters($lat1, $lon1, $lat2, $lon2)
+    {
+        $earthRadius = 6371000; // Radius bumi dalam meter
+        $latFrom = deg2rad(floatval($lat1));
+        $lonFrom = deg2rad(floatval($lon1));
+        $latTo   = deg2rad(floatval($lat2));
+        $lonTo   = deg2rad(floatval($lon2));
+
+        $latDelta = $latTo - $latFrom;
+        $lonDelta = $lonTo - $lonFrom;
+
+        $angle = 2 * asin(sqrt(pow(sin($latDelta / 2), 2) +
+            cos($latFrom) * cos($latTo) * pow(sin($lonDelta / 2), 2)));
+
+        return $angle * $earthRadius;
+    }
+
+    private function getUserAttendanceConfig($user)
+    {
+        $app = $user->role == 2 ? ($user->studentData->app ?? null) : ($user->teacherData->app ?? null);
+        $config = null;
+
+        // Ambil sesuai relasi jabatannya dari model User -> Jabatan -> AttendanceConfig
+        if ($user->jabatan) {
+            $config = $user->jabatan->attendanceConfigs()
+                ->when($app, fn($q) => $q->where('app', $app))
+                ->first();
+
+            if (!$config) {
+                $config = $user->jabatan->attendanceConfigs()->first();
+            }
+        }
+
+        // Fallback jika tidak ditemukan berdasarkan jabatan, cari berdasarkan role & app
+        if (!$config) {
+            $config = AttendanceConfig::where('role', $user->role)
+                ->when($app, fn($q) => $q->where('app', $app))
+                ->first();
+        }
+
+        return $config;
+    }
+
     public function getAbsensiConfig()
     {
         $user = Auth::user();
-        if ($user->role == 2) {
-            $app = $user->studentData->app;
-        } else {
-            $app = $user->teacherData->app;
-        }
+        $config = $this->getUserAttendanceConfig($user);
 
-        $items = AttendanceConfig::where('app', $app)
-            ->where('role', $user->role)
-            ->get();
+        if (!$config) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Konfigurasi absensi tidak ditemukan.',
+                'data'    => null,
+            ], 404);
+        }
 
         return response()->json([
             'success' => true,
-            'data'    => $items,
+            'data'    => $config->load('jabatan'),
         ]);
     }
 
@@ -1469,37 +1512,62 @@ class ApiController extends Controller
         $teacherId = null;
 
         if ($user->role == 2) {
-            $app = $user->studentData->app;
-            $studentId = $user->studentData->id;
+            $app = $user->studentData->app ?? null;
+            $studentId = $user->studentData->id ?? null;
         } else {
-            $app = $user->teacherData->app;
-            $teacherId = $user->teacherData->id;
+            $app = $user->teacherData->app ?? null;
+            $teacherId = $user->teacherData->id ?? null;
         }
 
-        $config = AttendanceConfig::where('app', $app)
-            ->where('role', $user->role)
-            ->first();
+        $config = $this->getUserAttendanceConfig($user);
 
         if (!$config) {
             return response()->json([
                 'success' => false,
-                'message' => 'Jadwal absensi tidak ditemukan untuk hari ini.',
+                'message' => 'Jadwal dan konfigurasi absensi tidak ditemukan untuk akun Anda.',
             ], 400);
         }
 
-        $type = null;
+        // Validasi titik koordinat GPS dari model AttendanceConfig
+        if (!empty($config->lat) && !empty($config->lng)) {
+            $userLat = $request->input('lat') ?? $request->input('latitude');
+            $userLng = $request->input('lng') ?? $request->input('longitude');
+
+            if ($userLat === null || $userLng === null) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Titik koordinat lokasi GPS (lat & lng) wajib disertakan untuk absensi.',
+                ], 400);
+            }
+
+            $distance = $this->calculateDistanceInMeters($userLat, $userLng, $config->lat, $config->lng);
+            $maxRadius = $config->radius ?: 100;
+
+            if ($distance > $maxRadius) {
+                return response()->json([
+                    'success'    => false,
+                    'message'    => 'Anda berada di luar radius area absensi. Jarak Anda: ' . round($distance) . ' meter (maksimal ' . $maxRadius . ' meter).',
+                    'distance'   => round($distance),
+                    'max_radius' => $maxRadius,
+                ], 400);
+            }
+        }
+
+        $type = $request->input('status');
         $now = now();
 
-        if ($now->between(
-            Carbon::createFromTimeString($config->clock_in_start),
-            Carbon::createFromTimeString($config->clock_in_end)
-        )) {
-            $type = 'masuk';
-        } elseif ($now->between(
-            Carbon::createFromTimeString($config->clock_out_start),
-            Carbon::createFromTimeString($config->clock_out_end)
-        )) {
-            $type = 'pulang';
+        if (!$type) {
+            if ($config->clock_in_start && $config->clock_in_end && $now->between(
+                Carbon::createFromTimeString($config->clock_in_start),
+                Carbon::createFromTimeString($config->clock_in_end)
+            )) {
+                $type = 'masuk';
+            } elseif ($config->clock_out_start && $config->clock_out_end && $now->between(
+                Carbon::createFromTimeString($config->clock_out_start),
+                Carbon::createFromTimeString($config->clock_out_end)
+            )) {
+                $type = 'pulang';
+            }
         }
 
         if (!$type) {
@@ -1509,8 +1577,33 @@ class ApiController extends Controller
             ], 400);
         }
 
-        // Check if already absensi today for this type
-        $exists = Present::where('app', $app)
+        // Validasi jam kerja jika status masuk/pulang
+        if ($type === 'masuk') {
+            if ($config->clock_in_start && $config->clock_in_end) {
+                $inStart = Carbon::createFromTimeString($config->clock_in_start);
+                $inEnd   = Carbon::createFromTimeString($config->clock_in_end);
+                if (!$now->between($inStart, $inEnd)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Waktu absensi masuk adalah ' . $config->clock_in_start . ' - ' . $config->clock_in_end . '.',
+                    ], 400);
+                }
+            }
+        } elseif ($type === 'pulang') {
+            if ($config->clock_out_start && $config->clock_out_end) {
+                $outStart = Carbon::createFromTimeString($config->clock_out_start);
+                $outEnd   = Carbon::createFromTimeString($config->clock_out_end);
+                if (!$now->between($outStart, $outEnd)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Waktu absensi pulang adalah ' . $config->clock_out_start . ' - ' . $config->clock_out_end . '.',
+                    ], 400);
+                }
+            }
+        }
+
+        // Cek apakah sudah absensi hari ini untuk tipe status tersebut
+        $exists = Present::when($app, fn($q) => $q->where('app', $app))
             ->when($user->role == 2, function ($q) use ($studentId) {
                 return $q->where('student_id', $studentId);
             }, function ($q) use ($teacherId) {
@@ -1533,9 +1626,16 @@ class ApiController extends Controller
         } else {
             $pres->teacher_id = $teacherId;
         }
-        $pres->app = $app;
-        $pres->waktu = $now;
+        $pres->app    = $app;
+        $pres->waktu  = $now;
         $pres->status = $type;
+
+        $file = $request->file('img') ?? $request->file('image');
+        if ($file) {
+            $imgPath = $file->store('absensi', 'public');
+            $pres->img = $imgPath;
+        }
+
         $pres->save();
 
         if ($user->fcm) {
@@ -1550,9 +1650,12 @@ class ApiController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Absensi ' . $type . ' berhasil.',
-            'data' => [
-                'type' => $type,
-                'waktu' => $pres->time
+            'data'    => [
+                'id'     => $pres->id,
+                'type'   => $type,
+                'status' => $type,
+                'waktu'  => $pres->time,
+                'img'    => $pres->img ? asset('storage/' . $pres->img) : null,
             ]
         ]);
     }

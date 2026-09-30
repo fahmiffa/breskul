@@ -12,4 +12,9 @@ class Jabatan extends Model
     {
         return $this->hasMany(User::class);
     }
+
+    public function attendanceConfigs()
+    {
+        return $this->hasMany(AttendanceConfig::class, 'jabatan_id');
+    }
 }
