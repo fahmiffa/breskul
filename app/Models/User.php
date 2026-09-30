@@ -53,6 +53,11 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasOne(Teach::class, 'user_id', 'id');
     }
 
+    public function employeeData()
+    {
+        return $this->hasOne(Employee::class, 'user_id', 'id');
+    }
+
     public function studentData()
     {
         return $this->hasOne(Students::class, 'user', 'id'); // pastikan foreign key benar
@@ -66,6 +71,11 @@ class User extends Authenticatable implements JWTSubject
     public function saldo()
     {
         return $this->hasOneThrough(Saldo::class, Students::class, 'user', 'students_id', 'id', 'id');
+    }
+
+    public function jabatan()
+    {
+        return $this->belongsTo(Jabatan::class);
     }
 
     /**
@@ -89,7 +99,9 @@ class User extends Authenticatable implements JWTSubject
         'email',
         'username',
         'password',
+        'nomor',
         'image',
+        'jabatan_id',
     ];
 
     /**

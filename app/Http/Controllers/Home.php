@@ -126,6 +126,8 @@ class Home extends Controller
                         $q->where('app', $appId);
                     })->orWhereHas('studentData', function ($q) use ($appId) {
                         $q->where('app', $appId);
+                    })->orwhereHas('employeeData', function ($q) use ($appId) {
+                        $q->where('app_id', $appId);
                     });
                 });
             })

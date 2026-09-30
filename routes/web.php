@@ -73,6 +73,7 @@ Route::prefix('dashboard')->middleware('auth')->name('dashboard.')->group(functi
         Route::get('halaqah/students-by-class', [App\Http\Controllers\HalaqahController::class, 'getStudentsByClass'])->name('halaqah.students-by-class');
         Route::resource('halaqah', App\Http\Controllers\HalaqahController::class);
         Route::resource('absensi', App\Http\Controllers\AttendanceConfigController::class);
+        Route::resource('karyawan', App\Http\Controllers\EmployeeController::class);
         Route::resource('ekstrakurikuler', App\Http\Controllers\ExtracurricularController::class);
         Route::post('soal/import', [App\Http\Controllers\SoalController::class, 'import'])->name('soal.import');
         Route::get('soal/template', [App\Http\Controllers\SoalController::class, 'template'])->name('soal.template');
@@ -81,6 +82,7 @@ Route::prefix('dashboard')->middleware('auth')->name('dashboard.')->group(functi
         Route::middleware(['isRole'])->group(function () {
             Route::resource('app', App\Http\Controllers\AppController::class);
             Route::resource('api', App\Http\Controllers\ApiKeyController::class);
+            Route::resource('jabatan', App\Http\Controllers\JabatanController::class);
         });
         Route::get('/', [Home::class, 'index'])->name('index');
     });

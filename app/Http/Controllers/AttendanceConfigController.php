@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AttendanceConfig;
+use App\Models\Jabatan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -11,7 +12,8 @@ class AttendanceConfigController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $items = AttendanceConfig::where('app', $user->app->id ?? $user->id) // Assuming logic typical for this app
+        $items = AttendanceConfig::with('jabatan')
+            ->where('app', $user->app->id ?? $user->id)
             ->orderBy('role')
             ->get();
             
@@ -22,13 +24,16 @@ class AttendanceConfigController extends Controller
     public function create()
     {
         $title = "Tambah Konfigurasi Absensi";
-        return view('master.absensi.form', compact('title'));
+        $jabatans = Jabatan::orderBy('name')->get();
+        return view('master.absensi.form', compact('title', 'jabatans'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'role' => 'required',
+            'name' => 'required|string|max:255',
+            'jabatan_id' => 'nullable|exists:jabatans,id',
+            'role' => 'nullable',
             'clock_in_start' => 'required',
             'clock_in_end' => 'required',
             'clock_out_start' => 'required',
@@ -39,15 +44,12 @@ class AttendanceConfigController extends Controller
         ]);
 
         $user = Auth::user();
-        // Handle app id, assuming user has app relation or similar logic as other controllers
         $appId = $user->app->id ?? ($user->studentData->app ?? $user->teacherData->app ?? null);
-        
-        // If admin (role 1) usually has direct app or select app? 
-        // Based on MapelDayController:
-        // if (auth()->user()->app) { $item->app = auth()->user()->app->id; }
 
         AttendanceConfig::create([
             'app' => $appId,
+            'name' => $request->name,
+            'jabatan_id' => $request->jabatan_id,
             'role' => $request->role,
             'clock_in_start' => $request->clock_in_start,
             'clock_in_end' => $request->clock_in_end,
@@ -65,13 +67,16 @@ class AttendanceConfigController extends Controller
     {
         $item = AttendanceConfig::findOrFail($id);
         $title = "Edit Konfigurasi Absensi";
-        return view('master.absensi.form', compact('item', 'title'));
+        $jabatans = Jabatan::orderBy('name')->get();
+        return view('master.absensi.form', compact('item', 'title', 'jabatans'));
     }
 
     public function update(Request $request, $id)
     {
         $request->validate([
-            'role' => 'required',
+            'name' => 'required|string|max:255',
+            'jabatan_id' => 'nullable|exists:jabatans,id',
+            'role' => 'nullable',
             'clock_in_start' => 'required',
             'clock_in_end' => 'required',
             'clock_out_start' => 'required',

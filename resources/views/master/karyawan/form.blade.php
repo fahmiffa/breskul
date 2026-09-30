@@ -2,9 +2,9 @@
 @section('title', $action)
 @section('content')
     <div class="flex flex-col bg-white rounded-lg shadow-md p-6">
-        <div class="font-semibold mb-3 text-xl">{{ $action }}</div>
+        <div class="font-semibold mb-3 text-xl">{{ $action }} Karyawan</div>
         <form method="POST"
-            action="{{ isset($items) ? route('dashboard.master.guru.update', ['guru' => $items->id]) : route('dashboard.master.guru.store') }}"
+            action="{{ isset($items) ? route('dashboard.master.karyawan.update', ['karyawan' => $items->id]) : route('dashboard.master.karyawan.store') }}"
             class="grid grid-cols-1">
             @isset($items)
                 @method('PUT')
@@ -15,23 +15,24 @@
                     <label class="block text-gray-700 text-sm font-semibold mb-2">Nama</label>
                     <div class="relative">
                         <input type="text" name="name" value="{{ old('name', $items->name ?? '') }}"
-                            class="border border-gray-300  ring-0 rounded-xl px-3 py-2 w-full  focus:outline-[#177245]">
+                            class="border border-gray-300  ring-0 rounded-xl px-3 py-2 w-full  focus:outline-[#177245]"
+                            required>
                     </div>
                     @error('name')
                         <p class="text-red-500 text-xs italic mt-2">{{ $message }}</p>
                     @enderror
                 </div>
                 <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-semibold mb-2">Gender</label>
-                    <select name="gender"
+                    <label class="block text-gray-700 text-sm font-semibold mb-2">Jenis Kelamin</label>
+                    <select name="jenis_kelamin"
                         class="block border border-gray-300  ring-0 rounded-xl px-3 py-2 w-full focus:outline-[#177245]"
                         required>
-                        <option value="">Pilih Gender</option>
-                        <option value="1" @selected(old('gender', isset($items) && $items->gender) == '1')>Laki-laki</option>
-                        <option value="2" @selected(old('gender', isset($items) && $items->gender) == '2')>Perempuan</option>
+                        <option value="">Pilih Jenis Kelamin</option>
+                        <option value="1" @selected(old('jenis_kelamin', isset($items) && $items->jenis_kelamin) == '1')>Laki-laki</option>
+                        <option value="2" @selected(old('jenis_kelamin', isset($items) && $items->jenis_kelamin) == '2')>Perempuan</option>
                     </select>
-    
-                    @error('gender')
+
+                    @error('jenis_kelamin')
                         <p class="text-red-500 text-xs italic mt-2">{{ $message }}</p>
                     @enderror
                 </div>
@@ -45,15 +46,29 @@
                 </div>
                 <div class="mb-4">
                     <label class="block text-gray-700 text-sm font-semibold mb-2">Email</label>
-                    <input type="email" name="email" value="{{ old('email', $items->user->email ?? '') }}" placeholder="Contoh: guru@example.com"
+                    <input type="email" name="email" value="{{ old('email', $items->user->email ?? '') }}" placeholder="Contoh: karyawan@example.com"
                         class="border border-gray-300  ring-0 rounded-xl px-3 py-2 w-full  focus:outline-[#177245]">
                     @error('email')
                         <p class="text-red-500 text-xs italic mt-2">{{ $message }}</p>
                     @enderror
                 </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-semibold mb-2">Jabatan</label>
+                    <select name="jabatan_id"
+                        class="block border border-gray-300  ring-0 rounded-xl px-3 py-2 w-full focus:outline-[#177245]">
+                        <option value="">Pilih Jabatan</option>
+                        @foreach($jabatans as $jabatan)
+                            <option value="{{ $jabatan->id }}" @selected(old('jabatan_id', $items->jabatan_id ?? '') == $jabatan->id)>{{ $jabatan->name }}</option>
+                        @endforeach
+                    </select>
+
+                    @error('jabatan_id')
+                        <p class="text-red-500 text-xs italic mt-2">{{ $message }}</p>
+                    @enderror
+                </div>
                 <div class="mb-4 md:col-span-2">
                     <label class="block text-gray-700 text-sm font-semibold mb-2">Alamat</label>
-                    <textarea name="alamat" class="border border-gray-300  ring-0 rounded-xl px-3 py-2 w-full focus:outline-[#177245]">{{ old('alamat', $items->alamat ?? '') }}</textarea>
+                    <textarea name="alamat" class="border border-gray-300  ring-0 rounded-xl px-3 py-2 w-full focus:outline-[#177245]" required>{{ old('alamat', $items->alamat ?? '') }}</textarea>
                     @error('alamat')
                         <p class="text-red-500 text-xs italic mt-2">{{ $message }}</p>
                     @enderror

@@ -14,6 +14,8 @@
             <table class="min-w-full bg-white border border-gray-200">
                 <thead>
                     <tr class="bg-gray-100 text-gray-600 uppercase text-sm leading-normal">
+                        <th class="py-3 px-6 text-left">Nama</th>
+                        <th class="py-3 px-6 text-left">Jabatan</th>
                         <th class="py-3 px-6 text-left">Role</th>
                         <th class="py-3 px-6 text-center">Masuk</th>
                         <th class="py-3 px-6 text-center">Pulang</th>
@@ -24,6 +26,18 @@
                 <tbody class="text-gray-600 text-sm font-light">
                     @forelse($items as $item)
                         <tr class="border-b border-gray-200 hover:bg-gray-100">
+                            <td class="py-3 px-6 text-left whitespace-nowrap font-medium">
+                                {{ $item->name ?? '-' }}
+                            </td>
+                            <td class="py-3 px-6 text-left whitespace-nowrap">
+                                @if($item->jabatan)
+                                    <span class="bg-purple-200 text-purple-600 py-1 px-3 rounded-full text-xs">
+                                        {{ $item->jabatan->name }}
+                                    </span>
+                                @else
+                                    <span class="text-xs text-gray-400">-</span>
+                                @endif
+                            </td>
                             <td class="py-3 px-6 text-left whitespace-nowrap">
                                 <span class="bg-{{ $item->role == 3 ? 'blue' : 'green' }}-200 text-{{ $item->role == 3 ? 'blue' : 'green' }}-600 py-1 px-3 rounded-full text-xs">
                                     {{ $item->role == 3 ? 'Guru' : 'Murid' }}
@@ -38,7 +52,12 @@
                             </td>
                             <td class="py-3 px-6 text-center">
                                 @if($item->lat && $item->lng)
-                                    <div class="text-xs text-blue-500">{{ $item->lat }}, {{ $item->lng }}</div>
+                                    <a href="https://www.google.com/maps?q={{ $item->lat }},{{ $item->lng }}" target="_blank" rel="noopener noreferrer" class="text-xs text-blue-500 hover:text-blue-700 hover:underline inline-flex items-center gap-1">
+                                        {{ $item->lat }}, {{ $item->lng }}
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                        </svg>
+                                    </a>
                                     <div class="text-[10px] text-gray-400">R: {{ $item->radius }}m</div>
                                 @else
                                     <span class="text-xs text-gray-400">Belum diset</span>
@@ -65,7 +84,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="py-3 px-6 text-center">Belum ada data konfigurasi.</td>
+                            <td colspan="7" class="py-3 px-6 text-center">Belum ada data konfigurasi.</td>
                         </tr>
                     @endforelse
                 </tbody>

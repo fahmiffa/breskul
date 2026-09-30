@@ -35,4 +35,9 @@ class Teach extends Model
     {
         return $this->hasMany(Halaqah::class, 'teach_id', 'id');
     }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 }
