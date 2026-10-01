@@ -21,6 +21,7 @@ Route::middleware('guest')->group(function () {
 Route::prefix('dashboard')->middleware('auth')->name('dashboard.')->group(function () {
     Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/', [Home::class, 'index'])->name('home');
+    Route::get('/panduan', [Home::class, 'panduan'])->name('panduan');
     Route::get('/pembayaran', [Home::class, 'pembayaran'])->name('pay');
     Route::post('/pembayaran', [Home::class, 'assignPay']);
     Route::post('/pembayaran/verifikasi', [Home::class, 'manualVerify'])->name('pay.verify');

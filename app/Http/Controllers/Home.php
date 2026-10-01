@@ -700,4 +700,10 @@ class Home extends Controller
             ], 500);
         }
     }
+
+    public function panduan()
+    {
+        $title = "Panduan & Petunjuk Penggunaan";
+        return view('panduan.index', compact('title'));
+    }
 }
