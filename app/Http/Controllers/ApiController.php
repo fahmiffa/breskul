@@ -140,7 +140,7 @@ class ApiController extends Controller
                 $q->where('user', $id);
             });
         } else {
-            $teacherId = $user->teacherData->id ?? null;
+            $employeeId = $user->teacherData->id ?? null;
             $items = Present::where('teacher_id', $teacherId);
         }
 
@@ -1462,7 +1462,7 @@ class ApiController extends Controller
 
     private function getUserAttendanceConfig($user)
     {
-        $app = $user->role == 2 ? ($user->studentData->app ?? null) : ($user->teacherData->app ?? null);
+        $app = $user->role == 2 ? ($user->studentData->app ?? null) : ($user->employeeData->app ?? null);
         $config = null;
 
         // Ambil sesuai relasi jabatannya dari model User -> Jabatan -> AttendanceConfig
@@ -1510,14 +1510,14 @@ class ApiController extends Controller
         $user = Auth::user();
         $app = null;
         $studentId = null;
-        $teacherId = null;
+        $employeeId = null;
 
         if ($user->role == 2) {
             $app = $user->studentData->app ?? null;
             $studentId = $user->studentData->id ?? null;
         } else {
-            $app = $user->teacherData->app ?? null;
-            $teacherId = $user->teacherData->id ?? null;
+            $app = $user->employeeData->app ?? null;
+            $employeeId = $user->employeeData->id ?? null;
         }
 
         $config = $this->getUserAttendanceConfig($user);
@@ -1607,8 +1607,8 @@ class ApiController extends Controller
         $exists = Present::when($app, fn($q) => $q->where('app', $app))
             ->when($user->role == 2, function ($q) use ($studentId) {
                 return $q->where('student_id', $studentId);
-            }, function ($q) use ($teacherId) {
-                return $q->where('teacher_id', $teacherId);
+            }, function ($q) use ($employeeId) {
+                return $q->where('employee_id', $employeeId);
             })
             ->whereDate('waktu', $now->toDateString())
             ->where('status', $type)
@@ -1625,7 +1625,7 @@ class ApiController extends Controller
         if ($user->role == 2) {
             $pres->student_id = $studentId;
         } else {
-            $pres->teacher_id = $teacherId;
+            $pres->teacher_id = $employeeId;
         }
         $pres->app    = $app;
         $pres->waktu  = $now;

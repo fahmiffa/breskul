@@ -103,14 +103,56 @@ class Home extends Controller
             ->when($type === 'murid', function ($query) {
                 $query->whereNotNull('student_id');
             })
-            ->when($type === 'guru', function ($query) {
-                $query->whereNotNull('teacher_id');
+            ->when($type === 'karyawan', function ($query) {
+                $query->whereNotNull('employee_id');
             })
-            ->with(['murid', 'guru'])
+            ->with(['murid', 'employee.jabatan'])
             ->latest('waktu')
             ->get();
 
+        if ($request->has('export') && $request->export == 'excel') {
+            return $this->exportAbsensi($items);
+        }
+
         return view('home.present.index', compact('items', 'start', 'end', 'type'));
+    }
+
+    public function exportAbsensi($items)
+    {
+        $headers = [
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=data_absensi.csv",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $columns = ['No', 'Nama', 'Tipe', 'Jabatan (Karyawan)', 'Waktu', 'Status'];
+
+        $callback = function () use ($items, $columns) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $columns);
+
+            foreach ($items as $index => $item) {
+                $jabatan = '-';
+                if ($item->employee_id && $item->employee && $item->employee->jabatan) {
+                    $jabatan = $item->employee->jabatan->name;
+                }
+
+                fputcsv($file, [
+                    $index + 1,
+                    $item->name,
+                    $item->tipe,
+                    $jabatan,
+                    $item->time,
+                    $item->status ?? 'Masuk'
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 
     public function akun()

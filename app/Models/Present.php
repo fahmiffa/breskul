@@ -18,12 +18,12 @@ class Present extends Model
 
     public function getNameAttribute()
     {
-        return $this->murid?->name ?? $this->guru?->name ?? '-';
+        return $this->murid?->name ?? $this->employee?->name ?? '-';
     }
 
     public function getTipeAttribute()
     {
-        return $this->teacher_id ? 'Guru' : 'Murid';
+        return $this->employee_id ? 'Karyawan' : 'Murid';
     }
 
     public function murid()
@@ -31,8 +31,8 @@ class Present extends Model
         return $this->belongsTo(Students::class, 'student_id');
     }
 
-    public function guru()
+    public function employee()
     {
-        return $this->belongsTo(Teach::class, 'teacher_id');
+        return $this->belongsTo(Employee::class, 'employee_id');
     }
 }

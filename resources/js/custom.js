@@ -1713,10 +1713,10 @@ export const absensiTable = (data, initialType = "") => {
         filteredData() {
             let temp = this.rows.filter((row) => {
                 const searchLower = this.search.toLowerCase();
-                const name = (row.name || (row.murid ? row.murid.name : (row.guru ? row.guru.name : ""))).toLowerCase();
+                const name = (row.name || (row.murid ? row.murid.name : (row.employee ? row.employee.name : ""))).toLowerCase();
                 const time = (row.time || "").toLowerCase();
                 const status = (row.status || "").toLowerCase();
-                const tipe = (row.tipe || (row.teacher_id ? "guru" : "murid")).toLowerCase();
+                const tipe = (row.tipe || (row.employee_id ? "karyawan" : "murid")).toLowerCase();
 
                 const matchesSearch =
                     searchLower === "" ||
@@ -1727,8 +1727,8 @@ export const absensiTable = (data, initialType = "") => {
                 let matchesType = true;
                 if (this.filterType === "murid") {
                     matchesType = row.student_id != null || tipe === "murid";
-                } else if (this.filterType === "guru") {
-                    matchesType = row.teacher_id != null || tipe === "guru";
+                } else if (this.filterType === "karyawan") {
+                    matchesType = row.employee_id != null || tipe === "karyawan";
                 }
 
                 return matchesSearch && matchesType;
@@ -1739,8 +1739,8 @@ export const absensiTable = (data, initialType = "") => {
                 let valB = b[this.sortColumn] || "";
 
                 if (this.sortColumn === "name") {
-                    valA = a.name || (a.murid ? a.murid.name : (a.guru ? a.guru.name : ""));
-                    valB = b.name || (b.murid ? b.murid.name : (b.guru ? b.guru.name : ""));
+                    valA = a.name || (a.murid ? a.murid.name : (a.employee ? a.employee.name : ""));
+                    valB = b.name || (b.murid ? b.murid.name : (b.employee ? b.employee.name : ""));
                 }
 
                 if (typeof valA === "string") valA = valA.toLowerCase();
@@ -1758,8 +1758,8 @@ export const absensiTable = (data, initialType = "") => {
             return this.rows.filter((r) => r.student_id != null || (r.tipe && r.tipe.toLowerCase() === "murid")).length;
         },
 
-        countGuru() {
-            return this.rows.filter((r) => r.teacher_id != null || (r.tipe && r.tipe.toLowerCase() === "guru")).length;
+        countKaryawan() {
+            return this.rows.filter((r) => r.employee_id != null || (r.tipe && r.tipe.toLowerCase() === "karyawan")).length;
         },
 
         photoModalOpen: false,

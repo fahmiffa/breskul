@@ -25,9 +25,9 @@
             <label class="text-xs font-bold text-gray-600 uppercase tracking-wider">Tipe</label>
             <select name="type"
                 class="border border-gray-300 rounded-lg px-3 py-2 focus:outline-green-500 focus:ring-1 focus:ring-green-500 text-sm shadow-sm bg-white cursor-pointer min-w-[150px]">
-                <option value="" {{ empty($type) ? 'selected' : '' }}>Semua ({{ config('app.school_mode') ? 'Murid & Guru' : 'Mahasiswa & Dosen' }})</option>
-                <option value="murid" {{ ($type ?? '') == 'murid' ? 'selected' : '' }}>{{ config('app.school_mode') ? 'Murid' : 'Mahasiswa' }}</option>
-                <option value="guru" {{ ($type ?? '') == 'guru' ? 'selected' : '' }}>{{ config('app.school_mode') ? 'Guru' : 'Dosen' }}</option>
+                <option value="" {{ empty($type) ? 'selected' : '' }}>Semua</option>
+                <option value="murid" {{ ($type ?? '') == 'murid' ? 'selected' : '' }}>Murid</option>
+                <option value="karyawan" {{ ($type ?? '') == 'karyawan' ? 'selected' : '' }}>Karyawan</option>
             </select>
         </div>
         <div class="flex gap-2 w-full sm:w-auto">
@@ -39,6 +39,9 @@
             </button>
             <a href="{{ route('dashboard.absensi') }}" class="flex-1 sm:flex-none bg-white hover:bg-gray-100 text-gray-700 border border-gray-300 font-bold py-2 px-5 rounded-lg transition duration-200 text-sm flex items-center justify-center shadow-sm">
                 Reset
+            </a>
+            <a href="{{ route('dashboard.absensi', ['start_date' => $start, 'end_date' => $end, 'type' => $type, 'export' => 'excel']) }}" class="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-5 rounded-lg transition duration-200 text-sm flex items-center justify-center shadow-sm">
+                Export Excel
             </a>
         </div>
     </form>
@@ -62,13 +65,13 @@
                     :class="filterType === 'murid' ? 'bg-white/25 text-white' : 'bg-gray-200 text-gray-600'"
                     x-text="countMurid()"></span>
             </button>
-            <button type="button" @click="filterType = 'guru'"
+            <button type="button" @click="filterType = 'karyawan'"
                 class="px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer border"
-                :class="filterType === 'guru' ? 'bg-purple-600 text-white border-purple-600 shadow-sm' : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-200'">
-                {{ config('app.school_mode') ? 'Guru' : 'Dosen' }}
+                :class="filterType === 'karyawan' ? 'bg-purple-600 text-white border-purple-600 shadow-sm' : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-200'">
+                Karyawan
                 <span class="px-1.5 py-0.5 rounded-full text-[10px]"
-                    :class="filterType === 'guru' ? 'bg-white/25 text-white' : 'bg-gray-200 text-gray-600'"
-                    x-text="countGuru()"></span>
+                    :class="filterType === 'karyawan' ? 'bg-white/25 text-white' : 'bg-gray-200 text-gray-600'"
+                    x-text="countKaryawan()"></span>
             </button>
         </div>
 
@@ -90,6 +93,7 @@
                         </div>
                     </th>
                     <th class="px-4 py-3 text-xs uppercase tracking-wider font-semibold text-center">Tipe</th>
+                    <th class="px-4 py-3 text-xs uppercase tracking-wider font-semibold text-center">Jabatan</th>
                     <th class="px-4 py-3 text-xs uppercase tracking-wider font-semibold">Waktu</th>
                     <th class="px-4 py-3 text-xs uppercase tracking-wider font-semibold text-center">Status</th>
                     <th class="px-4 py-3 text-xs uppercase tracking-wider font-semibold text-center">Foto</th>
@@ -99,13 +103,14 @@
                 <template x-for="(row, index) in paginatedData()" :key="row.id">
                     <tr class="hover:bg-gray-50/80 transition-colors">
                         <td class="px-4 py-3 text-gray-500 text-xs" x-text="((currentPage - 1) * perPage) + index + 1"></td>
-                        <td class="px-4 py-3 font-semibold text-gray-800" x-text="row.name || (row.murid ? row.murid.name : (row.guru ? row.guru.name : '-'))"></td>
+                        <td class="px-4 py-3 font-semibold text-gray-800" x-text="row.name || (row.murid ? row.murid.name : (row.employee ? row.employee.name : '-'))"></td>
                         <td class="px-4 py-3 text-center">
                             <span class="px-2.5 py-1 rounded-full text-xs font-semibold"
-                                :class="row.teacher_id ? 'bg-purple-100 text-purple-700 border border-purple-200' : 'bg-blue-100 text-blue-700 border border-blue-200'"
-                                x-text="row.teacher_id ? '{{ config('app.school_mode') ? 'Guru' : 'Dosen' }}' : '{{ config('app.school_mode') ? 'Murid' : 'Mahasiswa' }}'">
+                                :class="row.employee_id ? 'bg-purple-100 text-purple-700 border border-purple-200' : 'bg-blue-100 text-blue-700 border border-blue-200'"
+                                x-text="row.employee_id ? 'Karyawan' : 'Murid'">
                             </span>
                         </td>
+                        <td class="px-4 py-3 text-center text-xs" x-text="row.employee_id && row.employee && row.employee.jabatan ? row.employee.jabatan.name : '-'"></td>
                         <td class="px-4 py-3 text-gray-600 whitespace-nowrap text-xs sm:text-sm" x-text="row.time"></td>
                         <td class="px-4 py-3 text-center">
                             <template x-if="row.status">
@@ -194,11 +199,11 @@
             {{-- Modal Header --}}
             <div class="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between bg-white z-10">
                 <div class="flex items-center gap-2">
-                    <div class="font-bold text-gray-800 text-sm sm:text-base" x-text="activePhoto ? (activePhoto.name || (activePhoto.murid ? activePhoto.murid.name : (activePhoto.guru ? activePhoto.guru.name : 'Foto Absen'))) : 'Foto Absen'"></div>
-                    <template x-if="activePhoto && (activePhoto.tipe || activePhoto.teacher_id)">
+                    <div class="font-bold text-gray-800 text-sm sm:text-base" x-text="activePhoto ? (activePhoto.name || (activePhoto.murid ? activePhoto.murid.name : (activePhoto.employee ? activePhoto.employee.name : 'Foto Absen'))) : 'Foto Absen'"></div>
+                    <template x-if="activePhoto && (activePhoto.tipe || activePhoto.employee_id)">
                         <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold"
-                            :class="activePhoto.teacher_id ? 'bg-purple-100 text-purple-700 border border-purple-200' : 'bg-blue-100 text-blue-700 border border-blue-200'"
-                            x-text="activePhoto.teacher_id ? '{{ config('app.school_mode') ? 'Guru' : 'Dosen' }}' : '{{ config('app.school_mode') ? 'Murid' : 'Mahasiswa' }}'">
+                            :class="activePhoto.employee_id ? 'bg-purple-100 text-purple-700 border border-purple-200' : 'bg-blue-100 text-blue-700 border border-blue-200'"
+                            x-text="activePhoto.employee_id ? 'Karyawan' : 'Murid'">
                         </span>
                     </template>
                 </div>
