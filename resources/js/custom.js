@@ -1274,8 +1274,7 @@ export function accountManagement(data, schoolMode = false) {
 
                 const matchesRole =
                     this.filterRole === "" ||
-                    row.roles === this.filterRole ||
-                    rowJabatan === this.filterRole;
+                    row.roles === this.filterRole;
 
                 let matchesKelas = true;
                 if (this.filterKelas !== "") {

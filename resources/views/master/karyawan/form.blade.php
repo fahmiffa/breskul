@@ -28,8 +28,14 @@
                         class="block border border-gray-300  ring-0 rounded-xl px-3 py-2 w-full focus:outline-[#177245]"
                         required>
                         <option value="">Pilih Jenis Kelamin</option>
-                        <option value="1" @selected(old('jenis_kelamin', isset($items) && $items->jenis_kelamin) == '1')>Laki-laki</option>
-                        <option value="2" @selected(old('jenis_kelamin', isset($items) && $items->jenis_kelamin) == '2')>Perempuan</option>
+
+                        <option value="1" @selected(old('jenis_kelamin', isset($items) ? $items->jenis_kelamin : '') == 1)>
+                            Laki-laki
+                        </option>
+
+                        <option value="2" @selected(old('jenis_kelamin', isset($items) ? $items->jenis_kelamin : '') == 2)>
+                            Perempuan
+                        </option>
                     </select>
 
                     @error('jenis_kelamin')
@@ -38,7 +44,8 @@
                 </div>
                 <div class="mb-4">
                     <label class="block text-gray-700 text-sm font-semibold mb-2">Nomor HP</label>
-                    <input type="text" name="nomor" value="{{ old('nomor', $items->user->nomor ?? '') }}" placeholder="Contoh: 08123456789"
+                    <input type="text" name="nomor" value="{{ old('nomor', $items->user->nomor ?? '') }}"
+                        placeholder="Contoh: 08123456789"
                         class="border border-gray-300  ring-0 rounded-xl px-3 py-2 w-full  focus:outline-[#177245]">
                     @error('nomor')
                         <p class="text-red-500 text-xs italic mt-2">{{ $message }}</p>
@@ -46,7 +53,8 @@
                 </div>
                 <div class="mb-4">
                     <label class="block text-gray-700 text-sm font-semibold mb-2">Email</label>
-                    <input type="email" name="email" value="{{ old('email', $items->user->email ?? '') }}" placeholder="Contoh: karyawan@example.com"
+                    <input type="email" name="email" value="{{ old('email', $items->user->email ?? '') }}"
+                        placeholder="Contoh: karyawan@example.com"
                         class="border border-gray-300  ring-0 rounded-xl px-3 py-2 w-full  focus:outline-[#177245]">
                     @error('email')
                         <p class="text-red-500 text-xs italic mt-2">{{ $message }}</p>
@@ -55,7 +63,8 @@
                 <div class="mb-4">
                     <label class="block text-gray-700 text-sm font-semibold mb-2">Role</label>
                     <select name="role"
-                        class="block border border-gray-300 ring-0 rounded-xl px-3 py-2 w-full focus:outline-[#177245]" required>
+                        class="block border border-gray-300 ring-0 rounded-xl px-3 py-2 w-full focus:outline-[#177245]"
+                        required>
                         <option value="">Pilih Role</option>
                         <option value="3" @selected(old('role', isset($items) ? $items->user->role : '') == '3')>Guru</option>
                         <option value="4" @selected(old('role', isset($items) ? $items->user->role : '') == '4')>Petugas</option>
@@ -70,7 +79,7 @@
                     <select name="jabatan_id"
                         class="block border border-gray-300  ring-0 rounded-xl px-3 py-2 w-full focus:outline-[#177245]">
                         <option value="">Pilih Jabatan</option>
-                        @foreach($jabatans as $jabatan)
+                        @foreach ($jabatans as $jabatan)
                             <option value="{{ $jabatan->id }}" @selected(old('jabatan_id', $items->jabatan_id ?? '') == $jabatan->id)>{{ $jabatan->name }}</option>
                         @endforeach
                     </select>
@@ -81,7 +90,8 @@
                 </div>
                 <div class="mb-4 md:col-span-2">
                     <label class="block text-gray-700 text-sm font-semibold mb-2">Alamat</label>
-                    <textarea name="alamat" class="border border-gray-300  ring-0 rounded-xl px-3 py-2 w-full focus:outline-[#177245]" required>{{ old('alamat', $items->alamat ?? '') }}</textarea>
+                    <textarea name="alamat" class="border border-gray-300  ring-0 rounded-xl px-3 py-2 w-full focus:outline-[#177245]"
+                        required>{{ old('alamat', $items->alamat ?? '') }}</textarea>
                     @error('alamat')
                         <p class="text-red-500 text-xs italic mt-2">{{ $message }}</p>
                     @enderror

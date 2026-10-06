@@ -69,7 +69,7 @@
 
         @if (!Route::is('dashboard.home'))
         <div class="flex items-center shrink-0">
-            <a href="{{ route('dashboard.home') }}"
+            <a href="javascript:window.history.back()"
                 class="inline-flex items-center gap-2 bg-white text-green-700 hover:bg-green-50 active:scale-95 font-semibold text-xs sm:text-sm px-3.5 py-2 rounded-xl shadow transition-all duration-150 border border-green-100">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">

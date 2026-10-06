@@ -22,15 +22,8 @@
                     <option value="Admin App">Admin App</option>
                     <option value="Guru">Guru</option>
                     <option value="Siswa">Siswa</option>
-                    <option value="Karyawan">Karyawan</option>
+                    <option value="Petugas">Petugas</option>
                 </optgroup>
-                @if(isset($jabatans) && count($jabatans) > 0)
-                <optgroup label="Jabatan">
-                    @foreach($jabatans as $j)
-                    <option value="{{ $j->name }}">{{ $j->name }}</option>
-                    @endforeach
-                </optgroup>
-                @endif
             </select>
             <select x-model="filterKelas" x-show="filterRole === 'Siswa' || filterRole === ''"
                 class="border border-gray-300 ring-0 rounded-xl px-3 py-2 focus:outline-[#177245]">

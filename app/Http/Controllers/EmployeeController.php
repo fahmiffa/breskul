@@ -126,6 +126,7 @@ class EmployeeController extends Controller
         $title    = 'Form Karyawan';
         $items    = $karyawan;
         $jabatans = Jabatan::orderBy('name', 'asc')->get();
+        // dd($items);
         return view('master.karyawan.form', compact('action', 'title', 'items', 'jabatans'));
     }
 

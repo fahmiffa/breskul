@@ -84,6 +84,10 @@ class MapelDayController extends Controller
             })->where('status', 1)
             ->first();
 
+        if (!$akademik || !$akademik->head) {
+            return back()->withInput()->withErrors('Tahun akademik aktif atau data head tidak ditemukan. Pastikan sudah ada tahun akademik yang aktif.');
+        }
+
         try {
             \Illuminate\Support\Facades\DB::beginTransaction();
 
