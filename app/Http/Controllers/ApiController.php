@@ -1264,7 +1264,18 @@ class ApiController extends Controller
                 'data'    => $data,
             ]);
         } else if (Auth::user()->role == 3) {
-            $user   = Auth::user()->data->id;
+            // Ambil ID dari teacherData (tabel teaches), bukan employeeData
+            $teachData = Auth::user()->teacherData;
+
+            if (!$teachData) {
+                return response()->json([
+                    'success' => true,
+                    'data'    => [],
+                    'message' => 'Tidak ada data jadwal mengajar.',
+                ]);
+            }
+
+            $user   = $teachData->id;
             $jadwal = MapelTime::where('teacher_id', $user)
                 ->with(['mapel', 'mapelday.kelas'])
                 ->get()
@@ -1272,18 +1283,19 @@ class ApiController extends Controller
                 ->map(function ($times) {
                     $first = $times->first();
                     return [
-                        'kelas'  => $first->mapelday->kelas->name ?? null,
+                        'kelas'  => $first->mapelday->kelas->name ?? '-',
                         'jadwal' => $times->groupBy('mapelday.day')->map(function ($group) {
                             $f = $group->first();
                             return [
-                                'hari'  => $f->mapelday->hari,
+                                'hari'  => $f->mapelday->hari ?? '-',
                                 'waktu' => $group->map(function ($val) {
                                     return [
                                         'start' => date("H:i", strtotime($val->start)),
                                         'end'   => date("H:i", strtotime($val->end)),
-                                        'mapel' => $val->mapel->name ?? null,
+                                        'mapel' => $val->mapel->name ?? '-',
+                                        'guru'  => '',
                                     ];
-                                }),
+                                })->values(),
                             ];
                         })->values(),
                     ];
