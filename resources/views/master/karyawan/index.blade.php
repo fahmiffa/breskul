@@ -1,10 +1,6 @@
 @extends('base.layout')
 @section('title', $title)
 @section('content')
-    @php
-        $jabatans = \App\Models\Jabatan::orderBy('name', 'asc')->get();
-    @endphp
-
     <div class="flex flex-col bg-white rounded-lg shadow-md p-6" x-data="{ ...dataTable({{ json_encode($items) }}), importModal: false }">
 
         {{-- Success / Error Alert --}}
