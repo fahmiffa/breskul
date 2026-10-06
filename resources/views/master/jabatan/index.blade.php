@@ -19,6 +19,7 @@
                     <tr class="bg-green-500 text-left text-white">
                         <th class="px-4 py-2">No</th>
                         <th @click="sortBy('name')" class="cursor-pointer px-4 py-2">Nama Jabatan</th>
+                        <th @click="sortBy('app.name')" class="cursor-pointer px-4 py-2">Aplikasi</th>
                         <th class="px-4 py-2">Action</th>
                     </tr>
                 </thead>
@@ -27,6 +28,7 @@
                         <tr class="border-t border-gray-300">
                             <td class="px-4 py-2" x-text="((currentPage - 1) * perPage) + index + 1"></td>
                             <td class="px-4 py-2" x-text="row.name"></td>
+                            <td class="px-4 py-2" x-text="row.app ? row.app.name : '-'"></td>
                             <td class="px-4 py-2 flex items-center gap-1">
                                 <a :href="'/dashboard/master/jabatan/' + row.id + '/edit'"
                                     class="text-green-600 hover:text-green-700">
@@ -61,7 +63,7 @@
                         </tr>
                     </template>
                     <tr x-show="filteredData().length === 0">
-                        <td colspan="3" class="text-center px-4 py-2 text-gray-500">No results found.</td>
+                        <td colspan="4" class="text-center px-4 py-2 text-gray-500">No results found.</td>
                     </tr>
                 </tbody>
             </table>

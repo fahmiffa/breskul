@@ -21,6 +21,24 @@
                         <p class="text-red-500 text-xs italic mt-2">{{ $message }}</p>
                     @enderror
                 </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-semibold mb-2">Aplikasi</label>
+                    <div class="relative">
+                        <select name="app_id"
+                            class="border border-gray-300 ring-0 rounded-xl px-3 py-2 w-full md:w-1/2 focus:outline-[#177245]">
+                            <option value="">-- Pilih Aplikasi --</option>
+                            @foreach ($apps as $app)
+                                <option value="{{ $app->id }}"
+                                    {{ old('app_id', $items->app_id ?? '') == $app->id ? 'selected' : '' }}>
+                                    {{ $app->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    @error('app_id')
+                        <p class="text-red-500 text-xs italic mt-2">{{ $message }}</p>
+                    @enderror
+                </div>
             </div>
             <div class="flex items-center gap-2">
                 <button type="submit"

@@ -6,7 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class Jabatan extends Model
 {
-    protected $fillable = ['name'];
+    protected $fillable = ['name', 'app_id'];
+
+    public function app()
+    {
+        return $this->belongsTo(App::class);
+    }
 
     public function users()
     {
