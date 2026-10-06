@@ -17,17 +17,25 @@ class EmployeeController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $items = Employee::with(['jabatan', 'user'])
             ->latest()
             ->when(auth()->user()->role == 1 && auth()->user()->app, function ($query) {
                 $query->where('app_id', auth()->user()->app->id);
             })
+            ->when($request->filled('jabatan_id'), function ($query) use ($request) {
+                if ($request->jabatan_id === 'none') {
+                    $query->whereNull('jabatan_id');
+                } else {
+                    $query->where('jabatan_id', $request->jabatan_id);
+                }
+            })
             ->get();
 
+        $jabatans = Jabatan::orderBy('name', 'asc')->get();
         $title = 'Master Karyawan';
-        return view('master.karyawan.index', compact('items', 'title'));
+        return view('master.karyawan.index', compact('items', 'title', 'jabatans'));
     }
 
     /**

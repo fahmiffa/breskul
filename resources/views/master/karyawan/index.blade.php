@@ -1,7 +1,60 @@
 @extends('base.layout')
 @section('title', $title)
 @section('content')
-    <div class="flex flex-col bg-white rounded-lg shadow-md p-6" x-data="{ ...dataTable({{ json_encode($items) }}), importModal: false }">
+    <div class="flex flex-col bg-white rounded-lg shadow-md p-6" x-data="{
+        ...dataTable({{ json_encode($items) }}),
+        importModal: false,
+        filterJabatan: '{{ request('jabatan_id', '') }}',
+
+        filteredData() {
+            let temp = this.rows.filter((row) => {
+                const searchLower = this.search ? this.search.toLowerCase() : '';
+                const rowName = (row.name || '').toLowerCase();
+                const rowJenis = (row.jenis || '').toLowerCase();
+                const rowAlamat = (row.alamat || '').toLowerCase();
+                const rowNomor = (row.user && row.user.nomor ? row.user.nomor : '').toLowerCase();
+                const rowJabatan = (row.jabatan && row.jabatan.name ? row.jabatan.name : '').toLowerCase();
+
+                const matchesSearch = searchLower === '' ||
+                    rowName.includes(searchLower) ||
+                    rowJenis.includes(searchLower) ||
+                    rowAlamat.includes(searchLower) ||
+                    rowNomor.includes(searchLower) ||
+                    rowJabatan.includes(searchLower);
+
+                let matchesJabatan = true;
+                if (this.filterJabatan === 'none') {
+                    matchesJabatan = !row.jabatan_id;
+                } else if (this.filterJabatan !== '') {
+                    matchesJabatan = String(row.jabatan_id) === String(this.filterJabatan);
+                }
+
+                return matchesSearch && matchesJabatan;
+            });
+
+            temp.sort((a, b) => {
+                let valA = a[this.sortColumn];
+                let valB = b[this.sortColumn];
+
+                if (this.sortColumn === 'jabatan') {
+                    valA = a.jabatan ? (a.jabatan.name || '') : '';
+                    valB = b.jabatan ? (b.jabatan.name || '') : '';
+                } else if (this.sortColumn === 'nomor') {
+                    valA = a.user ? (a.user.nomor || '') : '';
+                    valB = b.user ? (b.user.nomor || '') : '';
+                }
+
+                if (typeof valA === 'string') valA = valA.toLowerCase();
+                if (typeof valB === 'string') valB = valB.toLowerCase();
+
+                if (valA < valB) return this.sortAsc ? -1 : 1;
+                if (valA > valB) return this.sortAsc ? 1 : -1;
+                return 0;
+            });
+
+            return temp;
+        }
+    }">
 
         {{-- Success / Error Alert --}}
         @if (session('success'))
@@ -19,11 +72,31 @@
             </div>
         @endif
 
-        <div class="mb-4 flex flex-wrap justify-between items-center gap-2">
-            <input type="text" x-model="search" placeholder="Pencarian"
-                class="w-full md:w-1/2 border border-gray-300 ring-0 rounded-xl px-3 py-2 focus:outline-[#177245]" />
+        <div class="mb-4 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3">
+            <div class="flex flex-wrap items-center gap-2 flex-1">
+                <input type="text" x-model="search" @input="currentPage = 1" placeholder="Pencarian nama, no hp, alamat, jabatan..."
+                    class="flex-1 min-w-[200px] border border-gray-300 ring-0 rounded-xl px-3 py-2 focus:outline-[#177245]" />
 
-            <div class="flex gap-2 flex-wrap">
+                <select x-model="filterJabatan" @change="currentPage = 1"
+                    class="border border-gray-300 ring-0 rounded-xl px-3 py-2 focus:outline-[#177245] bg-white text-sm">
+                    <option value="">Semua Jabatan</option>
+                    <option value="none">Tanpa Jabatan</option>
+                    @foreach ($jabatans as $jabatan)
+                        <option value="{{ $jabatan->id }}">{{ $jabatan->name }}</option>
+                    @endforeach
+                </select>
+
+                <select x-model="perPage" @change="currentPage = 1"
+                    class="border border-gray-300 ring-0 rounded-xl px-3 py-2 focus:outline-[#177245] bg-white text-sm">
+                    <option value="10">Tampilkan 10</option>
+                    <option value="25">Tampilkan 25</option>
+                    <option value="50">Tampilkan 50</option>
+                    <option value="100">Tampilkan 100</option>
+                    <option value="all">Tampilkan Semua</option>
+                </select>
+            </div>
+
+            <div class="flex gap-2 flex-wrap items-center justify-end shrink-0">
                 {{-- Import Button --}}
                 <button @click="importModal = true"
                     class="cursor-pointer bg-blue-500 text-xs hover:bg-blue-700 text-white font-semibold py-2 px-3 rounded-2xl flex items-center gap-1">
@@ -50,9 +123,9 @@
                         <th class="px-4 py-2">No</th>
                         <th @click="sortBy('name')" class="cursor-pointer px-4 py-2">Nama</th>
                         <th @click="sortBy('jenis')" class="cursor-pointer px-4 py-2">Jenis Kelamin</th>
-                        <th class="cursor-pointer px-4 py-2">No HP</th>
-                        <th class="cursor-pointer px-4 py-2">Alamat</th>
-                        <th class="px-4 py-2">Jabatan</th>
+                        <th @click="sortBy('nomor')" class="cursor-pointer px-4 py-2">No HP</th>
+                        <th @click="sortBy('alamat')" class="cursor-pointer px-4 py-2">Alamat</th>
+                        <th @click="sortBy('jabatan')" class="cursor-pointer px-4 py-2">Jabatan</th>
                         <th class="px-4 py-2">Action</th>
                     </tr>
                 </thead>
