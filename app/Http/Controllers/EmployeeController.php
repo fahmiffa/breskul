@@ -9,6 +9,8 @@ use DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class EmployeeController extends Controller
 {
@@ -213,5 +215,137 @@ class EmployeeController extends Controller
         Teach::where('user_id', $karyawan->user_id)->delete();
         $karyawan->delete();
         return redirect()->route('dashboard.master.karyawan.index')->with('success', 'Berhasil menghapus karyawan.');
+    }
+
+    /**
+     * Download template Excel untuk import karyawan.
+     */
+    public function template()
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Template Import Karyawan');
+
+        // Header
+        $sheet->setCellValue('A1', 'nama');
+        $sheet->setCellValue('B1', 'nomor_hp');
+        $sheet->setCellValue('C1', 'jenis_kelamin');
+
+        // Style header
+        $headerStyle = [
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '16A34A']],
+        ];
+        $sheet->getStyle('A1:C1')->applyFromArray($headerStyle);
+        $sheet->getColumnDimension('A')->setWidth(30);
+        $sheet->getColumnDimension('B')->setWidth(20);
+        $sheet->getColumnDimension('C')->setWidth(20);
+
+        // Contoh data
+        $sheet->setCellValue('A2', 'Contoh Nama Karyawan');
+        $sheet->setCellValue('B2', '08123456789');
+        $sheet->setCellValue('C2', 'Laki-laki');
+
+        // Note
+        $sheet->setCellValue('A4', 'Catatan: Kolom jenis_kelamin isi dengan: Laki-laki atau Perempuan');
+
+        $writer = new Xlsx($spreadsheet);
+        $filename = 'template_import_karyawan.xlsx';
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+
+        $writer->save('php://output');
+        exit;
+    }
+
+    /**
+     * Import karyawan dari file Excel.
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'jabatan_id' => 'required|exists:jabatans,id',
+            'file'       => 'required|mimes:xlsx,xls|max:5120',
+        ], [
+            'jabatan_id.required' => 'Jabatan wajib dipilih.',
+            'jabatan_id.exists'   => 'Jabatan tidak valid.',
+            'file.required'       => 'File Excel wajib diunggah.',
+            'file.mimes'          => 'File harus berformat .xlsx atau .xls.',
+        ]);
+
+        $jabatan = Jabatan::findOrFail($request->jabatan_id);
+        $isGuru  = stripos($jabatan->name, 'guru') !== false || stripos($jabatan->name, 'dosen') !== false;
+        $appId   = auth()->user()->app->id ?? null;
+
+        try {
+            $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReaderForFile($request->file('file')->getPathname());
+            $reader->setReadDataOnly(true);
+            $spreadsheet = $reader->load($request->file('file')->getPathname());
+            $rows = $spreadsheet->getActiveSheet()->toArray(null, true, true, true);
+        } catch (\Exception $e) {
+            return back()->withErrors('Gagal membaca file Excel: ' . $e->getMessage());
+        }
+
+        $success = 0;
+        $errors  = [];
+
+        DB::beginTransaction();
+        try {
+            foreach ($rows as $index => $row) {
+                // Skip header row
+                if ($index == 1) continue;
+
+                $nama   = trim($row['A'] ?? '');
+                $hp     = trim($row['B'] ?? '');
+                $jenisRaw = strtolower(trim($row['C'] ?? ''));
+
+                if (empty($nama)) continue;
+
+                $jenisKelamin = $jenisRaw === 'laki-laki' || $jenisRaw === 'laki' || $jenisRaw === 'l' ? 1 : 2;
+
+                $userId = DB::table('users')->insertGetId([
+                    'name'       => $nama,
+                    'username'   => userName($nama),
+                    'password'   => Hash::make('breskul'),
+                    'role'       => $isGuru ? 3 : 4,
+                    'status'     => 1,
+                    'nomor'      => $hp ?: null,
+                    'jabatan_id' => $jabatan->id,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                $employee = new Employee;
+                $employee->app_id       = $appId;
+                $employee->name         = $nama;
+                $employee->alamat       = '-';
+                $employee->jenis_kelamin = $jenisKelamin;
+                $employee->user_id      = $userId;
+                $employee->jabatan_id   = $jabatan->id;
+                $employee->save();
+
+                if ($isGuru) {
+                    $teach          = new Teach;
+                    $teach->user_id = $userId;
+                    $teach->name    = $nama;
+                    $teach->alamat  = '-';
+                    $teach->gender  = $jenisKelamin;
+                    $teach->app     = $appId;
+                    $teach->save();
+                }
+
+                $success++;
+            }
+
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return back()->withErrors('Terjadi kesalahan saat import: ' . $e->getMessage());
+        }
+
+        return redirect()->route('dashboard.master.karyawan.index')
+            ->with('success', "Berhasil mengimport {$success} karyawan dari jabatan {$jabatan->name}.");
     }
 }
