@@ -85,7 +85,7 @@ class MapelDayController extends Controller
             ->first();
 
         if (!$akademik || !$akademik->head) {
-            return back()->withInput()->withErrors('Tahun akademik aktif atau data head tidak ditemukan. Pastikan sudah ada tahun akademik yang aktif.');
+            return back()->withInput()->withErrors('Tahun akademik aktif atau data murid tidak ditemukan. Pastikan sudah ada tahun akademik dan yang aktif.');
         }
 
         try {
