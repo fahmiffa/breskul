@@ -54,6 +54,7 @@ class EmployeeController extends Controller
                 'jabatan_id'    => 'nullable|exists:jabatans,id',
                 'nomor'         => 'nullable|string|max:20',
                 'email'         => 'nullable|email|max:255|unique:users,email',
+                'role'          => 'required|in:3,4',
             ],
             [
                 'required' => 'Field wajib diisi',
@@ -63,14 +64,13 @@ class EmployeeController extends Controller
         DB::beginTransaction();
 
         try {
-            $jabatan = $request->jabatan_id ? Jabatan::find($request->jabatan_id) : null;
-            $isGuru  = $jabatan && (stripos($jabatan->name, 'guru') !== false || stripos($jabatan->name, 'dosen') !== false);
+            $isGuru = $request->role == 3;
 
             $userId = DB::table('users')->insertGetId([
                 'name'       => $request->name,
                 'username'   => UserName($request->name),
                 'password'   => Hash::make('binainsantaqwa'),
-                'role'       => $isGuru ? 3 : 4,
+                'role'       => $request->role,
                 'status'     => 1,
                 'nomor'      => $request->filled('nomor') ? $request->nomor : null,
                 'email'      => $request->filled('email') ? $request->email : null,
@@ -147,6 +147,7 @@ class EmployeeController extends Controller
                     'max:255',
                     Rule::unique('users', 'email')->ignore($karyawan->user_id),
                 ],
+                'role'          => 'required|in:3,4',
             ],
             [
                 'required' => 'Field wajib diisi',
@@ -162,8 +163,7 @@ class EmployeeController extends Controller
             $karyawan->jabatan_id    = $request->jabatan_id;
             $karyawan->save();
 
-            $jabatan = $request->jabatan_id ? Jabatan::find($request->jabatan_id) : null;
-            $isGuru  = $jabatan && (stripos($jabatan->name, 'guru') !== false || stripos($jabatan->name, 'dosen') !== false);
+            $isGuru = $request->role == 3;
 
             if ($isGuru) {
                 $teach = Teach::withTrashed()->where('user_id', $karyawan->user_id)->first();
@@ -193,7 +193,7 @@ class EmployeeController extends Controller
                     'name'       => $request->name,
                     'nomor'      => $request->filled('nomor') ? $request->nomor : null,
                     'email'      => $request->filled('email') ? $request->email : null,
-                    'role'       => $isGuru ? 3 : 4,
+                    'role'       => $request->role,
                     'jabatan_id' => $request->jabatan_id,
                     'updated_at' => now(),
                 ]);
@@ -266,9 +266,11 @@ class EmployeeController extends Controller
     public function import(Request $request)
     {
         $request->validate([
+            'role'       => 'required|in:3,4',
             'jabatan_id' => 'required|exists:jabatans,id',
             'file'       => 'required|mimes:xlsx,xls|max:5120',
         ], [
+            'role.required'       => 'Role wajib dipilih.',
             'jabatan_id.required' => 'Jabatan wajib dipilih.',
             'jabatan_id.exists'   => 'Jabatan tidak valid.',
             'file.required'       => 'File Excel wajib diunggah.',
@@ -276,7 +278,7 @@ class EmployeeController extends Controller
         ]);
 
         $jabatan = Jabatan::findOrFail($request->jabatan_id);
-        $isGuru  = stripos($jabatan->name, 'guru') !== false || stripos($jabatan->name, 'dosen') !== false;
+        $isGuru  = $request->role == 3;
         $appId   = auth()->user()->app->id ?? null;
 
         try {
@@ -309,7 +311,7 @@ class EmployeeController extends Controller
                     'name'       => $nama,
                     'username'   => userName($nama),
                     'password'   => Hash::make('breskul'),
-                    'role'       => $isGuru ? 3 : 4,
+                    'role'       => $request->role,
                     'status'     => 1,
                     'nomor'      => $hp ?: null,
                     'jabatan_id' => $jabatan->id,

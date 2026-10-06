@@ -156,6 +156,19 @@
                 <form action="{{ route('dashboard.master.karyawan.import') }}" method="POST" enctype="multipart/form-data" class="px-6 py-5 space-y-4">
                     @csrf
 
+                    {{-- Role --}}
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">
+                            Role <span class="text-red-500">*</span>
+                        </label>
+                        <select name="role" required
+                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-green-500 focus:ring-1 focus:ring-green-500 bg-white">
+                            <option value="">-- Pilih Role --</option>
+                            <option value="3">Guru</option>
+                            <option value="4">Petugas</option>
+                        </select>
+                    </div>
+
                     {{-- Jabatan --}}
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-1">

@@ -53,6 +53,19 @@
                     @enderror
                 </div>
                 <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-semibold mb-2">Role</label>
+                    <select name="role"
+                        class="block border border-gray-300 ring-0 rounded-xl px-3 py-2 w-full focus:outline-[#177245]" required>
+                        <option value="">Pilih Role</option>
+                        <option value="3" @selected(old('role', isset($items) ? $items->user->role : '') == '3')>Guru</option>
+                        <option value="4" @selected(old('role', isset($items) ? $items->user->role : '') == '4')>Petugas</option>
+                    </select>
+
+                    @error('role')
+                        <p class="text-red-500 text-xs italic mt-2">{{ $message }}</p>
+                    @enderror
+                </div>
+                <div class="mb-4">
                     <label class="block text-gray-700 text-sm font-semibold mb-2">Jabatan</label>
                     <select name="jabatan_id"
                         class="block border border-gray-300  ring-0 rounded-xl px-3 py-2 w-full focus:outline-[#177245]">
