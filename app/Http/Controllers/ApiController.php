@@ -148,7 +148,7 @@ class ApiController extends Controller
             ->get()
             ->map(function ($q) {
                 return [
-                    "waktu" => $q->time,
+                    "waktu" => $q->waktu,
                     "status" => $q->status,
                 ];
             });
