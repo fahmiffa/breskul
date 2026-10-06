@@ -140,8 +140,8 @@ class ApiController extends Controller
                 $q->where('user', $id);
             });
         } else {
-            $employeeId = $user->teacherData->id ?? null;
-            $items = Present::where('teacher_id', $teacherId);
+            $employeeId = $user->employeeData->id ?? null;
+            $items = Present::where('employee_id', $employeeId);
         }
 
         $items = $items->latest()
@@ -1516,7 +1516,7 @@ class ApiController extends Controller
             $app = $user->studentData->app ?? null;
             $studentId = $user->studentData->id ?? null;
         } else {
-            $app = $user->employeeData->app ?? null;
+            $app = $user->employeeData->app_id ?? null;
             $employeeId = $user->employeeData->id ?? null;
         }
 
@@ -1625,7 +1625,7 @@ class ApiController extends Controller
         if ($user->role == 2) {
             $pres->student_id = $studentId;
         } else {
-            $pres->teacher_id = $employeeId;
+            $pres->employee_id = $employeeId;
         }
         $pres->app    = $app;
         $pres->waktu  = $now;
