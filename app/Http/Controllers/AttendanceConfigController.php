@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\App;
 use App\Models\AttendanceConfig;
 use App\Models\Jabatan;
 use Illuminate\Http\Request;
@@ -12,10 +13,13 @@ class AttendanceConfigController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $items = AttendanceConfig::with('jabatan')
-            ->where('app', $user->app->id ?? $user->id)
-            ->orderBy('role')
-            ->get();
+        $query = AttendanceConfig::with(['jabatan.app', 'appData']);
+
+        if ($user->role == 1 && $user->app) {
+            $query->where('app', $user->app->id);
+        }
+
+        $items = $query->orderBy('role')->get();
             
         $title = "Konfigurasi Absensi";
         return view('master.absensi.index', compact('items', 'title'));
@@ -24,14 +28,30 @@ class AttendanceConfigController extends Controller
     public function create()
     {
         $title = "Tambah Konfigurasi Absensi";
-        $jabatans = Jabatan::orderBy('name')->get();
-        return view('master.absensi.form', compact('title', 'jabatans'));
+        $user = Auth::user();
+        $apps = [];
+
+        if ($user->role == 1 && $user->app) {
+            $appId = $user->app->id;
+            $jabatans = Jabatan::where(function ($q) use ($appId) {
+                $q->where('app_id', $appId)->orWhereNull('app_id');
+            })->orderBy('name')->get();
+        } else {
+            $apps = App::orderBy('name')->get();
+            $jabatans = Jabatan::with('app')->orderBy('name')->get();
+        }
+
+        return view('master.absensi.form', compact('title', 'jabatans', 'apps'));
     }
 
     public function store(Request $request)
     {
+        $user = Auth::user();
+        $isRole0 = $user->role == 0;
+
         $request->validate([
             'name' => 'required|string|max:255',
+            'app' => $isRole0 ? 'required|exists:apps,id' : 'nullable',
             'jabatan_id' => 'nullable|exists:jabatans,id',
             'role' => 'nullable',
             'clock_in_start' => 'required',
@@ -43,8 +63,14 @@ class AttendanceConfigController extends Controller
             'radius' => 'nullable|numeric',
         ]);
 
-        $user = Auth::user();
-        $appId = $user->app->id ?? ($user->studentData->app ?? $user->teacherData->app ?? null);
+        $appId = $request->app ?? $user->app?->id ?? ($user->studentData->app ?? $user->teacherData->app ?? null);
+
+        if (!$appId && $request->jabatan_id) {
+            $jabatan = Jabatan::find($request->jabatan_id);
+            if ($jabatan && $jabatan->app_id) {
+                $appId = $jabatan->app_id;
+            }
+        }
 
         AttendanceConfig::create([
             'app' => $appId,
@@ -67,14 +93,30 @@ class AttendanceConfigController extends Controller
     {
         $item = AttendanceConfig::findOrFail($id);
         $title = "Edit Konfigurasi Absensi";
-        $jabatans = Jabatan::orderBy('name')->get();
-        return view('master.absensi.form', compact('item', 'title', 'jabatans'));
+        $user = Auth::user();
+        $apps = [];
+
+        if ($user->role == 1 && $user->app) {
+            $appId = $user->app->id;
+            $jabatans = Jabatan::where(function ($q) use ($appId) {
+                $q->where('app_id', $appId)->orWhereNull('app_id');
+            })->orderBy('name')->get();
+        } else {
+            $apps = App::orderBy('name')->get();
+            $jabatans = Jabatan::with('app')->orderBy('name')->get();
+        }
+
+        return view('master.absensi.form', compact('item', 'title', 'jabatans', 'apps'));
     }
 
     public function update(Request $request, $id)
     {
+        $user = Auth::user();
+        $isRole0 = $user->role == 0;
+
         $request->validate([
             'name' => 'required|string|max:255',
+            'app' => $isRole0 ? 'nullable|exists:apps,id' : 'nullable',
             'jabatan_id' => 'nullable|exists:jabatans,id',
             'role' => 'nullable',
             'clock_in_start' => 'required',
@@ -87,7 +129,13 @@ class AttendanceConfigController extends Controller
         ]);
 
         $item = AttendanceConfig::findOrFail($id);
-        $item->update($request->all());
+
+        $data = $request->except(['_token', '_method']);
+        if ($isRole0 && $request->filled('app')) {
+            $data['app'] = $request->app;
+        }
+
+        $item->update($data);
 
         return redirect()->route('dashboard.master.absensi.index')->with('success', 'Konfigurasi berhasil diperbarui');
     }

@@ -24,4 +24,9 @@ class AttendanceConfig extends Model
     {
         return $this->belongsTo(\App\Models\Jabatan::class);
     }
+
+    public function appData()
+    {
+        return $this->belongsTo(\App\Models\App::class, 'app', 'id');
+    }
 }

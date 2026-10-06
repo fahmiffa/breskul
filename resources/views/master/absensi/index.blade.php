@@ -14,6 +14,9 @@
             <table class="min-w-full bg-white border border-gray-200">
                 <thead>
                     <tr class="bg-gray-100 text-gray-600 uppercase text-sm leading-normal">
+                        @if(auth()->user()->role == 0)
+                            <th class="py-3 px-6 text-left">Aplikasi</th>
+                        @endif
                         <th class="py-3 px-6 text-left">Nama</th>
                         <th class="py-3 px-6 text-left">Jabatan</th>
                         <th class="py-3 px-6 text-left">Role</th>
@@ -26,6 +29,13 @@
                 <tbody class="text-gray-600 text-sm font-light">
                     @forelse($items as $item)
                         <tr class="border-b border-gray-200 hover:bg-gray-100">
+                            @if(auth()->user()->role == 0)
+                                <td class="py-3 px-6 text-left whitespace-nowrap">
+                                    <span class="bg-gray-200 text-gray-700 py-1 px-3 rounded-full text-xs">
+                                        {{ $item->appData->name ?? ($item->jabatan?->app?->name ?? 'App ID: ' . $item->app) }}
+                                    </span>
+                                </td>
+                            @endif
                             <td class="py-3 px-6 text-left whitespace-nowrap font-medium">
                                 {{ $item->name ?? '-' }}
                             </td>
@@ -33,6 +43,9 @@
                                 @if($item->jabatan)
                                     <span class="bg-purple-200 text-purple-600 py-1 px-3 rounded-full text-xs">
                                         {{ $item->jabatan->name }}
+                                        @if(auth()->user()->role == 0 && $item->jabatan->app)
+                                            <span class="text-[10px] text-purple-500">({{ $item->jabatan->app->name }})</span>
+                                        @endif
                                     </span>
                                 @else
                                     <span class="text-xs text-gray-400">-</span>
@@ -84,7 +97,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="py-3 px-6 text-center">Belum ada data konfigurasi.</td>
+                            <td colspan="{{ auth()->user()->role == 0 ? 8 : 7 }}" class="py-3 px-6 text-center">Belum ada data konfigurasi.</td>
                         </tr>
                     @endforelse
                 </tbody>

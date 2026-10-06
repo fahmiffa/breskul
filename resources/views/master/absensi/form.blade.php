@@ -11,6 +11,22 @@
             @endif
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                @if(auth()->user()->role == 0)
+                <!-- Aplikasi (Khusus Role 0 Admin) -->
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Aplikasi <span class="text-red-500">*</span></label>
+                    <select name="app" id="select_app" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required onchange="filterJabatanByApp(this.value)">
+                        <option value="">-- Pilih Aplikasi --</option>
+                        @foreach($apps as $app)
+                            <option value="{{ $app->id }}" {{ old('app', $item->app ?? '') == $app->id ? 'selected' : '' }}>
+                                {{ $app->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('app') <p class="text-red-500 text-xs italic">{{ $message }}</p> @enderror
+                </div>
+                @endif
+
                 <!-- Nama -->
                 <div class="mb-4">
                     <label class="block text-gray-700 text-sm font-bold mb-2">Nama</label>
@@ -21,11 +37,13 @@
                 <!-- Jabatan -->
                 <div class="mb-4">
                     <label class="block text-gray-700 text-sm font-bold mb-2">Jabatan</label>
-                    <select name="jabatan_id" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    <select name="jabatan_id" id="select_jabatan" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                         <option value="">-- Pilih Jabatan (Opsional) --</option>
                         @foreach($jabatans as $jabatan)
-                            <option value="{{ $jabatan->id }}" {{ old('jabatan_id', $item->jabatan_id ?? '') == $jabatan->id ? 'selected' : '' }}>
-                                {{ $jabatan->name }}
+                            <option value="{{ $jabatan->id }}"
+                                data-app="{{ $jabatan->app_id ?? '' }}"
+                                {{ old('jabatan_id', $item->jabatan_id ?? '') == $jabatan->id ? 'selected' : '' }}>
+                                {{ $jabatan->name }} {{ auth()->user()->role == 0 && $jabatan->app ? '(' . $jabatan->app->name . ')' : '' }}
                             </option>
                         @endforeach
                     </select>
@@ -42,8 +60,6 @@
                     </select>
                     @error('role') <p class="text-red-500 text-xs italic">{{ $message }}</p> @enderror
                 </div>
-
-                <div></div>
 
                 <!-- Clock In -->
                 <div class="mb-4">
@@ -92,6 +108,25 @@
     </div>
 
     <script>
+        function filterJabatanByApp(appId) {
+            const selectJabatan = document.getElementById('select_jabatan');
+            if (!selectJabatan) return;
+            const options = selectJabatan.querySelectorAll('option[data-app]');
+            options.forEach(opt => {
+                const optApp = opt.getAttribute('data-app');
+                if (!appId || !optApp || optApp === appId) {
+                    opt.style.display = '';
+                    opt.disabled = false;
+                } else {
+                    opt.style.display = 'none';
+                    opt.disabled = true;
+                    if (opt.selected) {
+                        selectJabatan.value = '';
+                    }
+                }
+            });
+        }
+
         document.querySelectorAll('input[type="time"]').forEach(input => {
             input.addEventListener('change', function() {
                 const label = this.previousElementSibling;
@@ -112,6 +147,11 @@
 
         // Trigger on load for edited items
         window.addEventListener('load', () => {
+            const appSelect = document.getElementById('select_app');
+            if (appSelect && appSelect.value) {
+                filterJabatanByApp(appSelect.value);
+            }
+
             document.querySelectorAll('input[type="time"]').forEach(input => {
                 if (input.value) {
                     input.dispatchEvent(new Event('change'));
