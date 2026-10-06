@@ -37,7 +37,7 @@
                     <label class="block text-gray-700 text-sm font-bold mb-2">Role</label>
                     <select name="role" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                         <option value="">Pilih Role</option>
-                        <option value="3" {{ old('role', $item->role ?? '') == 3 ? 'selected' : '' }}>Guru</option>
+                        <option value="3" {{ old('role', $item->role ?? '') == 3 ? 'selected' : '' }}>Karyawan</option>
                         <option value="2" {{ old('role', $item->role ?? '') == 2 ? 'selected' : '' }}>Murid</option>
                     </select>
                     @error('role') <p class="text-red-500 text-xs italic">{{ $message }}</p> @enderror

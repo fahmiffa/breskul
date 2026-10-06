@@ -40,7 +40,7 @@
                             </td>
                             <td class="py-3 px-6 text-left whitespace-nowrap">
                                 <span class="bg-{{ $item->role == 3 ? 'blue' : 'green' }}-200 text-{{ $item->role == 3 ? 'blue' : 'green' }}-600 py-1 px-3 rounded-full text-xs">
-                                    {{ $item->role == 3 ? 'Guru' : 'Murid' }}
+                                    {{ $item->role == 3 ? 'Karyawan' : 'Murid' }}
                                 </span>
                             </td>
 
