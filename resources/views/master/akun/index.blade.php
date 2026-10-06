@@ -12,25 +12,26 @@
 
     <div class="mb-4 flex flex-wrap justify-between items-center gap-2">
         <div class="flex flex-wrap gap-2 w-full md:w-3/4">
-            <input type="text" x-model="search" placeholder="Cari Nama"
-                class="w-full md:w-1/3 border border-gray-300  ring-0 rounded-xl px-3 py-2 focus:outline-[#177245]" />
-            <select x-model="filterRole"
+            <input type="text" x-model="search" @input="currentPage = 1" placeholder="Cari Nama"
+                class="w-full md:w-1/3 border border-gray-300 ring-0 rounded-xl px-3 py-2 focus:outline-[#177245]" />
+            <select x-model="filterRole" @change="currentPage = 1"
                 class="border border-gray-300 ring-0 rounded-xl px-3 py-2 focus:outline-[#177245]">
                 <option value="">Semua Tipe</option>
-                    <option value="Siswa">Siswa</option>
-                    <option value="Petugas">Petugas</option>
-                </optgroup>
+                <option value="Guru">Guru</option>
+                <option value="Siswa">Siswa</option>
+                <option value="Karyawan">Karyawan</option>
             </select>
-            <select x-model="filterKelas" x-show="filterRole === 'Siswa' || filterRole === ''"
+            <select x-model="filterKelas" x-show="filterRole === 'Siswa' || filterRole === ''" @change="currentPage = 1"
                 class="border border-gray-300 ring-0 rounded-xl px-3 py-2 focus:outline-[#177245]">
                 <option value="">Semua {{ config('app.school_mode') ? 'Kelas' : 'Prodi' }}</option>
                 @foreach($classes as $c)
                 <option value="{{ $c->id }}">{{ $c->name }}</option>
                 @endforeach
             </select>
-            <select x-model="filterJabatan" x-show="filterRole === 'Petugas' || filterRole === 'Guru' || filterRole === ''"
+            <select x-model="filterJabatan" x-show="filterRole === 'Karyawan' || filterRole === 'Guru' || filterRole === ''" @change="currentPage = 1"
                 class="border border-gray-300 ring-0 rounded-xl px-3 py-2 focus:outline-[#177245]">
                 <option value="">Semua Jabatan</option>
+                <option value="none">Tanpa Jabatan</option>
                 @foreach($jabatans as $jabatan)
                 <option value="{{ $jabatan->id }}">{{ $jabatan->name }}</option>
                 @endforeach

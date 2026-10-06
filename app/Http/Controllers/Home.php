@@ -189,7 +189,9 @@ class Home extends Controller
             })->get();
         }
 
-        $jabatans = \App\Models\Jabatan::where('app_id', auth()->user()->app->id)->orderBy('name', 'asc')->get();
+        $jabatans = \App\Models\Jabatan::when($isAppUser, function ($q) use ($appId) {
+            $q->where('app_id', $appId);
+        })->orderBy('name', 'asc')->get();
 
         return view('master.akun.index', compact('items', 'classes', 'jabatans'));
     }
