@@ -16,11 +16,7 @@
                 class="w-full md:w-1/3 border border-gray-300  ring-0 rounded-xl px-3 py-2 focus:outline-[#177245]" />
             <select x-model="filterRole"
                 class="border border-gray-300 ring-0 rounded-xl px-3 py-2 focus:outline-[#177245]">
-                <option value="">Semua Tipe / Jabatan</option>
-                <optgroup label="Tipe Account">
-                    <option value="Admin">Admin</option>
-                    <option value="Admin App">Admin App</option>
-                    <option value="Guru">Guru</option>
+                <option value="">Semua Tipe</option>
                     <option value="Siswa">Siswa</option>
                     <option value="Petugas">Petugas</option>
                 </optgroup>
@@ -30,6 +26,14 @@
                 <option value="">Semua {{ config('app.school_mode') ? 'Kelas' : 'Prodi' }}</option>
                 @foreach($classes as $c)
                 <option value="{{ $c->id }}">{{ $c->name }}</option>
+                @endforeach
+            </select>
+            <select x-model="filterJabatan" x-show="filterRole === 'Petugas' || filterRole === 'Guru' || filterRole === ''"
+                class="border border-gray-300 ring-0 rounded-xl px-3 py-2 focus:outline-[#177245]">
+                <option value="">Semua Jabatan</option>
+                <option value="none">Tanpa Jabatan</option>
+                @foreach($jabatans as $jabatan)
+                <option value="{{ $jabatan->id }}">{{ $jabatan->name }}</option>
                 @endforeach
             </select>
         </div>

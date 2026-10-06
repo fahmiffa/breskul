@@ -1246,6 +1246,7 @@ export function accountManagement(data, schoolMode = false) {
         isLoading: false,
         filterRole: "",
         filterKelas: "",
+        filterJabatan: "",
         schoolMode: schoolMode,
 
         init() {
@@ -1287,7 +1288,15 @@ export function accountManagement(data, schoolMode = false) {
                     }
                 }
 
-                return matchesSearch && matchesRole && matchesKelas;
+                let matchesJabatan = true;
+                let jId = row.jabatan_id || (row.employee_data ? row.employee_data.jabatan_id : null) || (row.jabatan ? row.jabatan.id : null);
+                if (this.filterJabatan === "none") {
+                    matchesJabatan = !jId;
+                } else if (this.filterJabatan !== "") {
+                    matchesJabatan = String(jId) === String(this.filterJabatan);
+                }
+
+                return matchesSearch && matchesRole && matchesKelas && matchesJabatan;
             });
 
             temp.sort((a, b) => {
