@@ -31,15 +31,11 @@ class User extends Authenticatable implements JWTSubject
         }
 
         if ($this->role == 3) {
-            return "Guru";
+            return "Karyawan";
         }
 
         if ($this->role == 2) {
             return "Siswa";
-        }
-
-        if ($this->role == 4) {
-            return "Karyawan";
         }
 
         return "User";
