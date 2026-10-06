@@ -679,11 +679,11 @@ class ApiController extends Controller
                 'data'    => [
                     'user' => [
                         'id'     => $user->id,
-                        'name'   => $user->teacherData?->name ?? $user->name,
+                        'name'   => $user->employeeData?->name ?? $user->name,
                         'role'   => $user->role,
                         'status' => $user->status,
                         'image'  => $user->image ? asset('storage/' . $user->image) : null,
-                        'app'    => $user->teacherData?->apps?->name ?? $user->app?->name ?? '-',
+                        'app'    => $user->employeeData?->app?->name ?? $user->app?->name ?? '-',
                     ],
                 ],
             ]);
