@@ -31,7 +31,6 @@
             <select x-model="filterJabatan" x-show="filterRole === 'Petugas' || filterRole === 'Guru' || filterRole === ''"
                 class="border border-gray-300 ring-0 rounded-xl px-3 py-2 focus:outline-[#177245]">
                 <option value="">Semua Jabatan</option>
-                <option value="none">Tanpa Jabatan</option>
                 @foreach($jabatans as $jabatan)
                 <option value="{{ $jabatan->id }}">{{ $jabatan->name }}</option>
                 @endforeach
