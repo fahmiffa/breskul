@@ -22,6 +22,7 @@
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">No</th>
                     <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Karyawan/Guru</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tanggal</th>
                     <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Keterangan</th>
                     <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
                     <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Aksi</th>
@@ -34,6 +35,7 @@
                         <td class="px-6 py-4">
                             <div class="text-sm font-medium text-gray-900" x-text="row.employee ? row.employee.name : '-'"></div>
                         </td>
+                        <td class="px-6 py-4 text-sm text-gray-700" x-text="row.tanggal ?? '-'"></td>
                         <td class="px-6 py-4 text-sm text-gray-700 max-w-xs truncate" x-text="row.keterangan"></td>
                         <td class="px-6 py-4">
                             <span x-show="row.status == 3" class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>
@@ -63,7 +65,7 @@
                     </tr>
                 </template>
                 <tr x-show="paginatedRows.length === 0">
-                    <td colspan="5" class="px-6 py-8 text-center text-gray-500">
+                    <td colspan="6" class="px-6 py-8 text-center text-gray-500">
                         <div class="flex flex-col items-center justify-center">
                             <svg class="w-12 h-12 mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
                             <span class="text-lg font-medium">Tidak ada data izin ditemukan</span>

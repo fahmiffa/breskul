@@ -162,10 +162,14 @@ class ApiController extends Controller
             return response()->json(['success' => false, 'message' => 'Employee data not found']);
         }
         
-        $request->validate(['keterangan' => 'required']);
+        $request->validate([
+            'keterangan' => 'required',
+            'tanggal' => 'required|date',
+        ]);
         
         \App\Models\Permit::create([
             'employee_id' => $employeeId,
+            'tanggal' => $request->tanggal,
             'keterangan' => $request->keterangan,
             'status' => 3
         ]);
