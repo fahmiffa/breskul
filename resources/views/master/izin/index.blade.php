@@ -41,6 +41,7 @@
                             <span x-show="row.status == 3" class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>
                             <span x-show="row.status == 1" class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Berhasil</span>
                             <span x-show="row.status == 2" class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Ditolak</span>
+                            <span x-show="row.status == 0" class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Batal</span>
                         </td>
                         <td class="px-6 py-4 text-center">
                             <div class="flex justify-center items-center space-x-2">

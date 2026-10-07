@@ -20,7 +20,7 @@ class PermitController extends Controller
         $permit = \App\Models\Permit::findOrFail($id);
         
         $request->validate([
-            'status' => 'required|in:1,2,3'
+            'status' => 'required|in:0,1,2,3'
         ]);
 
         $permit->update(['status' => $request->status]);

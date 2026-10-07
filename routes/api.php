@@ -43,6 +43,7 @@ Route::middleware('jwt')->group(function () {
     Route::post('/absensi/submit', [ApiController::class, 'submitAbsensi']);
     Route::get('/izin', [ApiController::class, 'izin']);
     Route::post('/izin/submit', [ApiController::class, 'submitIzin']);
+    Route::post('/izin/cancel', [ApiController::class, 'cancelIzin']);
     Route::post('/scan-qr', [ApiController::class, 'scanQr']);
     Route::get('/data', [ApiController::class, 'data']);
     Route::get('/jadwal', [ApiController::class, 'jadwal']);

@@ -177,6 +177,38 @@ class ApiController extends Controller
         return response()->json(['success' => true, 'message' => 'Izin berhasil diajukan']);
     }
 
+    public function cancelIzin(\Illuminate\Http\Request $request)
+    {
+        $user = Auth::user();
+        
+        if (!in_array($user->role, [3, 4])) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized role']);
+        }
+        
+        $employeeId = $user->employeeData->id ?? null;
+        
+        if (!$employeeId) {
+            return response()->json(['success' => false, 'message' => 'Employee data not found']);
+        }
+        
+        $request->validate([
+            'id' => 'required',
+        ]);
+        
+        $permit = \App\Models\Permit::where('id', $request->id)->where('employee_id', $employeeId)->first();
+        if (!$permit) {
+            return response()->json(['success' => false, 'message' => 'Data izin tidak ditemukan']);
+        }
+        
+        if ($permit->status != 3) {
+            return response()->json(['success' => false, 'message' => 'Hanya izin dengan status pending yang bisa dibatalkan']);
+        }
+
+        $permit->update(['status' => 0]);
+        
+        return response()->json(['success' => true, 'message' => 'Izin berhasil dibatalkan']);
+    }
+
     public function absensi()
     {
         $user = Auth::user();
