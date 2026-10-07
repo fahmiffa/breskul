@@ -20,7 +20,7 @@ Route::post('/status', function () {
     return response()->json([
         'status' => true,
         'message' => 'Mohon maaf, aplikasi sedang dalam perbaikan.\nSilahkan coba lagi secara berkala',
-        'version' => '1.0.0+26'
+        'version' => '1.0.0+27'
     ], 200);
 });
 
@@ -41,6 +41,8 @@ Route::middleware('jwt')->group(function () {
     Route::get('/absensi', [ApiController::class, 'absensi']);
     Route::get('/absensi/config', [ApiController::class, 'getAbsensiConfig']);
     Route::post('/absensi/submit', [ApiController::class, 'submitAbsensi']);
+    Route::get('/izin', [ApiController::class, 'izin']);
+    Route::post('/izin/submit', [ApiController::class, 'submitIzin']);
     Route::post('/scan-qr', [ApiController::class, 'scanQr']);
     Route::get('/data', [ApiController::class, 'data']);
     Route::get('/jadwal', [ApiController::class, 'jadwal']);

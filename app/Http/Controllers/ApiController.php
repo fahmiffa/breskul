@@ -130,6 +130,49 @@ class ApiController extends Controller
         );
     }
 
+    public function izin()
+    {
+        $user = Auth::user();
+        
+        if (!in_array($user->role, [3, 4])) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized role']);
+        }
+        
+        $employeeId = $user->employeeData->id ?? null;
+        
+        if (!$employeeId) {
+            return response()->json(['success' => false, 'message' => 'Employee data not found']);
+        }
+
+        $items = \App\Models\Permit::where('employee_id', $employeeId)->latest()->get();
+        return response()->json(['success' => true, 'data' => $items]);
+    }
+
+    public function submitIzin(\Illuminate\Http\Request $request)
+    {
+        $user = Auth::user();
+        
+        if (!in_array($user->role, [3, 4])) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized role']);
+        }
+        
+        $employeeId = $user->employeeData->id ?? null;
+        
+        if (!$employeeId) {
+            return response()->json(['success' => false, 'message' => 'Employee data not found']);
+        }
+        
+        $request->validate(['keterangan' => 'required']);
+        
+        \App\Models\Permit::create([
+            'employee_id' => $employeeId,
+            'keterangan' => $request->keterangan,
+            'status' => 3
+        ]);
+        
+        return response()->json(['success' => true, 'message' => 'Izin berhasil diajukan']);
+    }
+
     public function absensi()
     {
         $user = Auth::user();

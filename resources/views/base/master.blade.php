@@ -32,6 +32,14 @@
         </span> Absensi
     </li>
 </a>
+<a href="{{ route('dashboard.master.izin.index') }}">
+    <li
+        class="flex flex-col justify-center items-center p-2.5 sm:p-4 border border-gray-200 rounded-xl shadow-sm hover:bg-green-100 bg-white text-center h-full text-xs sm:text-sm font-medium transition-colors {{ Route::is('dashboard.master.izin.*') ? 'bg-green-100' : null }}">
+        <span class="text-green-500 mb-1.5 sm:mb-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-text w-5 h-5 sm:w-6 sm:h-6"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+        </span> Izin
+    </li>
+</a>
 <a href="{{ route('dashboard.master.murid.index') }}">
     <li
         class="flex flex-col justify-center items-center p-2.5 sm:p-4 border border-gray-200 rounded-xl shadow-sm hover:bg-green-100 bg-white text-center h-full cursor-pointer text-xs sm:text-sm font-medium transition-colors {{ Route::is('dashboard.master.murid.*') ? 'bg-green-100' : null }}">

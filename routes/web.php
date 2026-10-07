@@ -74,6 +74,7 @@ Route::prefix('dashboard')->middleware('auth')->name('dashboard.')->group(functi
         Route::get('halaqah/students-by-class', [App\Http\Controllers\HalaqahController::class, 'getStudentsByClass'])->name('halaqah.students-by-class');
         Route::resource('halaqah', App\Http\Controllers\HalaqahController::class);
         Route::resource('absensi', App\Http\Controllers\AttendanceConfigController::class);
+        Route::resource('izin', App\Http\Controllers\PermitController::class);
         Route::post('karyawan/import', [App\Http\Controllers\EmployeeController::class, 'import'])->name('karyawan.import');
         Route::get('karyawan/template', [App\Http\Controllers\EmployeeController::class, 'template'])->name('karyawan.template');
         Route::resource('karyawan', App\Http\Controllers\EmployeeController::class);
