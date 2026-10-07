@@ -29,4 +29,9 @@ class Employee extends Model
     {
         return $this->belongsTo(App::class, 'app_id', 'id');
     }
+
+    public function attendanceConfig()
+    {
+        return $this->hasOne(AttendanceConfig::class);
+    }
 }

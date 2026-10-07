@@ -63,12 +63,17 @@ class AttendanceConfigController extends Controller
             $jabatans = Jabatan::where(function ($q) use ($appId) {
                 $q->where('app_id', $appId)->orWhereNull('app_id');
             })->orderBy('name')->get();
-            $employees = Employee::with('jabatan')->where('app_id', $appId)->orderBy('name')->get();
+            $employees = Employee::with('jabatan')
+                ->where('app_id', $appId)
+                ->whereDoesntHave('attendanceConfig')
+                ->orderBy('name')->get();
             $existingConfigs = AttendanceConfig::where('app', $appId)->orderBy('name')->get();
         } else {
             $apps = App::orderBy('name')->get();
             $jabatans = Jabatan::with('app')->orderBy('name')->get();
-            $employees = Employee::with('jabatan', 'app')->orderBy('name')->get();
+            $employees = Employee::with('jabatan', 'app')
+                ->whereDoesntHave('attendanceConfig')
+                ->orderBy('name')->get();
             $existingConfigs = AttendanceConfig::orderBy('name')->get();
         }
 
