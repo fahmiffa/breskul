@@ -10,6 +10,17 @@ Route::get('/kebijakan-privasi', function () {
     return view('policy');
 });
 
+Route::prefix('panduan')->group(function () {
+    Route::get('akun', function () {
+        return view('akun');
+    });
+
+    Route::get('absensi', function () {
+        return view('absensi');
+    });
+});
+
+
 Route::middleware('guest')->group(function () {
     Route::get('/', [AuthController::class, 'loginForm']);
     Route::get('/login', [AuthController::class, 'loginForm'])->name('login');

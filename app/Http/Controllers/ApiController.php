@@ -82,7 +82,7 @@ class ApiController extends Controller
             $response = Http::post(env('URL_WA') . '/send', [
                 'number'  => env('NumberWa'),
                 'to'      => $to,
-                'message' => "Anda reset Berhasil Password\nPassword akun anda : " . $pass,
+                'message' => "Lupa password Anda reset Berhasil\n username : ".$user->username." \n Password : " . $pass,
             ]);
 
             DB::commit();
