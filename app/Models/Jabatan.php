@@ -20,6 +20,11 @@ class Jabatan extends Model
 
     public function attendanceConfigs()
     {
-        return $this->hasMany(AttendanceConfig::class, 'jabatan_id');
+        return $this->hasManyThrough(AttendanceConfig::class, Employee::class, 'jabatan_id', 'employee_id');
+    }
+
+    public function employees()
+    {
+        return $this->hasMany(Employee::class);
     }
 }

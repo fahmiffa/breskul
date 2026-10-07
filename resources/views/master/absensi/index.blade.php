@@ -10,6 +10,37 @@
             </a>
         </div>
 
+        <!-- Filter -->
+        <form method="GET" action="{{ route('dashboard.master.absensi.index') }}" class="mb-4 flex flex-wrap items-end gap-3">
+            <div>
+                <label class="block text-gray-600 text-xs font-semibold mb-1">Role Target</label>
+                <select name="role_target" class="border rounded py-1.5 px-3 text-sm text-gray-700 focus:outline-none focus:shadow-outline">
+                    <option value="">Semua</option>
+                    <option value="karyawan" {{ request('role_target') === 'karyawan' ? 'selected' : '' }}>Karyawan</option>
+                    <option value="murid" {{ request('role_target') === 'murid' ? 'selected' : '' }}>Murid</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-gray-600 text-xs font-semibold mb-1">Jabatan</label>
+                <select name="jabatan_id" class="border rounded py-1.5 px-3 text-sm text-gray-700 focus:outline-none focus:shadow-outline">
+                    <option value="">Semua Jabatan</option>
+                    @foreach($jabatans as $jabatan)
+                        <option value="{{ $jabatan->id }}" {{ request('jabatan_id') == $jabatan->id ? 'selected' : '' }}>
+                            {{ $jabatan->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="flex gap-2">
+                <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white text-xs font-semibold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    Filter
+                </button>
+                <a href="{{ route('dashboard.master.absensi.index') }}" class="bg-gray-300 hover:bg-gray-400 text-gray-700 text-xs font-semibold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    Reset
+                </a>
+            </div>
+        </form>
+
         <div class="overflow-x-auto">
             <table class="min-w-full bg-white border border-gray-200">
                 <thead>
@@ -18,8 +49,7 @@
                             <th class="py-3 px-6 text-left">Aplikasi</th>
                         @endif
                         <th class="py-3 px-6 text-left">Nama</th>
-                        <th class="py-3 px-6 text-left">Jabatan</th>
-                        <th class="py-3 px-6 text-left">Role</th>
+                        <th class="py-3 px-6 text-left">Target</th>
                         <th class="py-3 px-6 text-center">Masuk</th>
                         <th class="py-3 px-6 text-center">Pulang</th>
                         <th class="py-3 px-6 text-center">Koordinat</th>
@@ -32,7 +62,7 @@
                             @if(auth()->user()->role == 0)
                                 <td class="py-3 px-6 text-left whitespace-nowrap">
                                     <span class="bg-gray-200 text-gray-700 py-1 px-3 rounded-full text-xs">
-                                        {{ $item->appData->name ?? ($item->jabatan?->app?->name ?? 'App ID: ' . $item->app) }}
+                                        {{ $item->appData->name ?? ($item->employee?->app?->name ?? 'App ID: ' . $item->app) }}
                                     </span>
                                 </td>
                             @endif
@@ -40,21 +70,16 @@
                                 {{ $item->name ?? '-' }}
                             </td>
                             <td class="py-3 px-6 text-left whitespace-nowrap">
-                                @if($item->jabatan)
+                                @if($item->employee)
                                     <span class="bg-purple-200 text-purple-600 py-1 px-3 rounded-full text-xs">
-                                        {{ $item->jabatan->name }}
-                                        @if(auth()->user()->role == 0 && $item->jabatan->app)
-                                            <span class="text-[10px] text-purple-500">({{ $item->jabatan->app->name }})</span>
+                                        {{ $item->employee->name }} 
+                                        @if($item->employee->jabatan)
+                                            <span class="text-[10px] text-purple-500">({{ $item->employee->jabatan->name }})</span>
                                         @endif
                                     </span>
                                 @else
-                                    <span class="text-xs text-gray-400">-</span>
+                                    <span class="bg-green-200 text-green-600 py-1 px-3 rounded-full text-xs">Murid</span>
                                 @endif
-                            </td>
-                            <td class="py-3 px-6 text-left whitespace-nowrap">
-                                <span class="bg-{{ $item->role == 3 ? 'blue' : 'green' }}-200 text-{{ $item->role == 3 ? 'blue' : 'green' }}-600 py-1 px-3 rounded-full text-xs">
-                                    {{ $item->role == 3 ? 'Karyawan' : 'Murid' }}
-                                </span>
                             </td>
 
                             <td class="py-3 px-6 text-center">
@@ -97,11 +122,16 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ auth()->user()->role == 0 ? 8 : 7 }}" class="py-3 px-6 text-center">Belum ada data konfigurasi.</td>
+                            <td colspan="{{ auth()->user()->role == 0 ? 7 : 6 }}" class="py-3 px-6 text-center">Belum ada data konfigurasi.</td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="mt-4">
+            {{ $items->links() }}
         </div>
     </div>
 @endsection

@@ -9,8 +9,7 @@ class AttendanceConfig extends Model
     protected $fillable = [
         'app',
         'name',
-        'jabatan_id',
-        'role',
+        'employee_id',
         'clock_in_start',
         'clock_in_end',
         'clock_out_start',
@@ -20,9 +19,9 @@ class AttendanceConfig extends Model
         'radius',
     ];
 
-    public function jabatan()
+    public function employee()
     {
-        return $this->belongsTo(\App\Models\Jabatan::class);
+        return $this->belongsTo(\App\Models\Employee::class);
     }
 
     public function appData()

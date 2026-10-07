@@ -1553,25 +1553,29 @@ class ApiController extends Controller
 
     private function getUserAttendanceConfig($user)
     {
-        $app = $user->role == 2 ? ($user->studentData->app ?? null) : ($user->employeeData->app ?? null);
         $config = null;
 
-        // Ambil sesuai relasi jabatannya dari model User -> Jabatan -> AttendanceConfig
-        if ($user->jabatan) {
-            $config = $user->jabatan->attendanceConfigs()
+        if ($user->role == 2) {
+            // Murid: cari config tanpa employee_id (berlaku umum untuk murid)
+            $app = $user->studentData->app ?? null;
+            $config = AttendanceConfig::whereNull('employee_id')
                 ->when($app, fn($q) => $q->where('app', $app))
                 ->first();
+        } else {
+            // Karyawan: cari config berdasarkan employee_id
+            $employee = $user->employeeData;
+            $app = $employee->app_id ?? null;
 
-            if (!$config) {
-                $config = $user->jabatan->attendanceConfigs()->first();
+            if ($employee) {
+                $config = AttendanceConfig::where('employee_id', $employee->id)->first();
             }
-        }
 
-        // Fallback jika tidak ditemukan berdasarkan jabatan, cari berdasarkan role & app
-        if (!$config) {
-            $config = AttendanceConfig::where('role', $user->role)
-                ->when($app, fn($q) => $q->where('app', $app))
-                ->first();
+            // Fallback: cari config tanpa employee_id berdasarkan app
+            if (!$config) {
+                $config = AttendanceConfig::whereNull('employee_id')
+                    ->when($app, fn($q) => $q->where('app', $app))
+                    ->first();
+            }
         }
 
         return $config;
@@ -1590,9 +1594,40 @@ class ApiController extends Controller
             ], 404);
         }
 
+        // Load relasi employee beserta jabatan-nya
+        $config->load('employee.jabatan');
+
+        // Bangun response backward-compatible
+        $employee = $config->employee;
+        $jabatan = $employee?->jabatan;
+
+        $data = [
+            'id'              => $config->id,
+            'app'             => $config->app,
+            'name'            => $config->name,
+            'jabatan_id'      => $jabatan?->id,
+            'role'            => $employee ? 3 : 2,
+            'clock_in_start'  => $config->clock_in_start,
+            'clock_in_end'    => $config->clock_in_end,
+            'clock_out_start' => $config->clock_out_start,
+            'clock_out_end'   => $config->clock_out_end,
+            'created_at'      => $config->created_at,
+            'updated_at'      => $config->updated_at,
+            'lat'             => $config->lat,
+            'lng'             => $config->lng,
+            'radius'          => $config->radius,
+            'jabatan'         => $jabatan ? [
+                'id'         => $jabatan->id,
+                'app_id'     => $jabatan->app_id,
+                'name'       => $jabatan->name,
+                'created_at' => $jabatan->created_at,
+                'updated_at' => $jabatan->updated_at,
+            ] : null,
+        ];
+
         return response()->json([
             'success' => true,
-            'data'    => $config->load('jabatan'),
+            'data'    => $data,
         ]);
     }
 
