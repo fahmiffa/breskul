@@ -198,7 +198,7 @@
 
         function copyConfig(selectElement) {
             const selectedOption = selectElement.options[selectElement.selectedIndex];
-            if (!selectedOption.value) return;
+            if (!selectedOption || !selectedOption.value) return;
 
             const fields = [
                 {name: 'clock_in_start', val: selectedOption.getAttribute('data-clock-in-start')},
@@ -336,6 +336,7 @@
             if (document.getElementById('copy_config')) {
                 new TomSelect("#copy_config",{
                     create: false,
+                    plugins: ['clear_button'],
                     sortField: {
                         field: "text",
                         direction: "asc"

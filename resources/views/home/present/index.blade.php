@@ -114,14 +114,19 @@
                         <td class="px-4 py-3 text-gray-600 whitespace-nowrap text-xs sm:text-sm" x-text="row.time"></td>
                         <td class="px-4 py-3 text-center">
                             <template x-if="row.status">
-                                <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
-                                    :class="{
-                                        'bg-green-100 text-green-700 border border-green-200': row.status.toLowerCase() === 'masuk',
-                                        'bg-orange-100 text-orange-700 border border-orange-200': row.status.toLowerCase() === 'pulang',
-                                        'bg-gray-100 text-gray-700 border border-gray-200': row.status.toLowerCase() !== 'masuk' && row.status.toLowerCase() !== 'pulang'
-                                    }"
-                                    x-text="row.status">
-                                </span>
+                                <div class="flex flex-col items-center gap-1">
+                                    <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
+                                        :class="{
+                                            'bg-green-100 text-green-700 border border-green-200': row.status.toLowerCase() === 'masuk',
+                                            'bg-orange-100 text-orange-700 border border-orange-200': row.status.toLowerCase() === 'pulang',
+                                            'bg-gray-100 text-gray-700 border border-gray-200': row.status.toLowerCase() !== 'masuk' && row.status.toLowerCase() !== 'pulang'
+                                        }"
+                                        x-text="row.status">
+                                    </span>
+                                    <template x-if="row.status.toLowerCase() === 'masuk' && row.late_time">
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-600 border border-red-200" x-text="row.late_time"></span>
+                                    </template>
+                                </div>
                             </template>
                             <template x-if="!row.status">
                                 <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-gray-100 text-gray-700">
