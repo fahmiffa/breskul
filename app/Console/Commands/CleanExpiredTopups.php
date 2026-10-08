@@ -31,7 +31,7 @@ class CleanExpiredTopups extends Command
         if ($this->option('queue')) {
             CleanExpiredTopupsJob::dispatch();
             $this->info('Tugas CleanExpiredTopupsJob berhasil dikirim ke Queue Worker.');
-            Log::info('Artisan topup:clean-expired: CleanExpiredTopupsJob dikirim ke antrean.');
+            // Log::info('Artisan topup:clean-expired: CleanExpiredTopupsJob dikirim ke antrean.');
             return;
         }
 
