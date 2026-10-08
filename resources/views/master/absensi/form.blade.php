@@ -67,7 +67,19 @@
                     @error('role_target') <p class="text-red-500 text-xs italic">{{ $message }}</p> @enderror
                 </div>
 
-                @if(!isset($item))
+                @if(isset($item))
+                <!-- Readonly Target Information for Edit -->
+                <div class="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Karyawan Terpilih</label>
+                        <input type="text" disabled value="{{ $item->employee ? $item->employee->name : 'Murid' }}" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight bg-gray-100 cursor-not-allowed">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Jabatan</label>
+                        <input type="text" disabled value="{{ $item->employee && $item->employee->jabatan ? $item->employee->jabatan->name : '-' }}" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight bg-gray-100 cursor-not-allowed">
+                    </div>
+                </div>
+                @else
                 <div id="karyawan_section" class="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6" style="display: none;">
                     <!-- Filter Jabatan -->
                     <div class="mb-4">
@@ -309,4 +321,28 @@
             });
         });
     </script>
+@push('styles')
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+    <style>
+        .ts-control { border-radius: 0.25rem; padding: 0.5rem 0.75rem; border-color: #e5e7eb; }
+        .ts-wrapper.single .ts-control { background-color: #fff; }
+    </style>
+@endpush
+
+@push('script')
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (document.getElementById('copy_config')) {
+                new TomSelect("#copy_config",{
+                    create: false,
+                    sortField: {
+                        field: "text",
+                        direction: "asc"
+                    }
+                });
+            }
+        });
+    </script>
+@endpush
 @endsection

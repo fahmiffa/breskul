@@ -13,6 +13,10 @@
         <!-- Filter -->
         <form method="GET" action="{{ route('dashboard.master.absensi.index') }}" class="mb-4 flex flex-wrap items-end gap-3">
             <div>
+                <label class="block text-gray-600 text-xs font-semibold mb-1">Pencarian Nama</label>
+                <input type="text" name="name" value="{{ request('name') }}" placeholder="Cari nama..." class="border rounded py-1.5 px-3 text-sm text-gray-700 focus:outline-none focus:shadow-outline">
+            </div>
+            <div>
                 <label class="block text-gray-600 text-xs font-semibold mb-1">Role Target</label>
                 <select name="role_target" class="border rounded py-1.5 px-3 text-sm text-gray-700 focus:outline-none focus:shadow-outline">
                     <option value="">Semua</option>

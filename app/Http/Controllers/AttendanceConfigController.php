@@ -38,6 +38,17 @@ class AttendanceConfigController extends Controller
             });
         }
 
+        // Filter Nama
+        if ($request->filled('name')) {
+            $name = $request->name;
+            $query->where(function ($q) use ($name) {
+                $q->where('name', 'like', "%{$name}%")
+                  ->orWhereHas('employee', function ($q) use ($name) {
+                      $q->where('name', 'like', "%{$name}%");
+                  });
+            });
+        }
+
         $items = $query->orderBy('name')->paginate(10)->withQueryString();
 
         if ($appId) {
