@@ -31,6 +31,7 @@ class FirebaseMessage
 
         // Setup Google Client
         $client = new Google_Client();
+        $client->setHttpClient(new \GuzzleHttp\Client(['timeout' => 10]));
         $client->setAuthConfig($serviceAccountPath);
         $client->addScope("https://www.googleapis.com/auth/firebase.messaging");
 
@@ -41,7 +42,7 @@ class FirebaseMessage
         $url = "https://fcm.googleapis.com/v1/projects/{$projectId}/messages:send";
 
         // Kirim request menggunakan Laravel HTTP client
-        $response = Http::withToken($token)
+        $response = Http::timeout(10)->withToken($token)
             ->acceptJson()
             ->post($url, $message);
 
@@ -75,6 +76,7 @@ class FirebaseMessage
 
         // Setup Google Client
         $client = new Google_Client();
+        $client->setHttpClient(new \GuzzleHttp\Client(['timeout' => 10]));
         $client->setAuthConfig($serviceAccountPath);
         $client->addScope("https://www.googleapis.com/auth/firebase.messaging");
 
@@ -96,7 +98,7 @@ class FirebaseMessage
         ];
 
         // Kirim request
-        $response = Http::withToken($accessToken)
+        $response = Http::timeout(10)->withToken($accessToken)
             ->acceptJson()
             ->post($url, $message);
 
