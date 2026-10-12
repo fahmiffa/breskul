@@ -321,7 +321,7 @@ class ApiController extends Controller
             } else {
                 Log::channel('absensi')->info('Data kartu ditolak', [
                     'device_id' => $deviceId,
-                    'payload'   => $request->uid,
+                    'payload'   => $body,
                 ]);
 
                 return response()->json([
@@ -386,7 +386,7 @@ class ApiController extends Controller
             } else {
                 Log::channel('absensi')->info('Data absensi ditolak', [
                     'device_id' => $deviceId,
-                    'payload'   => $request->uid,
+                    'payload'   => $body,
                 ]);
 
                 return response()->json([
@@ -1710,7 +1710,7 @@ class ApiController extends Controller
                 $inStart = Carbon::createFromTimeString($config->clock_in_start);
                 $inEnd   = Carbon::createFromTimeString($config->clock_in_end);
                 // if (!$now->between($inStart, $inEnd)) {
-                if($now->it($inStart)) {
+                if($now->lt($inStart)) {
                     return response()->json([
                         'success' => false,
                         // 'message' => 'Waktu absensi masuk adalah ' . $config->clock_in_start . ' - ' . $config->clock_in_end . '.',
@@ -1719,11 +1719,30 @@ class ApiController extends Controller
                 }
             }
         } elseif ($type === 'pulang') {
+            
+                // Cek apakah sudah absensi masuk hari ini
+                $exists = Present::when($app, fn($q) => $q->where('app', $app))
+                    ->when($user->role == 2, function ($q) use ($studentId) {
+                        return $q->where('student_id', $studentId);
+                    }, function ($q) use ($employeeId) {
+                        return $q->where('employee_id', $employeeId);
+                    })
+                    ->whereDate('waktu', $now->toDateString())
+                    ->where('status', "masuk")
+                    ->exists();
+
+                if (!$exists) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Anda belum absensi masuk hari ini.',
+                    ], 400);
+                }
+
             if ($config->clock_out_start && $config->clock_out_end) {
                 $outStart = Carbon::createFromTimeString($config->clock_out_start);
                 $outEnd   = Carbon::createFromTimeString($config->clock_out_end);
                 // if (!$now->between($outStart, $outEnd)) {
-                if($now->it($outStart)) {
+                if($now->lt($outStart)) {
                     return response()->json([
                         'success' => false,
                         // 'message' => 'Waktu absensi pulang adalah ' . $config->clock_out_start . ' - ' . $config->clock_out_end . '.',
