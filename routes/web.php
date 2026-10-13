@@ -6,6 +6,10 @@ use App\Http\Controllers\Home;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/informasi/{id}', function ($id) {
+    return $id;
+});
+
 Route::get('/kebijakan-privasi', function () {
     return view('policy');
 });
