@@ -1709,12 +1709,13 @@ class ApiController extends Controller
             if ($config->clock_in_start && $config->clock_in_end) {
                 $inStart = Carbon::createFromTimeString($config->clock_in_start);
                 $inEnd   = Carbon::createFromTimeString($config->clock_in_end);
-                // if (!$now->between($inStart, $inEnd)) {
-                if($now->lt($inStart)) {
+                $outStart   = Carbon::createFromTimeString($config->clock_out_start);
+                if (!$now->between($inStart, $outStart)) {
+                // if($now->lt($inStart)) {
                     return response()->json([
                         'success' => false,
-                        // 'message' => 'Waktu absensi masuk adalah ' . $config->clock_in_start . ' - ' . $config->clock_in_end . '.',
-                         'message' => 'Waktu absensi masuk dimulai ' . $config->clock_in_start,
+                        'message' => 'Waktu absensi masuk adalah ' . $config->clock_in_start . ' - ' . $config->clock_out_start . '.',
+                        //  'message' => 'Waktu absensi masuk dimulai ' . $config->clock_in_start,
                     ], 400);
                 }
             }
