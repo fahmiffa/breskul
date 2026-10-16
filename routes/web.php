@@ -24,6 +24,11 @@ Route::prefix('panduan')->group(function () {
     });
 });
 
+Route::get('/clear', function () {
+    Artisan::call('optimize:clear');
+        File::put(storage_path('logs/laravel.log'), '');
+        return 'Log cleared';
+});
 
 Route::middleware('guest')->group(function () {
     Route::get('/', [AuthController::class, 'loginForm']);

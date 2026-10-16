@@ -42,7 +42,7 @@ use Illuminate\Support\Str;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Carbon\Carbon;
-
+use Intervention\Image\Laravel\Facades\Image;
 
 class ApiController extends Controller
 {
@@ -1783,8 +1783,22 @@ class ApiController extends Controller
 
         $file = $request->file('img') ?? $request->file('image');
         if ($file) {
-            $imgPath = $file->store('absensi', 'public');
-            $pres->img = $imgPath;
+            if (!$file->isValid()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Upload foto gagal: ' . $file->getErrorMessage(),
+                ], 400);
+            }
+
+            $filename = 'absensi/' . Str::uuid() . '.jpg';
+
+            $image = Image::read($file->getRealPath())
+                ->scaleDown(width: 1024)   // perkecil jika lebih lebar dari 1024px
+                ->toJpeg(quality: 75);     // kompres ke JPEG kualitas 75%
+
+            Storage::disk('public')->put($filename, (string) $image);
+
+            $pres->img = $filename;
         }
 
         $pres->save();
