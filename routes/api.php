@@ -69,6 +69,10 @@ Route::middleware('jwt')->group(function () {
     Route::get('/topup', [ApiController::class, 'getTopup']);
     Route::get('/topup/{id}', [ApiController::class, 'detailTopup']);
 
+    // Bank API
+    Route::get('/bank', [ApiController::class, 'getBanks']);
+    Route::get('/banks', [ApiController::class, 'getBanks']);
+
     // Exam API
     Route::prefix('exam')->group(function () {
         // More specific routes first

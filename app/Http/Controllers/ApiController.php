@@ -556,6 +556,24 @@ class ApiController extends Controller
         }
     }
 
+    public function getBanks()
+    {
+        $user = Auth::user();
+        $appId = $user ? ($user->studentData?->app ?? $user->teacherData?->app ?? $user->employeeData?->app_id ?? $user->app?->id ?? null) : null;
+
+        $banks = \App\Models\Bank::when($appId, function ($q) use ($appId) {
+            $q->where(function ($sub) use ($appId) {
+                $sub->where('app_id', $appId)->orWhereNull('app_id');
+            });
+        })->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Daftar bank berhasil diambil',
+            'data'    => $banks,
+        ]);
+    }
+
     public function paymentWebhook(Request $request, PaymentWebhookService $service)
     {
         $service->handle($request->all());
