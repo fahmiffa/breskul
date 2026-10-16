@@ -300,24 +300,24 @@ class ApiController extends Controller
         ]);
     }
 
-    public function saldoGate(Request $request)
+    public function push(Request $request)
     {
         $deviceId = $request->header('Device-ID', 'UNKNOWN_DEVICE');
         $device   = ApiKey::where('key', $deviceId)->first();
         $body     = $request->all();
         if ($device) {
 
-            $be = Students::where('rfid', $request->uid)->first();
-            if ($be) {
-                Log::channel('absensi')->info('Data cek diterima', [
-                    'device_id' => $deviceId,
-                    'payload'   => $request->uid,
-                ]);
+            $student = Students::where('rfid', $request->uid)->first();
+            if ($student) {
 
-                return response()->json([
-                    'success' => true,
-                    'msg'     => "Saldo ". number_format($be->saldo?->nominal ?? 0, 0, ',', '.'),
-                ], 200);
+                if($request->par == "saldo")
+                {
+                    return $this->saldoGate($student);
+                }
+                else
+                {
+                    return $this->absenGate($student);
+                }
             } else {
                 Log::channel('absensi')->info('Data kartu ditolak', [
                     'device_id' => $deviceId,
@@ -331,7 +331,7 @@ class ApiController extends Controller
             }
         } else {
 
-            Log::channel('absensi')->info('Data cek ditolak', [
+            Log::channel('absensi')->info('Data cek ditolak, Perangkat tidak dikenal', [
                 'device_id' => $deviceId,
                 'payload'   => $request->uid,
             ]);
@@ -343,69 +343,43 @@ class ApiController extends Controller
         }
     }
 
-    public function absenGate(Request $request)
+    public function saldoGate(Students $student)
     {
-        $deviceId = $request->header('Device-ID', 'UNKNOWN_DEVICE');
-        $device   = ApiKey::where('key', $deviceId)->first();
-        $body     = $request->all();
-        if ($device) {
+        return response()->json([
+            'success' => true,
+            'msg'     => "Saldo ". number_format($student->saldo?->nominal ?? 0, 0, ',', '.'),
+        ], 200);
+    }
 
-            $be = Students::where('rfid', $request->uid)->first();
-            if ($be) {
-                Log::channel('absensi')->info('Data absensi diterima', [
-                    'device_id' => $deviceId,
-                    'payload'   => $request->uid,
-                ]);
+    public function absenGate(Students $student)
+    {
 
-                $today = date('Y-m-d');
-                $historyCount = Present::where('student_id', $be->id)
-                    ->whereDate('waktu', $today)
-                    ->count();
-                $status = $historyCount == 0 ? 'masuk' : 'pulang';
+        $today = date('Y-m-d');
+        $historyCount = Present::where('student_id', $student->id)
+            ->whereDate('waktu', $today)
+            ->count();
+        $status = $historyCount == 0 ? 'masuk' : 'pulang';
 
-                $pres             = new Present;
-                $pres->student_id = $be->id;
-                $pres->app        = $be->app;
-                $pres->waktu      = date("Y-m-d H:i:s");
-                $pres->status     = $status;
-                $pres->save();
+        $pres             = new Present;
+        $pres->student_id = $student->id;
+        $pres->app        = $student->app;
+        $pres->waktu      = date("Y-m-d H:i:s");
+        $pres->status     = $status;
+        $pres->save();
 
-                if ($be->users?->fcm) {
-                    $message = [
-                        "topic" => "user_" . $be->users->id,
-                        "title" => "Absensi Berhasil",
-                        "body"  => "Anda berhasil absensi " . $status . " pada " . $pres->time,
-                    ];
-                    ProcessFcm::dispatch($message);
-                }
-
-                return response()->json([
-                    'success' => true,
-                    'msg'     => $be->name,
-                ], 200);
-            } else {
-                Log::channel('absensi')->info('Data absensi ditolak', [
-                    'device_id' => $deviceId,
-                    'payload'   => $body,
-                ]);
-
-                return response()->json([
-                    'success' => false,
-                    'msg'     => 'Kartu error',
-                ], 400);
-            }
-        } else {
-
-            Log::channel('absensi')->info('Data absensi ditolak', [
-                'device_id' => $deviceId,
-                'payload'   => $request->uid,
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'msg'     => 'Perangkat error',
-            ], 400);
+        if ($student->users?->fcm) {
+            $message = [
+                "topic" => "user_" . $student->users->id,
+                "title" => "Absensi Berhasil",
+                "body"  => "Anda berhasil absensi " . $status . " pada " . $pres->time,
+            ];
+            ProcessFcm::dispatch($message);
         }
+
+        return response()->json([
+            'success' => true,
+            'msg'     => $student->name,
+        ], 200);
     }
 
     public function rfidRiwayatSaldo(Request $request)
