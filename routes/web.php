@@ -75,6 +75,7 @@ Route::prefix('dashboard')->middleware('auth')->name('dashboard.')->group(functi
         Route::get('/akun/export', [Home::class, 'exportAkun'])->name('akun.export');
         Route::post('/akun/password', [Home::class, 'updateAccountPassword'])->name('akun.password');
         Route::post('/akun/status', [Home::class, 'updateAccountStatus'])->name('akun.status');
+        Route::post('/akun/lock', [Home::class, 'updateAccountLock'])->name('akun.lock');
         Route::get('murid/template', [App\Http\Controllers\StudentsController::class, 'template'])->name('murid.template');
         Route::resource('murid', App\Http\Controllers\StudentsController::class);
         Route::get('murid/{id}/qrcode', [App\Http\Controllers\StudentsController::class, 'qrcode'])->name('murid.qrcode');

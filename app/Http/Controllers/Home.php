@@ -745,6 +745,42 @@ class Home extends Controller
         }
     }
 
+    public function updateAccountLock(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'id'      => 'required|exists:users,id',
+            'is_lock' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validasi gagal',
+                'errors'  => $validator->errors()
+            ], 400);
+        }
+
+        try {
+            $user = User::find($request->id);
+            $isLock = filter_var($request->is_lock, FILTER_VALIDATE_BOOLEAN);
+            $user->is_lock = $isLock;
+            if (!$isLock) {
+                $user->deviceId = null;
+            }
+            $user->save();
+
+            return response()->json([
+                'status'   => true,
+                'message'  => $isLock ? 'Akun berhasil dikunci' : 'Kunci akun berhasil dibuka',
+                'is_lock'  => (bool) $user->is_lock,
+                'deviceId' => $user->deviceId,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function panduan()
     {
         $title = "Panduan & Petunjuk Penggunaan";

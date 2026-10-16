@@ -1247,6 +1247,7 @@ export function accountManagement(data, schoolMode = false) {
         filterRole: "",
         filterKelas: "",
         filterJabatan: "",
+        filterLock: "",
         schoolMode: schoolMode,
 
         init() {
@@ -1296,7 +1297,14 @@ export function accountManagement(data, schoolMode = false) {
                     matchesJabatan = String(jId) === String(this.filterJabatan);
                 }
 
-                return matchesSearch && matchesRole && matchesKelas && matchesJabatan;
+                let matchesLock = true;
+                if (this.filterLock === "locked") {
+                    matchesLock = !!row.is_lock;
+                } else if (this.filterLock === "unlocked") {
+                    matchesLock = !row.is_lock;
+                }
+
+                return matchesSearch && matchesRole && matchesKelas && matchesJabatan && matchesLock;
             });
 
             temp.sort((a, b) => {
@@ -1328,7 +1336,12 @@ export function accountManagement(data, schoolMode = false) {
 
         async updatePassword() {
             if (this.newPassword.length < 6) {
-                alert("Password minimal 6 karakter");
+                Swal.fire({
+                    title: "Peringatan",
+                    text: "Password minimal 6 karakter",
+                    icon: "warning",
+                    confirmButtonColor: "#16a34a",
+                });
                 return;
             }
 
@@ -1355,14 +1368,29 @@ export function accountManagement(data, schoolMode = false) {
                 const result = await response.json();
 
                 if (response.ok) {
-                    alert(result.message);
+                    Swal.fire({
+                        title: "Berhasil!",
+                        text: result.message || "Password berhasil diperbarui",
+                        icon: "success",
+                        confirmButtonColor: "#16a34a",
+                    });
                     this.closePasswordModal();
                 } else {
-                    alert(result.message || "Gagal memperbarui password");
+                    Swal.fire({
+                        title: "Gagal!",
+                        text: result.message || "Gagal memperbarui password",
+                        icon: "error",
+                        confirmButtonColor: "#ef4444",
+                    });
                 }
             } catch (error) {
                 console.error(error);
-                alert("Terjadi kesalahan koneksi");
+                Swal.fire({
+                    title: "Error!",
+                    text: "Terjadi kesalahan koneksi",
+                    icon: "error",
+                    confirmButtonColor: "#ef4444",
+                });
             } finally {
                 this.isLoading = false;
             }
@@ -1370,10 +1398,24 @@ export function accountManagement(data, schoolMode = false) {
 
         async updateStatus(row) {
             const newStatus = row.status == 1 ? 0 : 1;
-            const confirmMessage =
-                newStatus == 1 ? "Aktifkan akun ini?" : "Nonaktifkan akun ini?";
+            const confirmTitle = newStatus == 1 ? "Aktifkan Akun?" : "Nonaktifkan Akun?";
+            const confirmText = newStatus == 1
+                ? `Apakah Anda yakin ingin mengaktifkan akun "${row.data ? row.data.name : row.name}"?`
+                : `Apakah Anda yakin ingin menonaktifkan akun "${row.data ? row.data.name : row.name}"?`;
 
-            if (!confirm(confirmMessage)) return;
+            const confirmResult = await Swal.fire({
+                title: confirmTitle,
+                text: confirmText,
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: newStatus == 1 ? "#16a34a" : "#ef4444",
+                cancelButtonColor: "#6b7280",
+                confirmButtonText: newStatus == 1 ? "Ya, Aktifkan!" : "Ya, Nonaktifkan!",
+                cancelButtonText: "Batal",
+                reverseButtons: true,
+            });
+
+            if (!confirmResult.isConfirmed) return;
 
             try {
                 const token = document
@@ -1384,6 +1426,7 @@ export function accountManagement(data, schoolMode = false) {
                     headers: {
                         "Content-Type": "application/json",
                         "X-CSRF-TOKEN": token,
+                        "Accept": "application/json",
                     },
                     body: JSON.stringify({
                         id: row.id,
@@ -1394,20 +1437,109 @@ export function accountManagement(data, schoolMode = false) {
                 const result = await response.json();
 
                 if (response.ok) {
-                    // Update local data
                     const index = this.rows.findIndex((r) => r.id === row.id);
                     if (index !== -1) {
                         this.rows[index].status = newStatus;
                         this.rows[index].state =
                             newStatus == 1 ? "Aktif" : "Tidak Aktif";
                     }
-                    alert(result.message);
+                    Swal.fire({
+                        title: "Berhasil!",
+                        text: result.message || "Status berhasil diperbarui",
+                        icon: "success",
+                        confirmButtonColor: "#16a34a",
+                    });
                 } else {
-                    alert(result.message || "Gagal memperbarui status");
+                    Swal.fire({
+                        title: "Gagal!",
+                        text: result.message || "Gagal memperbarui status",
+                        icon: "error",
+                        confirmButtonColor: "#ef4444",
+                    });
                 }
             } catch (error) {
                 console.error(error);
-                alert("Terjadi kesalahan koneksi");
+                Swal.fire({
+                    title: "Error!",
+                    text: "Terjadi kesalahan koneksi",
+                    icon: "error",
+                    confirmButtonColor: "#ef4444",
+                });
+            }
+        },
+
+        async updateLock(row) {
+            const currentLock = !!row.is_lock;
+            const newLock = !currentLock;
+            const targetLabel = newLock ? "Kunci" : "Buka Kunci";
+            const confirmTitle = newLock ? "Kunci Akun Perangkat?" : "Buka Kunci Akun Perangkat?";
+            const confirmText = newLock
+                ? `Apakah Anda yakin ingin mengunci akun "${row.data ? row.data.name : row.name}" ke perangkat?`
+                : `Apakah Anda yakin ingin membuka kunci akun "${row.data ? row.data.name : row.name}"? Device ID akan di-reset sehingga user dapat login dari perangkat baru.`;
+
+            const confirmResult = await Swal.fire({
+                title: confirmTitle,
+                text: confirmText,
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: newLock ? "#f59e0b" : "#16a34a",
+                cancelButtonColor: "#6b7280",
+                confirmButtonText: `Ya, ${targetLabel}!`,
+                cancelButtonText: "Batal",
+                reverseButtons: true,
+            });
+
+            if (!confirmResult.isConfirmed) return;
+
+            try {
+                const token = document
+                    .querySelector('meta[name="csrf-token"]')
+                    .getAttribute("content");
+                const response = await fetch("/dashboard/master/akun/lock", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": token,
+                        "Accept": "application/json",
+                    },
+                    body: JSON.stringify({
+                        id: row.id,
+                        is_lock: newLock,
+                    }),
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    const index = this.rows.findIndex((r) => r.id === row.id);
+                    if (index !== -1) {
+                        this.rows[index].is_lock = newLock;
+                        if (!newLock) {
+                            this.rows[index].deviceId = null;
+                        }
+                    }
+                    Swal.fire({
+                        title: "Berhasil!",
+                        text: result.message || "Status kunci berhasil diperbarui",
+                        icon: "success",
+                        confirmButtonColor: "#16a34a",
+                    });
+                } else {
+                    Swal.fire({
+                        title: "Gagal!",
+                        text: result.message || "Gagal memperbarui status kunci",
+                        icon: "error",
+                        confirmButtonColor: "#ef4444",
+                    });
+                }
+            } catch (error) {
+                console.error(error);
+                Swal.fire({
+                    title: "Error!",
+                    text: "Terjadi kesalahan koneksi",
+                    icon: "error",
+                    confirmButtonColor: "#ef4444",
+                });
             }
         },
     };

@@ -36,6 +36,12 @@
                 <option value="{{ $jabatan->id }}">{{ $jabatan->name }}</option>
                 @endforeach
             </select>
+            <select x-model="filterLock" @change="currentPage = 1"
+                class="border border-gray-300 ring-0 rounded-xl px-3 py-2 focus:outline-[#177245]">
+                <option value="">Semua Status Kunci</option>
+                <option value="locked">Terkunci</option>
+                <option value="unlocked">Tidak Terkunci</option>
+            </select>
         </div>
         <div class="flex gap-2">
             <a :href="'{{ route('dashboard.master.akun.export') }}?kelas=' + filterKelas"
@@ -59,6 +65,7 @@
                     <th class="px-4 py-2">{{ config('app.school_mode') ? 'Kelas' : 'Prodi' }}</th>
                     <th class="px-4 py-2">Tipe / Jabatan</th>
                     <th class="px-4 py-2">Status</th>
+                    <th class="px-4 py-2">Kunci Perangkat</th>
                     <th class="px-4 py-2">Opsi</th>
                 </tr>
             </thead>
@@ -83,6 +90,20 @@
                                 x-text="row.state"></span>
                         </td>
                         <td class="px-4 py-2">
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <button @click="updateLock(row)"
+                                    :class="row.is_lock ? 'bg-amber-100 text-amber-700 hover:bg-amber-200 border border-amber-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-300'"
+                                    class="px-2.5 py-1 rounded-full text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors shadow-xs"
+                                    :title="row.is_lock ? 'Klik untuk membuka kunci perangkat' : 'Klik untuk mengunci perangkat'">
+                                    <span class="inline-block w-2 h-2 rounded-full" :class="row.is_lock ? 'bg-amber-500' : 'bg-gray-400'"></span>
+                                    <span x-text="row.is_lock ? 'Terkunci' : 'Terbuka'"></span>
+                                </button>
+                                <template x-if="row.deviceId">
+                                    <span class="text-[10px] text-gray-400 font-mono truncate max-w-[80px]" :title="'Device ID: ' + row.deviceId" x-text="row.deviceId"></span>
+                                </template>
+                            </div>
+                        </td>
+                        <td class="px-4 py-2">
                             <div class="flex gap-2">
                                 <button @click="openPasswordModal(row)"
                                     class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs cursor-pointer">
@@ -93,12 +114,17 @@
                                     class="text-white px-2 py-1 rounded text-xs cursor-pointer"
                                     x-text="row.status == 1 ? 'Nonaktifkan' : 'Aktifkan'">
                                 </button>
+                                <button @click="updateLock(row)"
+                                    :class="row.is_lock ? 'bg-amber-600 hover:bg-amber-700' : 'bg-purple-600 hover:bg-purple-700'"
+                                    class="text-white px-2 py-1 rounded text-xs cursor-pointer"
+                                    x-text="row.is_lock ? 'Buka Kunci' : 'Kunci'">
+                                </button>
                             </div>
                         </td>
                     </tr>
                 </template>
                 <tr x-show="filteredData().length === 0">
-                    <td colspan="7" class="text-center px-4 py-2 text-gray-500">No results found.</td>
+                    <td colspan="8" class="text-center px-4 py-2 text-gray-500">No results found.</td>
                 </tr>
             </tbody>
         </table>
