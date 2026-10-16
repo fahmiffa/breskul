@@ -686,6 +686,14 @@ class ApiController extends Controller
             $user->save();
         }
 
+        // Update deviceId jika kosong/null dan ubah is_lock menjadi true
+        $deviceId = $request->input('deviceId') ?? $request->header('X-Device-Id');
+        if (empty($user->deviceId) && !empty($deviceId)) {
+            $user->deviceId = $deviceId;
+            $user->is_lock = true;
+            $user->save();
+        }
+
         return response()->json([
             'token'      => $token,
             'expires_in' => auth('api')->factory()->getTTL() * 1,
@@ -698,10 +706,30 @@ class ApiController extends Controller
     /**
      * Refresh a token.
      */
-    public function refresh()
+    public function refresh(Request $request)
     {
         try {
+            $user = null;
+            try {
+                $user = JWTAuth::parseToken()->authenticate();
+            } catch (\Throwable $e) {
+            }
+
             $token = JWTAuth::refresh(JWTAuth::getToken());
+
+            if (!$user) {
+                try {
+                    $user = JWTAuth::setToken($token)->toUser();
+                } catch (\Throwable $e) {
+                }
+            }
+
+            $deviceId = $request->input('deviceId') ?? $request->header('X-Device-Id');
+            if ($user && empty($user->deviceId) && !empty($deviceId)) {
+                $user->deviceId = $deviceId;
+                $user->is_lock = true;
+                $user->save();
+            }
 
             return response()->json([
                 'success' => true,

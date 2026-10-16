@@ -123,6 +123,8 @@ class User extends Authenticatable implements JWTSubject
         'nomor',
         'image',
         'jabatan_id',
+        'is_lock',
+        'deviceId',
     ];
 
     /**
@@ -147,6 +149,7 @@ class User extends Authenticatable implements JWTSubject
         return [
             'email_verified_at' => 'datetime',
             'password'          => 'hashed',
+            'is_lock'           => 'boolean',
         ];
     }
 }
