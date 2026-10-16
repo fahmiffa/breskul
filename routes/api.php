@@ -7,14 +7,7 @@ use Illuminate\Support\Facades\Route;
 Route::post('/absensi-device', [ApiController::class, 'postAbsensiApiKey']);
 Route::post('/webhook', [Home::class, 'midtransHook']);
 Route::post('/saldo/transaksi', [ApiController::class, 'rfidRiwayatSaldo']);
-if(ENV('SALDO'))
-{
-    Route::post('/push', [ApiController::class, 'saldoGate']);
-}
-else
-{
-    Route::post('/push', [ApiController::class, 'absenGate']);
-}
+Route::post('/push', [ApiController::class, 'push']);
 
 Route::post('/status', function () {
     return response()->json([

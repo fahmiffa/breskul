@@ -341,6 +341,7 @@ class ApiController extends Controller
                 'msg'     => 'Perangkat error',
             ], 400);
         }
+        
     }
 
     public function saldoGate(Students $student)
