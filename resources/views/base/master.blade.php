@@ -259,6 +259,24 @@
         Akun
     </li>
 </a>
+<a href="{{ route('dashboard.master.bank.index') }}">
+    <li
+        class="flex flex-col justify-center items-center p-2.5 sm:p-4 border border-gray-200 rounded-xl shadow-sm hover:bg-green-100 bg-white text-center h-full cursor-pointer text-xs sm:text-sm font-medium transition-colors {{ Route::is('dashboard.master.bank.*') ? 'bg-green-100' : null }}">
+        <span class="text-green-500 mb-1.5 sm:mb-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="lucide lucide-landmark w-5 h-5 sm:w-6 sm:h-6">
+                <line x1="3" y1="22" x2="21" y2="22"/>
+                <line x1="6" y1="18" x2="6" y2="11"/>
+                <line x1="10" y1="18" x2="10" y2="11"/>
+                <line x1="14" y1="18" x2="14" y2="11"/>
+                <line x1="18" y1="18" x2="18" y2="11"/>
+                <polygon points="12 2 20 7 4 7"/>
+            </svg>
+        </span>
+        Bank
+    </li>
+</a>
 <a href="{{ route('dashboard.master.pembayaran.index') }}">
     <li
         class="flex flex-col justify-center items-center p-2.5 sm:p-4 border border-gray-200 rounded-xl shadow-sm hover:bg-green-100 bg-white text-center h-full cursor-pointer text-xs sm:text-sm font-medium transition-colors {{ Route::is('dashboard.master.pembayaran.*') ? 'bg-green-100' : null }}">

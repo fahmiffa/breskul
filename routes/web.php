@@ -104,6 +104,7 @@ Route::prefix('dashboard')->middleware('auth')->name('dashboard.')->group(functi
         Route::get('soal/template', [App\Http\Controllers\SoalController::class, 'template'])->name('soal.template');
         Route::resource('soal', App\Http\Controllers\SoalController::class);
         Route::resource('ujian', App\Http\Controllers\UjianController::class);
+        Route::resource('bank', App\Http\Controllers\BankController::class);
         Route::middleware(['isRole'])->group(function () {
             Route::resource('app', App\Http\Controllers\AppController::class);
             Route::resource('api', App\Http\Controllers\ApiKeyController::class);

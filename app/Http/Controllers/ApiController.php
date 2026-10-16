@@ -686,13 +686,18 @@ class ApiController extends Controller
             $user->save();
         }
 
-        // Update deviceId jika kosong/null dan ubah is_lock menjadi true
-        $deviceId = $request->input('deviceId') ?? $request->header('X-Device-Id');
-        if (empty($user->deviceId) && !empty($deviceId)) {
-            $user->deviceId = $deviceId;
-            $user->is_lock = true;
-            $user->save();
+        if($user->role != 2)
+        {
+            // Update deviceId jika kosong/null dan ubah is_lock menjadi true
+            $deviceId = $request->input('deviceId') ?? $request->header('X-Device-Id');
+            if (empty($user->deviceId) && !empty($deviceId)) {
+                $user->deviceId = $deviceId;
+                $user->is_lock = true;
+                $user->save();
+            }
+            
         }
+
 
         return response()->json([
             'token'      => $token,
@@ -725,7 +730,7 @@ class ApiController extends Controller
             }
 
             $deviceId = $request->input('deviceId') ?? $request->header('X-Device-Id');
-            if ($user && empty($user->deviceId) && !empty($deviceId)) {
+            if ($user && empty($user->deviceId) && !empty($deviceId) && $user->role != 2) {
                 $user->deviceId = $deviceId;
                 $user->is_lock = true;
                 $user->save();
