@@ -17,6 +17,7 @@ class AttendanceConfig extends Model
         'lat',
         'lng',
         'radius',
+        'students'
     ];
 
     public function employee()

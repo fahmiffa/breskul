@@ -122,6 +122,7 @@ class AttendanceConfigController extends Controller
             'lat' => $request->lat,
             'lng' => $request->lng,
             'radius' => $request->radius ?? 100,
+            'students' => $request->role_target == "karyawan" ? 0 : 1
         ];
 
         if ($request->role_target === 'karyawan' && !empty($request->employee_ids)) {
@@ -197,6 +198,8 @@ class AttendanceConfigController extends Controller
         if ($isRole0 && $request->filled('app')) {
             $data['app'] = $request->app;
         }
+
+        $data['students'] = $request->role_target == "karyawan" ? 0 : 1;
 
         $item->update($data);
 

@@ -355,6 +355,38 @@ class ApiController extends Controller
     public function absenGate(Students $student)
     {
 
+        $app = $user->studentData->app ?? null;
+        $config = AttendanceConfig::whereNull('employee_id')
+                    ->when($app, fn($q) => $q->where('app', $app))
+                    ->where('students', 1)
+                    ->first();
+
+        $now = now();
+        
+        if ($config->clock_in_start && $config->clock_in_end && $now->between(
+            Carbon::createFromTimeString($config->clock_in_start),
+            Carbon::createFromTimeString($config->clock_in_end)
+        )) {
+            $type = 'masuk';
+        } elseif ($config->clock_out_start && $config->clock_out_end && $now->between(
+            Carbon::createFromTimeString($config->clock_out_start),
+            Carbon::createFromTimeString($config->clock_out_end)
+        )) {
+            $type = 'pulang';
+        }
+        else {
+            $type = NULL;
+        }
+
+        if (!$type) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Waktu Tidak Valid',
+            ], 400);
+        }
+
+
+
         $today = date('Y-m-d');
         $historyCount = Present::where('student_id', $student->id)
             ->whereDate('waktu', $today)
