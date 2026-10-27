@@ -53,6 +53,7 @@ Route::prefix('dashboard')->middleware('auth')->name('dashboard.')->group(functi
     Route::put('/kas/{id}', [App\Http\Controllers\KasController::class, 'update'])->name('kas.update');
     Route::delete('/kas/{id}', [App\Http\Controllers\KasController::class, 'destroy'])->name('kas.destroy');
     Route::get('/absensi', [Home::class, 'absensi'])->name('absensi');
+    Route::get('/absensi/export', [Home::class, 'exportAbsensiExcel'])->name('absensi.export');
     Route::get('setting', [Home::class, 'setting'])->name('setting');
     Route::post('/pass', [Home::class, 'pass'])->name('pass');
     Route::resource('pengumuman', AnnoucementController::class);

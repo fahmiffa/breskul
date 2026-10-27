@@ -8,7 +8,13 @@
 </style>
 @endpush
 @section('content')
-<div class="flex flex-col bg-white rounded-2xl shadow-md p-4 sm:p-6 border border-gray-100" x-data="absensiTable({{ json_encode($items) }}, '{{ $type ?? '' }}')">
+<div class="flex flex-col bg-white rounded-2xl shadow-md p-4 sm:p-6 border border-gray-100" 
+     x-data="{
+         ...absensiTable({{ json_encode($items) }}, '{{ $type ?? '' }}'),
+         exportModalOpen: false,
+         exportType: '{{ $type === 'murid' ? 'murid' : 'karyawan' }}',
+         exportMonth: '{{ !empty($start) ? substr($start, 0, 7) : date('Y-m') }}'
+     }">
 
     <form action="{{ route('dashboard.absensi') }}" method="GET" class="mb-6 flex flex-wrap items-end gap-3 sm:gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
         <div class="flex flex-col gap-1 w-full sm:w-auto">
@@ -40,9 +46,12 @@
             <a href="{{ route('dashboard.absensi') }}" class="flex-1 sm:flex-none bg-white hover:bg-gray-100 text-gray-700 border border-gray-300 font-bold py-2 px-5 rounded-lg transition duration-200 text-sm flex items-center justify-center shadow-sm">
                 Reset
             </a>
-            <a href="{{ route('dashboard.absensi', ['start_date' => $start, 'end_date' => $end, 'type' => $type, 'export' => 'excel']) }}" class="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-5 rounded-lg transition duration-200 text-sm flex items-center justify-center shadow-sm">
+            <button type="button" @click="exportModalOpen = true" class="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-5 rounded-lg transition duration-200 text-sm flex items-center justify-center gap-2 shadow-sm cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
                 Export Excel
-            </a>
+            </button>
         </div>
     </form>
 
@@ -264,6 +273,118 @@
                     </button>
                 </div>
             </div>
+
+        </div>
+    </div>
+
+    {{-- Modal Export Excel --}}
+    <div x-show="exportModalOpen"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         @keydown.escape.window="exportModalOpen = false"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+         style="display: none;"
+         x-cloak>
+
+        <div @click.outside="exportModalOpen = false"
+             class="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-100">
+
+            {{-- Modal Header --}}
+            <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+                <div class="flex items-center gap-2">
+                    <div class="p-2 bg-green-100 text-green-700 rounded-xl">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-gray-800 text-base">Export Absensi Excel</h3>
+                        <p class="text-xs text-gray-500">Pilih tipe absensi dan bulan laporan</p>
+                    </div>
+                </div>
+
+                <button @click="exportModalOpen = false" type="button"
+                    class="text-gray-400 hover:text-gray-700 p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            {{-- Modal Body / Form --}}
+            <form action="{{ route('dashboard.absensi.export') }}" method="GET" class="p-6 flex flex-col gap-5">
+                <input type="hidden" name="export" value="excel">
+
+                {{-- Pilihan Tipe --}}
+                <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Tipe Absensi</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="relative flex items-center justify-between p-3 border rounded-xl cursor-pointer transition-all"
+                               :class="exportType === 'karyawan' ? 'border-green-600 bg-green-50/50 ring-2 ring-green-500/20' : 'border-gray-200 hover:bg-gray-50'">
+                            <div class="flex items-center gap-2.5">
+                                <span class="w-3 h-3 rounded-full border flex items-center justify-center"
+                                      :class="exportType === 'karyawan' ? 'border-green-600 bg-green-600' : 'border-gray-400'">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-white" x-show="exportType === 'karyawan'"></span>
+                                </span>
+                                <span class="text-sm font-semibold text-gray-800">Karyawan</span>
+                            </div>
+                            <input type="radio" name="type" value="karyawan" x-model="exportType" class="sr-only">
+                        </label>
+
+                        <label class="relative flex items-center justify-between p-3 border rounded-xl cursor-pointer transition-all"
+                               :class="exportType === 'murid' ? 'border-green-600 bg-green-50/50 ring-2 ring-green-500/20' : 'border-gray-200 hover:bg-gray-50'">
+                            <div class="flex items-center gap-2.5">
+                                <span class="w-3 h-3 rounded-full border flex items-center justify-center"
+                                      :class="exportType === 'murid' ? 'border-green-600 bg-green-600' : 'border-gray-400'">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-white" x-show="exportType === 'murid'"></span>
+                                </span>
+                                <span class="text-sm font-semibold text-gray-800">{{ config('app.school_mode') ? 'Murid' : 'Mahasiswa' }}</span>
+                            </div>
+                            <input type="radio" name="type" value="murid" x-model="exportType" class="sr-only">
+                        </label>
+                    </div>
+                </div>
+
+                {{-- Pilihan Bulan --}}
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Pilih Bulan</label>
+                    <input type="month" name="month" x-model="exportMonth" required
+                           class="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm focus:outline-green-500 focus:ring-1 focus:ring-green-500 shadow-sm bg-white cursor-pointer" />
+                    <p class="text-[11px] text-gray-500 mt-0.5">
+                        Setiap tanggal absensi akan dibuat menjadi sheet terpisah (contoh: <span class="font-medium text-gray-700">1-10-2026</span>, <span class="font-medium text-gray-700">2-10-2026</span>, dst).
+                    </p>
+                </div>
+
+                {{-- Info Box --}}
+                <div class="p-3 bg-amber-50 rounded-xl border border-amber-200/70 text-xs text-amber-800 flex gap-2.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-amber-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>
+                        Setiap sheet menampilkan kolom <strong>Nama</strong>, <strong>Masuk</strong>, dan <strong>Pulang</strong>. Waktu masuk yang terlambat akan otomatis diblock dengan warna merah.
+                    </span>
+                </div>
+
+                {{-- Modal Footer --}}
+                <div class="flex items-center justify-end gap-2.5 pt-2 border-t border-gray-100">
+                    <button type="button" @click="exportModalOpen = false"
+                            class="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">
+                        Batal
+                    </button>
+                    <button type="submit" @click="setTimeout(() => exportModalOpen = false, 500)"
+                            class="px-5 py-2 text-sm font-bold text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors shadow-sm flex items-center gap-2 cursor-pointer">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Download Excel
+                    </button>
+                </div>
+            </form>
 
         </div>
     </div>

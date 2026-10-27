@@ -90,6 +90,10 @@ class Home extends Controller
 
     public function absensi(Request $request)
     {
+        if ($request->has('export') && $request->export == 'excel') {
+            return $this->exportAbsensiExcel($request);
+        }
+
         $start = $request->get('start_date', date('Y-m-d'));
         $end   = $request->get('end_date', date('Y-m-d'));
         $type  = $request->get('type');
@@ -97,7 +101,7 @@ class Home extends Controller
         $items = Present::query()
             ->whereDate('waktu', '>=', $start)
             ->whereDate('waktu', '<=', $end)
-            ->when(auth()->user()->role == 1 && auth()->user()->app, function ($query) {
+            ->when(auth()->check() && auth()->user()->role == 1 && auth()->user()->app, function ($query) {
                 $query->where('app', auth()->user()->app->id);
             })
             ->when($type === 'murid', function ($query) {
@@ -110,11 +114,22 @@ class Home extends Controller
             ->latest('waktu')
             ->get();
 
-        if ($request->has('export') && $request->export == 'excel') {
-            return $this->exportAbsensi($items);
+        return view('home.present.index', compact('items', 'start', 'end', 'type'));
+    }
+
+    public function exportAbsensiExcel(Request $request)
+    {
+        $type = $request->get('type', 'karyawan');
+        $month = $request->get('month');
+
+        if (!$month && $request->has('start_date')) {
+            $month = \Carbon\Carbon::parse($request->get('start_date'))->format('Y-m');
         }
 
-        return view('home.present.index', compact('items', 'start', 'end', 'type'));
+        $appId = auth()->check() && auth()->user()->role == 1 && auth()->user()->app ? auth()->user()->app->id : null;
+
+        $export = new \App\Exports\AbsensiExport($type, $month, $appId);
+        return $export->export();
     }
 
     public function exportAbsensi($items)

@@ -62,7 +62,7 @@ class Present extends Model
             $clockInEnd = Carbon::create($waktu->year, $waktu->month, $waktu->day, $hour, $minute, $second, $waktu->timezone);
 
             if ($waktu->greaterThan($clockInEnd)) {
-                $diffInMinutes = $clockInEnd->diffInMinutes($waktu);
+                $diffInMinutes = (int) $clockInEnd->diffInMinutes($waktu);
                 if ($diffInMinutes >= 60) {
                     $hours = floor($diffInMinutes / 60);
                     $minutes = $diffInMinutes % 60;
