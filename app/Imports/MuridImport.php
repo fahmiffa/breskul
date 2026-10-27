@@ -57,6 +57,7 @@ class MuridImport implements ToCollection
                     'password'    => Hash::make('breskul'),
                     'role'        => 2,
                     'status'      => 1,
+                    'nomor'       => isset($row[6]) ? trim((string) $row[6]) : null;
                     'created_at'  => now(),
                     'updated_at'  => now(),
                 ]);
@@ -67,6 +68,9 @@ class MuridImport implements ToCollection
                     'app'        => auth()->user()->app->id,
                     'gender'     => $gender,
                     'nis'        => $nis,
+                    'hp_parent'  => isset($row[6]) ? trim((string) $row[6]) : null;
+                    'alamat'     => isset($row[4]) ? trim((string) $row[4]) : null;
+                    'rfid'       => isset($row[7]) ? trim((string) $row[7]) : null;
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
