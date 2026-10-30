@@ -40,7 +40,7 @@ class Present extends Model
             }
         } elseif ($this->student_id) {
             if ($this->murid) {
-                $config = \App\Models\AttendanceConfig::whereNull('employee_id')->where('app', $this->murid->app)->first();
+                $config = \App\Models\AttendanceConfig::whereNull('employee_id')->where('app', $this->murid->app)->where('students',1)->first();
             }
         } else {
             $config = \App\Models\AttendanceConfig::whereNull('employee_id')->where('app', $this->app)->first();
