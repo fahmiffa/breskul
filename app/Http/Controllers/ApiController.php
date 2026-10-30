@@ -151,7 +151,7 @@ class ApiController extends Controller
     public function submitIzin(\Illuminate\Http\Request $request)
     {
         $user = Auth::user();
-        
+    
         if (!in_array($user->role, [3, 4])) {
             return response()->json(['success' => false, 'message' => 'Unauthorized role']);
         }
@@ -162,10 +162,18 @@ class ApiController extends Controller
             return response()->json(['success' => false, 'message' => 'Employee data not found']);
         }
         
-        $request->validate([
+        $validator = \Validator::make($request->all(), [
             'keterangan' => 'required',
             'tanggal' => 'required|date',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+                'received' => $request->all()
+            ], 422);
+        }
         
         \App\Models\Permit::create([
             'employee_id' => $employeeId,
@@ -190,10 +198,19 @@ class ApiController extends Controller
         if (!$employeeId) {
             return response()->json(['success' => false, 'message' => 'Employee data not found']);
         }
-        
-        $request->validate([
-            'id' => 'required',
+
+        $validator = \Validator::make($request->all(), [
+              'id' => 'required|exists:permits,id',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+                'received' => $request->all()
+            ], 422);
+        }
+        
         
         $permit = \App\Models\Permit::where('id', $request->id)->where('employee_id', $employeeId)->first();
         if (!$permit) {
