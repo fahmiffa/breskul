@@ -70,6 +70,24 @@ Route::prefix('dashboard')->middleware('auth')->name('dashboard.')->group(functi
         return response()->json(['progress' => $progress]);
     });
 
+    // === GNUCASH ACCOUNTING MODULE ===
+    Route::prefix('gnucash')->name('gnucash.')->group(function () {
+        // Accounts (Chart of Accounts)
+        Route::get('accounts', [App\Http\Controllers\GnucashAccountController::class, 'index'])->name('accounts.index');
+        Route::get('accounts/create', [App\Http\Controllers\GnucashAccountController::class, 'create'])->name('accounts.create');
+        Route::post('accounts', [App\Http\Controllers\GnucashAccountController::class, 'store'])->name('accounts.store');
+        Route::get('accounts/{id}/edit', [App\Http\Controllers\GnucashAccountController::class, 'edit'])->name('accounts.edit');
+        Route::put('accounts/{id}', [App\Http\Controllers\GnucashAccountController::class, 'update'])->name('accounts.update');
+        Route::delete('accounts/{id}', [App\Http\Controllers\GnucashAccountController::class, 'destroy'])->name('accounts.destroy');
+        Route::get('accounts/{id}/ledger', [App\Http\Controllers\GnucashAccountController::class, 'ledger'])->name('accounts.ledger');
+        Route::post('accounts/{id}/quick-transaction', [App\Http\Controllers\GnucashAccountController::class, 'quickTransaction'])->name('accounts.quick-transaction');
+
+        // Transactions (Journal)
+        Route::get('transactions/import', [App\Http\Controllers\GnucashTransactionController::class, 'importForm'])->name('transactions.import.form');
+        Route::post('transactions/import', [App\Http\Controllers\GnucashTransactionController::class, 'import'])->name('transactions.import');
+        Route::resource('transactions', App\Http\Controllers\GnucashTransactionController::class);
+    });
+
     Route::prefix('master')->name('master.')->middleware('checkMaster')->group(function () {
         Route::resource('kelas', App\Http\Controllers\ClassesController::class);
         Route::get('/akun', [Home::class, 'akun'])->name('akun.index');

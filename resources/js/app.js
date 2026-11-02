@@ -1,10 +1,13 @@
 import Alpine from "alpinejs";
 import Swal from "sweetalert2";
+import TomSelect from "tom-select";
+import "tom-select/dist/css/tom-select.css";
 import "trix";
 import "trix/dist/trix.css";
 import "./alignment-elements.js";
 
 window.Swal = Swal;
+window.TomSelect = TomSelect;
 
 window.Trix = Trix; // Don't need to bind to the window, but useful for debugging.
 Trix.config.toolbar.getDefaultHTML = toolbarDefaultHTML;
