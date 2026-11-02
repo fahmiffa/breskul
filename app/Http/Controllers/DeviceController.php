@@ -12,35 +12,6 @@ class DeviceController extends Controller
     /**
      * Resolve the app_id based on authenticated user and user role.
      */
-    protected function resolveAppId(Request $request): ?int
-    {
-        $user = Auth::user();
-        if (!$user) {
-            return null;
-        }
-
-        // Role 1: Admin App (linked to App via user_id)
-        if ($user->role == 1 && $user->app) {
-            return (int) $user->app->id;
-        }
-
-        // Check if user has direct app relation
-        if ($user->app) {
-            return (int) $user->app->id;
-        }
-
-        // Role 0: Super Admin (can view specific app if filtered, or null for all)
-        if ($user->role == 0) {
-            return $request->filled('app_id') ? (int) $request->get('app_id') : null;
-        }
-
-        // Role 3: Guru
-        if ($user->role == 3 && $user->teacherData) {
-            return (int) ($user->teacherData->app ?? null);
-        }
-
-        return null;
-    }
 
     /**
      * Get unique devices grouped by device_name (taking the latest record for each device_name).
@@ -66,7 +37,7 @@ class DeviceController extends Controller
      */
     public function index(Request $request)
     {
-        $appId = $this->resolveAppId($request);
+        $appId = Auth::user()->id;
         $devices = $this->getUniqueDevices($appId);
 
         if ($request->ajax() || $request->wantsJson()) {

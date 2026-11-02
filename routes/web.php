@@ -69,8 +69,6 @@ Route::prefix('dashboard')->middleware('auth')->name('dashboard.')->group(functi
         $progress = Cache::get("job-progress-{$jobId}", 0);
         return response()->json(['progress' => $progress]);
     });
-    Route::get('/perangkat-data', [App\Http\Controllers\DeviceController::class, 'data'])->name('perangkat.live_data');
-
     // === GNUCASH ACCOUNTING MODULE ===
     Route::prefix('gnucash')->name('gnucash.')->group(function () {
         // Accounts (Chart of Accounts)

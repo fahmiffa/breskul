@@ -16,10 +16,6 @@
         <div>
             <div class="flex items-center gap-2">
                 <h1 class="text-xl sm:text-2xl font-bold text-gray-800">Monitoring Perangkat</h1>
-                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    Live Pooling (15s)
-                </span>
             </div>
             <p class="text-xs sm:text-sm text-gray-500 mt-1">
                 Pantau status perangkat IoT operasional secara real-time dari endpoint <code>POST /api/state</code>
@@ -205,7 +201,6 @@
                             {{-- Terakhir Update --}}
                             <td class="px-4 py-3.5 whitespace-nowrap">
                                 <div class="text-xs font-medium text-gray-700" x-text="item.updated_at"></div>
-                                <div class="text-[11px] text-gray-400" x-text="item.last_seen"></div>
                             </td>
 
                             {{-- Aksi --}}
@@ -241,36 +236,12 @@
         </div>
     </div>
 
-    {{-- API Information Box --}}
-    <div class="bg-gray-50 border border-gray-200 rounded-2xl p-4 sm:p-5">
-        <div class="flex items-start gap-3">
-            <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex-shrink-0 flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
-                </svg>
-            </div>
-            <div class="flex-1 text-xs text-gray-600">
-                <h4 class="font-bold text-gray-800 text-sm mb-1">Informasi Endpoint Integrasi IoT Perangkat</h4>
-                <p class="mb-2">Perangkat IoT (ESP32 / RFID Reader / Gate) mengirimkan status ke server dengan spesifikasi berikut:</p>
-                <div class="bg-gray-900 text-gray-100 rounded-xl p-3 font-mono text-[11px] overflow-x-auto space-y-1">
-                    <div><span class="text-emerald-400 font-bold">POST</span> {{ url('/api/state') }}</div>
-                    <div class="text-gray-400">Headers: Device-ID: &lt;API_KEY&gt; | Content-Type: application/json</div>
-                    <div class="text-gray-300">{</div>
-                    <div class="pl-4 text-gray-300">"device_name": "kantor",</div>
-                    <div class="pl-4 text-emerald-300">"status": 1, <span class="text-gray-500">// 0 = startup, 1 = stand by</span></div>
-                    <div class="pl-4 text-gray-300">"app": {{ $appId ?? 1 }}</div>
-                    <div class="text-gray-300">}</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
 </div>
 
 @push('script')
 <script>
-document.addEventListener('alpine:init', () => {
-    Alpine.data('deviceMonitoring', () => ({
+window.deviceMonitoring = function() {
+    return {
         appId: @json($appId),
         devices: @json($deviceList ?? []),
         summary: {
@@ -281,7 +252,7 @@ document.addEventListener('alpine:init', () => {
         search: '',
         filterStatus: 'all',
         loading: false,
-        countdown: 15,
+        countdown: 5,
         timerInterval: null,
         pollInterval: null,
         lastUpdated: '{{ now()->format("H:i:s") }}',
@@ -292,7 +263,7 @@ document.addEventListener('alpine:init', () => {
                 if (this.countdown > 1) {
                     this.countdown--;
                 } else {
-                    this.countdown = 15;
+                    this.countdown = 5;
                     this.fetchData(false);
                 }
             }, 1000);
@@ -312,7 +283,7 @@ document.addEventListener('alpine:init', () => {
         async fetchData(manual = false) {
             if (manual) {
                 this.loading = true;
-                this.countdown = 15;
+                this.countdown = 5;
             }
 
             try {
@@ -368,8 +339,16 @@ document.addEventListener('alpine:init', () => {
                 alert('Terjadi kesalahan jaringan.');
             }
         }
-    }));
-});
+    };
+};
+
+if (window.Alpine) {
+    window.Alpine.data('deviceMonitoring', window.deviceMonitoring);
+} else {
+    document.addEventListener('alpine:init', () => {
+        window.Alpine.data('deviceMonitoring', window.deviceMonitoring);
+    });
+}
 </script>
 @endpush
 @endsection

@@ -370,35 +370,6 @@ class Home extends Controller
             $q->where('app', $appId);
         })->count();
 
-        $latestDeviceIds = \App\Models\Device::selectRaw('MAX(id) as id')
-            ->when($appId, function ($q) use ($appId) {
-                $q->where('app_id', $appId);
-            })
-            ->groupBy('device_name');
-
-        $devices = \App\Models\Device::whereIn('id', $latestDeviceIds)
-            ->with('app')
-            ->orderByDesc('updated_at')
-            ->get()
-            ->unique('device_name')
-            ->values();
-        $totalDevices = $devices->count();
-        $totalStandbyDevices = $devices->where('status', 1)->count();
-        $totalStartupDevices = $devices->where('status', 0)->count();
-
-        $deviceList = $devices->map(function ($d) {
-            return [
-                'id'           => $d->id,
-                'device_name'  => $d->device_name,
-                'app_id'       => $d->app_id,
-                'status'       => (int) $d->status,
-                'status_label' => (int) $d->status === 1 ? 'Stand by' : 'Startup',
-                'ip_address'   => $d->ip_address ?? '-',
-                'last_seen'    => $d->updated_at ? $d->updated_at->diffForHumans() : '-',
-                'is_active'    => $d->updated_at && $d->updated_at->diffInSeconds(now()) <= 120,
-            ];
-        });
-
         $examSummary = [];
         $totalPaymentPaid = 0;
         $totalPaymentUnpaid = 0;
@@ -454,12 +425,7 @@ class Home extends Controller
             'totalProdi',
             'examSummary',
             'totalPaymentPaid',
-            'totalPaymentUnpaid',
-            'devices',
-            'deviceList',
-            'totalDevices',
-            'totalStandbyDevices',
-            'totalStartupDevices'
+            'totalPaymentUnpaid'
         ));
     }
 
