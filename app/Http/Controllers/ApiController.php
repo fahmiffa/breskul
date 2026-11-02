@@ -369,8 +369,8 @@ class ApiController extends Controller
         $body     = $request->all();
         if ($device) {
             Device::updateOrCreate(
-                ['device_name' => $deviceId],
-                ['app_id' => $device->app]
+                ['device_name' => $request->device_name],
+                ['app_id' => $request->app]
             );
         } 
     }
