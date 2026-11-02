@@ -370,9 +370,18 @@ class Home extends Controller
             $q->where('app', $appId);
         })->count();
 
-        $devices = \App\Models\Device::when($appId, function ($q) use ($appId) {
-            $q->where('app_id', $appId);
-        })->with('app')->latest('updated_at')->get();
+        $latestDeviceIds = \App\Models\Device::selectRaw('MAX(id) as id')
+            ->when($appId, function ($q) use ($appId) {
+                $q->where('app_id', $appId);
+            })
+            ->groupBy('device_name');
+
+        $devices = \App\Models\Device::whereIn('id', $latestDeviceIds)
+            ->with('app')
+            ->orderByDesc('updated_at')
+            ->get()
+            ->unique('device_name')
+            ->values();
         $totalDevices = $devices->count();
         $totalStandbyDevices = $devices->where('status', 1)->count();
         $totalStartupDevices = $devices->where('status', 0)->count();

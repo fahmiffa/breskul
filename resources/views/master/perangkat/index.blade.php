@@ -299,7 +299,10 @@ document.addEventListener('alpine:init', () => {
         },
 
         get filteredDevices() {
+            const seen = new Set();
             return this.devices.filter(d => {
+                if (seen.has(d.device_name)) return false;
+                seen.add(d.device_name);
                 const matchSearch = !this.search || d.device_name.toLowerCase().includes(this.search.toLowerCase());
                 const matchStatus = this.filterStatus === 'all' || String(d.status) === this.filterStatus;
                 return matchSearch && matchStatus;

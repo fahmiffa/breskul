@@ -43,24 +43,36 @@ class DeviceController extends Controller
     }
 
     /**
+     * Get unique devices grouped by device_name (taking the latest record for each device_name).
+     */
+    protected function getUniqueDevices(?int $appId)
+    {
+        $latestIds = Device::selectRaw('MAX(id) as id')
+            ->when($appId, function ($q) use ($appId) {
+                $q->where('app_id', $appId);
+            })
+            ->groupBy('device_name');
+
+        return Device::whereIn('id', $latestIds)
+            ->with('app')
+            ->orderByDesc('updated_at')
+            ->get()
+            ->unique('device_name')
+            ->values();
+    }
+
+    /**
      * Display a listing of devices.
      */
     public function index(Request $request)
     {
         $appId = $this->resolveAppId($request);
-
-        $query = Device::query()
-            ->when($appId, function ($q) use ($appId) {
-                $q->where('app_id', $appId);
-            })
-            ->with('app')
-            ->orderByDesc('updated_at');
+        $devices = $this->getUniqueDevices($appId);
 
         if ($request->ajax() || $request->wantsJson()) {
-            return $this->formatJsonResponse($query->get());
+            return $this->formatJsonResponse($devices);
         }
 
-        $devices = $query->get();
         $totalCount   = $devices->count();
         $standbyCount = $devices->where('status', 1)->count();
         $startupCount = $devices->where('status', 0)->count();
@@ -100,15 +112,9 @@ class DeviceController extends Controller
     public function data(Request $request)
     {
         $appId = $this->resolveAppId($request);
+        $devices = $this->getUniqueDevices($appId);
 
-        $query = Device::query()
-            ->when($appId, function ($q) use ($appId) {
-                $q->where('app_id', $appId);
-            })
-            ->with('app')
-            ->orderByDesc('updated_at');
-
-        return $this->formatJsonResponse($query->get());
+        return $this->formatJsonResponse($devices);
     }
 
     /**
