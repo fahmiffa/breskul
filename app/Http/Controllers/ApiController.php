@@ -28,7 +28,7 @@ use App\Models\UjianStudent;
 use App\Models\Halaqah;
 use App\Models\HalaqahStudent;
 use App\Models\Teach;
-use App\Models\Devices;
+use App\Models\Device;
 use App\Services\Firebase\FirebaseMessage;
 use App\Services\PaymentWebhookService;
 use Illuminate\Support\Facades\DB;
@@ -368,7 +368,7 @@ class ApiController extends Controller
         $device   = ApiKey::where('key', $deviceId)->first();
         $body     = $request->all();
         if ($device) {
-            Devices::updateOrCreate(
+            Device::updateOrCreate(
                 ['device_name' => $deviceId],
                 ['app_id' => $device->app]
             );
