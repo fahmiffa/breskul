@@ -8,6 +8,7 @@ Route::post('/absensi-device', [ApiController::class, 'postAbsensiApiKey']);
 Route::post('/webhook', [Home::class, 'midtransHook']);
 Route::post('/saldo/transaksi', [ApiController::class, 'rfidRiwayatSaldo']);
 Route::post('/push', [ApiController::class, 'push']);
+Route::post('/state', [ApiController::class, 'state']);
 
 Route::post('/status', function () {
     return response()->json([
