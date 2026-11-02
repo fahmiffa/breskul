@@ -364,16 +364,41 @@ class ApiController extends Controller
 
     public function state(Request $request)
     {
-        $deviceId = $request->header('Device-ID', 'UNKNOWN_DEVICE');
-        $device   = ApiKey::where('key', $deviceId)->first();
-        $body     = $request->all();
-        if ($device) {
-            Device::create([
-                'device_name' => $request->device_name,
-                'app_id' => $request->app,
-                'status' => $request->status ?? 0,
+        $deviceId = $request->header('Device-ID', $request->header('X-Device-Id', $request->input('device_id', 'UNKNOWN_DEVICE')));
+        $device   = ApiKey::where('key', $deviceId)->orWhere('name', $deviceId)->first();
+
+        if ($device || $request->has('app') || $request->has('device_name')) {
+            $appId = $request->input('app') ?? $request->input('app_id') ?? ($device ? $device->app : null);
+            $rawStatus = $request->input('status', $request->input('state', 0));
+            $status = is_numeric($rawStatus)
+                ? (int) $rawStatus
+                : (in_array(strtolower((string) $rawStatus), ['stand by', 'standby', '1', 'ready', 'active']) ? 1 : 0);
+
+            $deviceName = $request->input('device_name', ($device ? $device->name : 'Perangkat'));
+
+            $dev = Device::updateOrCreate(
+                [
+                    'device_name' => $deviceName,
+                    'app_id'      => $appId,
+                ],
+                [
+                    'status'      => $status,
+                    'ip_address'  => $request->input('ip', $request->input('ip_address', $request->ip())),
+                ]
+            );
+            $dev->touch();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Status perangkat berhasil diperbarui',
+                'data'    => $dev,
             ]);
-        } 
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Device ID tidak valid',
+        ], 401);
     }
 
     public function saldoGate(Students $student)

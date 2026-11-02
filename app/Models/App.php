@@ -9,4 +9,9 @@ class App extends Model
     {
         return $this->hasOne(User::class, 'id', 'user_id');
     }
+
+    public function devices()
+    {
+        return $this->hasMany(Device::class, 'app_id', 'id');
+    }
 }

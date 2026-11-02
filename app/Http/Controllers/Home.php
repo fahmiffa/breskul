@@ -370,6 +370,26 @@ class Home extends Controller
             $q->where('app', $appId);
         })->count();
 
+        $devices = \App\Models\Device::when($appId, function ($q) use ($appId) {
+            $q->where('app_id', $appId);
+        })->with('app')->latest('updated_at')->get();
+        $totalDevices = $devices->count();
+        $totalStandbyDevices = $devices->where('status', 1)->count();
+        $totalStartupDevices = $devices->where('status', 0)->count();
+
+        $deviceList = $devices->map(function ($d) {
+            return [
+                'id'           => $d->id,
+                'device_name'  => $d->device_name,
+                'app_id'       => $d->app_id,
+                'status'       => (int) $d->status,
+                'status_label' => (int) $d->status === 1 ? 'Stand by' : 'Startup',
+                'ip_address'   => $d->ip_address ?? '-',
+                'last_seen'    => $d->updated_at ? $d->updated_at->diffForHumans() : '-',
+                'is_active'    => $d->updated_at && $d->updated_at->diffInSeconds(now()) <= 120,
+            ];
+        });
+
         $examSummary = [];
         $totalPaymentPaid = 0;
         $totalPaymentUnpaid = 0;
@@ -425,7 +445,12 @@ class Home extends Controller
             'totalProdi',
             'examSummary',
             'totalPaymentPaid',
-            'totalPaymentUnpaid'
+            'totalPaymentUnpaid',
+            'devices',
+            'deviceList',
+            'totalDevices',
+            'totalStandbyDevices',
+            'totalStartupDevices'
         ));
     }
 

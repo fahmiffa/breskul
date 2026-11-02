@@ -69,6 +69,7 @@ Route::prefix('dashboard')->middleware('auth')->name('dashboard.')->group(functi
         $progress = Cache::get("job-progress-{$jobId}", 0);
         return response()->json(['progress' => $progress]);
     });
+    Route::get('/perangkat-data', [App\Http\Controllers\DeviceController::class, 'data'])->name('perangkat.live_data');
 
     // === GNUCASH ACCOUNTING MODULE ===
     Route::prefix('gnucash')->name('gnucash.')->group(function () {
@@ -124,6 +125,8 @@ Route::prefix('dashboard')->middleware('auth')->name('dashboard.')->group(functi
         Route::resource('soal', App\Http\Controllers\SoalController::class);
         Route::resource('ujian', App\Http\Controllers\UjianController::class);
         Route::resource('bank', App\Http\Controllers\BankController::class);
+        Route::get('perangkat/data', [App\Http\Controllers\DeviceController::class, 'data'])->name('perangkat.data');
+        Route::resource('perangkat', App\Http\Controllers\DeviceController::class);
         Route::middleware(['isRole'])->group(function () {
             Route::resource('app', App\Http\Controllers\AppController::class);
             Route::resource('api', App\Http\Controllers\ApiKeyController::class);

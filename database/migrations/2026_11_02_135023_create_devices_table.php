@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->integer('app_id')->unsigned();
             $table->string('device_name');
+            $table->boolean('status')->default(0);
             $table->timestamps();
         });
     }
