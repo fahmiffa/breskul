@@ -368,10 +368,11 @@ class ApiController extends Controller
         $device   = ApiKey::where('key', $deviceId)->first();
         $body     = $request->all();
         if ($device) {
-            Device::updateOrCreate(
-                ['device_name' => $request->device_name],
-                ['app_id' => $request->app]
-            );
+            Device::create([
+                'device_name' => $request->device_name,
+                'app_id' => $request->app,
+                'status' => $request->status ?? 0,
+            ]);
         } 
     }
 
