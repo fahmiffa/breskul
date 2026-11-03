@@ -364,6 +364,8 @@ class ApiController extends Controller
 
     public function state(Request $request)
     {
+        // $data = $request->all();
+        //  Log::channel('present')->info(json_encode($data));
         $deviceId = $request->header('Device-ID', $request->header('X-Device-Id', $request->input('device_id', 'UNKNOWN_DEVICE')));
         $device   = ApiKey::where('key', $deviceId)->orWhere('name', $deviceId)->first();
 
@@ -411,7 +413,6 @@ class ApiController extends Controller
 
     public function absenGate(Students $student)
     {
-
         $app = $user->studentData->app ?? null;
         $config = AttendanceConfig::whereNull('employee_id')
                     ->when($app, fn($q) => $q->where('app', $app))
@@ -442,19 +443,26 @@ class ApiController extends Controller
             ], 400);
         }
 
+        $today = $now->toDateString();
 
-
-        $today = date('Y-m-d');
-        $historyCount = Present::where('student_id', $student->id)
-            ->whereDate('waktu', $today)
-            ->count();
-        $status = $historyCount == 0 ? 'masuk' : 'pulang';
+        $exists = Present::where('student_id',$student->id)
+                            ->whereDate('waktu',$today)
+                            ->where('status',$type)
+                            ->exists();
+        
+        if($exists)
+        {
+          return response()->json([
+            'succes' => true,
+            'message' => "Sudah Absensi ".$tipe
+          ]);
+        }
 
         $pres             = new Present;
         $pres->student_id = $student->id;
         $pres->app        = $student->app;
         $pres->waktu      = date("Y-m-d H:i:s");
-        $pres->status     = $status;
+        $pres->status     = $type;
         $pres->save();
 
         if ($student->users?->fcm) {

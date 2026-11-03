@@ -52,6 +52,12 @@ return [
 
     'channels'     => [
 
+        'present'    => [
+            'driver' => 'single',
+            'path'   => storage_path('logs/present.log'),
+            'level'  => 'debug',
+        ],
+
         'payment'    => [
             'driver' => 'single',
             'path'   => storage_path('logs/payment.log'),

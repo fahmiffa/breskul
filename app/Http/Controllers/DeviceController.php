@@ -82,9 +82,8 @@ class DeviceController extends Controller
      */
     public function data(Request $request)
     {
-        $appId = $this->resolveAppId($request);
+        $appId = Auth::user()->id;
         $devices = $this->getUniqueDevices($appId);
-
         return $this->formatJsonResponse($devices);
     }
 
@@ -126,7 +125,7 @@ class DeviceController extends Controller
      */
     public function destroy(Request $request, string $id)
     {
-        $appId = $this->resolveAppId($request);
+        $appId = Auth::user()->id;
         $device = Device::when($appId, function ($q) use ($appId) {
             $q->where('app_id', $appId);
         })->findOrFail($id);
