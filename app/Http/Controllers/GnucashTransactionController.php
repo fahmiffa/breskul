@@ -376,12 +376,16 @@ class GnucashTransactionController extends Controller
             if (!file_exists($targetDir)) {
                 @mkdir($targetDir, 0777, true);
             }
+            @chmod($targetDir, 0777);
 
             $ext = $file->getClientOriginalExtension() ?: 'gnucash';
             $fileName = Str::uuid() . '_' . time() . '.' . $ext;
             $file->move($targetDir, $fileName);
             $fullPath = $targetDir . DIRECTORY_SEPARATOR . $fileName;
             @chmod($fullPath, 0666);
+
+            // Gunakan path relatif (uploads/gnucash/...) agar aman di berbagai environment
+            $relativePath = 'uploads/gnucash/' . $fileName;
 
             $jobId = (string) Str::uuid();
 
@@ -391,9 +395,9 @@ class GnucashTransactionController extends Controller
             // Pastikan tidak menggunakan driver 'sync' agar request web langsung selesai (< 1 detik)
             // dan tidak terkena timeout Cloudflare (Error 524)
             $queueConnection = config('queue.default') === 'sync' ? 'database' : config('queue.default');
-            ImportGnucashJob::dispatch($fullPath, $fresh, $jobId)->onConnection($queueConnection);
+            ImportGnucashJob::dispatch($relativePath, $fresh, $jobId)->onConnection($queueConnection);
 
-            Log::info("Gnucash import dispatched to queue '{$queueConnection}' with jobId: {$jobId}. Path: {$fullPath}");
+            Log::info("Gnucash import dispatched to queue '{$queueConnection}' with jobId: {$jobId}. Path: {$relativePath}");
 
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json([

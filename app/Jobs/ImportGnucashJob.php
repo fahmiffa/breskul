@@ -121,21 +121,29 @@ class ImportGnucashJob implements ShouldQueue
      */
     protected function resolvePath(string $path): string
     {
-        if (file_exists($path)) {
+        // 1. Cek langsung jika file ada
+        if (file_exists($path) && is_file($path)) {
             return $path;
         }
 
-        $candidates = [
-            public_path($path),
-            public_path('uploads/gnucash/' . basename($path)),
-            Storage::disk('local')->path($path),
-            storage_path('app/' . ltrim($path, '/')),
-        ];
+        // 2. Cek relatif terhadap public/
+        $cleanPath = ltrim(str_replace(['\\', '/'], DIRECTORY_SEPARATOR, $path), DIRECTORY_SEPARATOR);
+        $publicCandidate = public_path($cleanPath);
+        if (file_exists($publicCandidate) && is_file($publicCandidate)) {
+            return $publicCandidate;
+        }
 
-        foreach ($candidates as $cand) {
-            if (file_exists($cand)) {
-                return $cand;
-            }
+        // 3. Cek di public/uploads/gnucash/
+        $fileName = basename($path);
+        $uploadsCandidate = public_path('uploads' . DIRECTORY_SEPARATOR . 'gnucash' . DIRECTORY_SEPARATOR . $fileName);
+        if (file_exists($uploadsCandidate) && is_file($uploadsCandidate)) {
+            return $uploadsCandidate;
+        }
+
+        // 4. Cek relatif terhadap storage/app/
+        $storageCandidate = storage_path('app' . DIRECTORY_SEPARATOR . $cleanPath);
+        if (file_exists($storageCandidate) && is_file($storageCandidate)) {
+            return $storageCandidate;
         }
 
         return $path;
@@ -148,6 +156,11 @@ class ImportGnucashJob implements ShouldQueue
     {
         if (file_exists($path) && is_file($path)) {
             @unlink($path);
+        }
+
+        $publicUpload = public_path('uploads' . DIRECTORY_SEPARATOR . 'gnucash' . DIRECTORY_SEPARATOR . basename($this->storedFilePath));
+        if (file_exists($publicUpload) && is_file($publicUpload)) {
+            @unlink($publicUpload);
         }
 
         try {
