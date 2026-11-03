@@ -16,7 +16,8 @@
 /public/build
 /public/hot
 /public/storage
-/public/uploads
+/public/uploads/gnucash/*
+!/public/uploads/gnucash/.gitkeep
 /storage/*.key
 /storage/pail
 /vendor
