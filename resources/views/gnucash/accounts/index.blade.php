@@ -165,7 +165,7 @@
                                         </span>
                                         <a href="{{ route('dashboard.gnucash.accounts.ledger', $acc->id) }}"
                                            class="account-name text-green-700 hover:text-green-900 hover:underline font-medium flex items-center gap-1.5"
-                                           title="Buka Buku Besar akun ini (seperti sub.png)">
+                                           title="Lihat Transaksi untuk akun {{ $acc->name }}">
                                             <span>{{ $acc->name }}</span>
                                             <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-0 group-hover:opacity-100 transition-opacity text-green-600">
                                                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>

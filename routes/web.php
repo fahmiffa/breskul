@@ -67,7 +67,15 @@ Route::prefix('dashboard')->middleware('auth')->name('dashboard.')->group(functi
 
     Route::get('job-progress/{jobId}', function ($jobId) {
         $progress = Cache::get("job-progress-{$jobId}", 0);
-        return response()->json(['progress' => $progress]);
+        $status = Cache::get("job-status-{$jobId}", null);
+        $error = Cache::get("job-error-{$jobId}", null);
+        $result = Cache::get("job-result-{$jobId}", null);
+        return response()->json([
+            'progress' => (int) $progress,
+            'status' => $status,
+            'error' => $error,
+            'result' => $result,
+        ]);
     });
     // === GNUCASH ACCOUNTING MODULE ===
     Route::prefix('gnucash')->name('gnucash.')->group(function () {

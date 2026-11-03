@@ -18,7 +18,7 @@
                 <h1 class="text-xl sm:text-2xl font-bold text-gray-800">Monitoring Perangkat</h1>
             </div>
             <p class="text-xs sm:text-sm text-gray-500 mt-1">
-                Pantau status perangkat IoT operasional secara real-time dari endpoint <code>POST /api/state</code>
+                Pantau status perangkat IoT operasional secara real-time
             </p>
         </div>
 

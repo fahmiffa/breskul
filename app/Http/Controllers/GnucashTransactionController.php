@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\ImportGnucashJob;
 use App\Models\GnucashAccount;
 use App\Models\GnucashSplit;
 use App\Models\GnucashTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -352,7 +354,7 @@ class GnucashTransactionController extends Controller
     }
 
     /**
-     * Process web upload of a .gnucash file.
+     * Process web upload of a .gnucash file via background job queue.
      */
     public function import(Request $request)
     {
@@ -363,25 +365,37 @@ class GnucashTransactionController extends Controller
         ]);
 
         $file = $request->file('gnucash_file');
-        $tempPath = $file->getRealPath();
-
         $fresh = $request->boolean('fresh');
 
         try {
-            $params = [
-                'path' => $tempPath,
-            ];
-            if ($fresh) {
-                $params['--fresh'] = true;
+            // Simpan file ke storage lokal untuk diproses oleh background job
+            $storedPath = $file->store('imports/gnucash', 'local');
+            $jobId = (string) Str::uuid();
+
+            Cache::put("job-progress-{$jobId}", 0, now()->addMinutes(30));
+            Cache::put("job-status-{$jobId}", 'File diunggah, menunggu antrean worker...', now()->addMinutes(30));
+
+            ImportGnucashJob::dispatch($storedPath, $fresh, $jobId);
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Import telah dimasukkan ke dalam antrean (job queue).',
+                    'jobId' => $jobId,
+                ]);
             }
 
-            Artisan::call('gnucash:import', $params);
-            $output = Artisan::output();
-
             return redirect()->route('dashboard.gnucash.transactions.index')
-                ->with('success', 'Import file GnuCash berhasil diselesaikan!');
+                ->with('success', 'Import file GnuCash sedang diproses di background!');
         } catch (\Throwable $e) {
-            return back()->with('err', 'Gagal mengimpor file: ' . $e->getMessage());
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal memulai job import: ' . $e->getMessage(),
+                ], 500);
+            }
+
+            return back()->with('err', 'Gagal memulai import: ' . $e->getMessage());
         }
     }
 }
