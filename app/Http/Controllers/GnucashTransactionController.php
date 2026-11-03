@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class GnucashTransactionController extends Controller
@@ -367,6 +368,8 @@ class GnucashTransactionController extends Controller
         $file = $request->file('gnucash_file');
         $fresh = $request->boolean('fresh');
 
+        Log::info("Gnucash upload received: " . $file->getClientOriginalName() . " (" . $file->getSize() . " bytes)");
+
         try {
             // Simpan file ke storage lokal untuk diproses oleh background job
             $storedPath = $file->store('imports/gnucash', 'local');
@@ -379,6 +382,8 @@ class GnucashTransactionController extends Controller
             // dan tidak terkena timeout Cloudflare (Error 524)
             $queueConnection = config('queue.default') === 'sync' ? 'database' : config('queue.default');
             ImportGnucashJob::dispatch($storedPath, $fresh, $jobId)->onConnection($queueConnection);
+
+            Log::info("Gnucash import dispatched to queue '{$queueConnection}' with jobId: {$jobId}");
 
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json([
