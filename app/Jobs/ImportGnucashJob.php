@@ -69,6 +69,12 @@ class ImportGnucashJob implements ShouldQueue
     public function handle(GnucashImporterService $importer): void
     {
         $resolvedPath = $this->resolvePath($this->storedFilePath);
+        $fileExists = file_exists($resolvedPath);
+        $fileSize = $fileExists ? filesize($resolvedPath) : 0;
+
+        Log::info("ImportGnucashJob [{$this->jobId}] dimulai. Path: '{$this->storedFilePath}', Resolved: '{$resolvedPath}', Status: " . ($fileExists ? "ADA ({$fileSize} bytes)" : "TIDAK ADA"));
+
+        $isSuccess = false;
 
         try {
             Cache::put("job-progress-{$this->jobId}", 0, now()->addMinutes(30));
@@ -82,6 +88,8 @@ class ImportGnucashJob implements ShouldQueue
                     Cache::put("job-status-{$this->jobId}", $status, now()->addMinutes(30));
                 }
             );
+
+            $isSuccess = true;
 
             Cache::put("job-progress-{$this->jobId}", 100, now()->addMinutes(30));
             Cache::put("job-status-{$this->jobId}", 'Import berhasil diselesaikan!', now()->addMinutes(30));
@@ -99,7 +107,11 @@ class ImportGnucashJob implements ShouldQueue
 
             throw $e;
         } finally {
-            $this->cleanupFile($resolvedPath);
+            // Hanya bersihkan file jika import benar-benar sukses.
+            // Jika gagal, pertahankan file agar bisa diperiksa.
+            if ($isSuccess) {
+                $this->cleanupFile($resolvedPath);
+            }
         }
     }
 
@@ -111,9 +123,6 @@ class ImportGnucashJob implements ShouldQueue
         Cache::put("job-progress-{$this->jobId}", -1, now()->addMinutes(30));
         Cache::put("job-error-{$this->jobId}", $exception ? $exception->getMessage() : 'Job gagal diproses worker.', now()->addMinutes(30));
         Cache::put("job-status-{$this->jobId}", 'Gagal: ' . ($exception ? $exception->getMessage() : 'Terjadi kegagalan.'), now()->addMinutes(30));
-
-        $resolvedPath = $this->resolvePath($this->storedFilePath);
-        $this->cleanupFile($resolvedPath);
     }
 
     /**

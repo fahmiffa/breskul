@@ -359,13 +359,35 @@ class GnucashTransactionController extends Controller
      */
     public function import(Request $request)
     {
-        $request->validate([
-            'gnucash_file' => 'required|file',
-        ], [
-            'gnucash_file.required' => 'Pilih file .gnucash terlebih dahulu.',
-        ]);
+        // 1. Validasi apakah ada file yang diterima server
+        if (!$request->hasFile('gnucash_file')) {
+            $maxUpload = ini_get('upload_max_filesize');
+            $maxPost = ini_get('post_max_size');
+            $contentLength = $request->header('Content-Length');
+            $sizeMsg = $contentLength ? round($contentLength / 1024 / 1024, 2) . ' MB' : 'tidak diketahui';
+
+            Log::warning("Upload GnuCash gagal: file tidak terdeteksi. Ukuran request: {$sizeMsg}. Batas PHP: upload_max_filesize={$maxUpload}, post_max_size={$maxPost}");
+
+            $msg = "File tidak terupload ke server. Ukuran file yang dikirim ({$sizeMsg}) kemungkinan melebihi batas upload_max_filesize ({$maxUpload}) atau post_max_size ({$maxPost}) di server.";
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $msg], 422);
+            }
+            return back()->with('err', $msg);
+        }
 
         $file = $request->file('gnucash_file');
+
+        // 2. Validasi integritas upload PHP
+        if (!$file->isValid()) {
+            $errorMsg = $file->getErrorMessage();
+            Log::warning("Upload GnuCash invalid: " . $errorMsg);
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Gagal mengunggah file: ' . $errorMsg], 422);
+            }
+            return back()->with('err', 'Gagal mengunggah file: ' . $errorMsg);
+        }
+
         $fresh = $request->boolean('fresh');
 
         Log::info("Gnucash upload received: " . $file->getClientOriginalName() . " (" . $file->getSize() . " bytes)");
@@ -383,6 +405,12 @@ class GnucashTransactionController extends Controller
             $file->move($targetDir, $fileName);
             $fullPath = $targetDir . DIRECTORY_SEPARATOR . $fileName;
             @chmod($fullPath, 0666);
+
+            if (!file_exists($fullPath)) {
+                throw new \Exception("File berhasil dipindahkan tapi tidak ditemukan di target: {$fullPath}");
+            }
+
+            Log::info("File tersimpan fisik di: {$fullPath} (" . filesize($fullPath) . " bytes)");
 
             // Gunakan path relatif (uploads/gnucash/...) agar aman di berbagai environment
             $relativePath = 'uploads/gnucash/' . $fileName;
