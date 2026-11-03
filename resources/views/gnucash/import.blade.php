@@ -6,7 +6,7 @@
         <div class="flex items-center justify-between pb-4 mb-6 border-b border-gray-100">
             <div>
                 <h1 class="text-xl font-bold text-gray-800">Import File GnuCash</h1>
-                <p class="text-xs text-gray-500 mt-0.5">Upload file berekstensi <code>.gnucash</code> untuk mengimpor data akuntansi (akun dan transaksi) via background job queue.</p>
+                <p class="text-xs text-gray-500 mt-0.5">Upload file berekstensi <code>.gnucash</code> untuk mengimpor data akuntansi (akun dan transaksi)</p>
             </div>
             <a href="{{ route('dashboard.gnucash.transactions.index') }}"
                class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold py-2 px-3 rounded-xl transition flex items-center gap-1">
@@ -141,20 +141,6 @@
                 </label>
             </div>
 
-            <!-- Background Job Info Banner -->
-            <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
-                <h3 class="text-xs font-bold text-indigo-900 mb-1.5 flex items-center gap-1.5">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
-                    </svg>
-                    Proses Berjalan di Antrean Latar Belakang (Job Queue)
-                </h3>
-                <ul class="text-xs text-indigo-800 space-y-1 list-disc list-inside">
-                    <li>File tidak membebani web server saat diunggah karena diproses di antrean antrian (queue).</li>
-                    <li>Browser tidak akan timeout (bebas dari error 504 Gateway Timeout).</li>
-                    <li>Pastikan queue worker aktif di terminal/server: <code>php artisan queue:work</code>.</li>
-                </ul>
-            </div>
 
             <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
                 <a href="{{ route('dashboard.gnucash.transactions.index') }}"

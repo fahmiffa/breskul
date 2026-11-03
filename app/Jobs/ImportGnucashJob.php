@@ -18,28 +18,36 @@ class ImportGnucashJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     /**
-     * The number of seconds the job can run before timing out.
+     * Jumlah percobaan maksimal jika job gagal.
+     * Cukup 1 kali agar tidak menimpa / truncate berulang kali jika XML corrupt.
+     *
+     * @var int
+     */
+    public $tries = 1;
+
+    /**
+     * Waktu maksimal eksekusi job (detik).
      *
      * @var int
      */
     public $timeout = 600;
 
     /**
-     * Path to the uploaded file relative to storage/app.
+     * Path file upload relatif terhadap disk local.
      *
      * @var string
      */
     protected string $storedFilePath;
 
     /**
-     * Whether to truncate existing tables.
+     * Pilihan apakah truncate tabel lama.
      *
      * @var bool
      */
     protected bool $fresh;
 
     /**
-     * Unique ID to track job progress.
+     * Unique ID untuk tracking progres job.
      *
      * @var string
      */
@@ -61,6 +69,12 @@ class ImportGnucashJob implements ShouldQueue
     public function handle(GnucashImporterService $importer): void
     {
         $absolutePath = Storage::disk('local')->path($this->storedFilePath);
+        if (!file_exists($absolutePath)) {
+            $fallbackPath = storage_path('app/' . ltrim($this->storedFilePath, '/'));
+            if (file_exists($fallbackPath)) {
+                $absolutePath = $fallbackPath;
+            }
+        }
 
         try {
             Cache::put("job-progress-{$this->jobId}", 0, now()->addMinutes(30));
@@ -95,6 +109,20 @@ class ImportGnucashJob implements ShouldQueue
             if (Storage::disk('local')->exists($this->storedFilePath)) {
                 Storage::disk('local')->delete($this->storedFilePath);
             }
+        }
+    }
+
+    /**
+     * Handle a job failure.
+     */
+    public function failed(?Throwable $exception): void
+    {
+        Cache::put("job-progress-{$this->jobId}", -1, now()->addMinutes(30));
+        Cache::put("job-error-{$this->jobId}", $exception ? $exception->getMessage() : 'Job gagal diproses worker.', now()->addMinutes(30));
+        Cache::put("job-status-{$this->jobId}", 'Gagal: ' . ($exception ? $exception->getMessage() : 'Terjadi kegagalan.'), now()->addMinutes(30));
+
+        if (Storage::disk('local')->exists($this->storedFilePath)) {
+            Storage::disk('local')->delete($this->storedFilePath);
         }
     }
 }

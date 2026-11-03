@@ -375,7 +375,10 @@ class GnucashTransactionController extends Controller
             Cache::put("job-progress-{$jobId}", 0, now()->addMinutes(30));
             Cache::put("job-status-{$jobId}", 'File diunggah, menunggu antrean worker...', now()->addMinutes(30));
 
-            ImportGnucashJob::dispatch($storedPath, $fresh, $jobId);
+            // Pastikan tidak menggunakan driver 'sync' agar request web langsung selesai (< 1 detik)
+            // dan tidak terkena timeout Cloudflare (Error 524)
+            $queueConnection = config('queue.default') === 'sync' ? 'database' : config('queue.default');
+            ImportGnucashJob::dispatch($storedPath, $fresh, $jobId)->onConnection($queueConnection);
 
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json([
