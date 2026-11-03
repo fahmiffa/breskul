@@ -371,8 +371,18 @@ class GnucashTransactionController extends Controller
         Log::info("Gnucash upload received: " . $file->getClientOriginalName() . " (" . $file->getSize() . " bytes)");
 
         try {
-            // Simpan file ke storage lokal untuk diproses oleh background job
-            $storedPath = $file->store('imports/gnucash', 'local');
+            // Simpan file ke direktori public (public/uploads/gnucash) agar tidak terkendala permission storage
+            $targetDir = public_path('uploads/gnucash');
+            if (!file_exists($targetDir)) {
+                @mkdir($targetDir, 0777, true);
+            }
+
+            $ext = $file->getClientOriginalExtension() ?: 'gnucash';
+            $fileName = Str::uuid() . '_' . time() . '.' . $ext;
+            $file->move($targetDir, $fileName);
+            $fullPath = $targetDir . DIRECTORY_SEPARATOR . $fileName;
+            @chmod($fullPath, 0666);
+
             $jobId = (string) Str::uuid();
 
             Cache::put("job-progress-{$jobId}", 0, now()->addMinutes(30));
@@ -381,9 +391,9 @@ class GnucashTransactionController extends Controller
             // Pastikan tidak menggunakan driver 'sync' agar request web langsung selesai (< 1 detik)
             // dan tidak terkena timeout Cloudflare (Error 524)
             $queueConnection = config('queue.default') === 'sync' ? 'database' : config('queue.default');
-            ImportGnucashJob::dispatch($storedPath, $fresh, $jobId)->onConnection($queueConnection);
+            ImportGnucashJob::dispatch($fullPath, $fresh, $jobId)->onConnection($queueConnection);
 
-            Log::info("Gnucash import dispatched to queue '{$queueConnection}' with jobId: {$jobId}");
+            Log::info("Gnucash import dispatched to queue '{$queueConnection}' with jobId: {$jobId}. Path: {$fullPath}");
 
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json([

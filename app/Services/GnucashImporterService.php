@@ -26,6 +26,10 @@ class GnucashImporterService
             throw new Exception("File .gnucash tidak ditemukan di: {$filePath}");
         }
 
+        if (!is_readable($filePath)) {
+            throw new Exception("File .gnucash tidak dapat dibaca karena permission (user worker tidak memiliki izin baca). Path: {$filePath}");
+        }
+
         $report = function (int $progress, string $status) use ($progressCallback) {
             if ($progressCallback) {
                 call_user_func($progressCallback, $progress, $status);

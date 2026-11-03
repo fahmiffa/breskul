@@ -33,7 +33,7 @@ class ImportGnucashJob implements ShouldQueue
     public $timeout = 600;
 
     /**
-     * Path file upload relatif terhadap disk local.
+     * Path file upload (bisa absolute path di public/uploads atau relative disk).
      *
      * @var string
      */
@@ -68,20 +68,14 @@ class ImportGnucashJob implements ShouldQueue
      */
     public function handle(GnucashImporterService $importer): void
     {
-        $absolutePath = Storage::disk('local')->path($this->storedFilePath);
-        if (!file_exists($absolutePath)) {
-            $fallbackPath = storage_path('app/' . ltrim($this->storedFilePath, '/'));
-            if (file_exists($fallbackPath)) {
-                $absolutePath = $fallbackPath;
-            }
-        }
+        $resolvedPath = $this->resolvePath($this->storedFilePath);
 
         try {
             Cache::put("job-progress-{$this->jobId}", 0, now()->addMinutes(30));
             Cache::put("job-status-{$this->jobId}", 'Memulai pembacaan file GnuCash...', now()->addMinutes(30));
 
             $result = $importer->import(
-                $absolutePath,
+                $resolvedPath,
                 $this->fresh,
                 function (int $progress, string $status) {
                     Cache::put("job-progress-{$this->jobId}", $progress, now()->addMinutes(30));
@@ -105,10 +99,7 @@ class ImportGnucashJob implements ShouldQueue
 
             throw $e;
         } finally {
-            // Hapus file temporary di storage setelah selesai diproses
-            if (Storage::disk('local')->exists($this->storedFilePath)) {
-                Storage::disk('local')->delete($this->storedFilePath);
-            }
+            $this->cleanupFile($resolvedPath);
         }
     }
 
@@ -121,8 +112,50 @@ class ImportGnucashJob implements ShouldQueue
         Cache::put("job-error-{$this->jobId}", $exception ? $exception->getMessage() : 'Job gagal diproses worker.', now()->addMinutes(30));
         Cache::put("job-status-{$this->jobId}", 'Gagal: ' . ($exception ? $exception->getMessage() : 'Terjadi kegagalan.'), now()->addMinutes(30));
 
-        if (Storage::disk('local')->exists($this->storedFilePath)) {
-            Storage::disk('local')->delete($this->storedFilePath);
+        $resolvedPath = $this->resolvePath($this->storedFilePath);
+        $this->cleanupFile($resolvedPath);
+    }
+
+    /**
+     * Temukan lokasi fisik file di disk.
+     */
+    protected function resolvePath(string $path): string
+    {
+        if (file_exists($path)) {
+            return $path;
+        }
+
+        $candidates = [
+            public_path($path),
+            public_path('uploads/gnucash/' . basename($path)),
+            Storage::disk('local')->path($path),
+            storage_path('app/' . ltrim($path, '/')),
+        ];
+
+        foreach ($candidates as $cand) {
+            if (file_exists($cand)) {
+                return $cand;
+            }
+        }
+
+        return $path;
+    }
+
+    /**
+     * Bersihkan file upload temporary setelah proses selesai.
+     */
+    protected function cleanupFile(string $path): void
+    {
+        if (file_exists($path) && is_file($path)) {
+            @unlink($path);
+        }
+
+        try {
+            if (Storage::disk('local')->exists($this->storedFilePath)) {
+                Storage::disk('local')->delete($this->storedFilePath);
+            }
+        } catch (Throwable $e) {
+            // Abaikan jika tidak ada di disk local
         }
     }
 }
