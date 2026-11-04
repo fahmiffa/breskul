@@ -349,14 +349,64 @@ document.addEventListener('DOMContentLoaded', function () {
 
     <!-- Print Only Header -->
     <div class="print-header">
-        <h1 class="text-xl font-bold uppercase tracking-wide">Laporan Transaksi Berdasarkan Akun (GnuCash)</h1>
+        <h1 class="text-xl font-bold uppercase tracking-wide">
+            {{ ($reportType ?? 'transactions') === 'cash_flow' ? 'Laporan Arus Kas (Cash Flow) - GnuCash' : 'Laporan Transaksi Berdasarkan Akun (GnuCash)' }}
+        </h1>
         <p class="text-xs text-gray-600">
             Periode: {{ $fromDate ? \Carbon\Carbon::parse($fromDate)->format('d/m/Y') : 'Awal' }} s/d {{ $toDate ? \Carbon\Carbon::parse($toDate)->format('d/m/Y') : 'Sekarang' }}
-            | Kategori: {{ $selectedAccountType ? ($accountTypes[$selectedAccountType] ?? $selectedAccountType) : 'Semua Kategori' }}
+            @if(($reportType ?? 'transactions') === 'cash_flow')
+                | Rekening: {{ $isSingleCashAccount ? ($selectedCashAccount->name ?? 'Kas Spesifik') : 'Semua Rekening Kas & Bank' }}
+            @else
+                | Kategori: {{ $selectedAccountType ? ($accountTypes[$selectedAccountType] ?? $selectedAccountType) : 'Semua Kategori' }}
+            @endif
             | Dicetak pada: {{ now()->translatedFormat('d F Y H:i') }}
         </p>
     </div>
 
+    <!-- Report Mode Switcher Tabs (Transaksi vs Cash Flow) -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-2.5 no-print flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div class="flex items-center gap-2 p-1 bg-gray-100 rounded-xl w-full sm:w-auto">
+            <a href="{{ route('dashboard.gnucash.reports.index', array_merge(request()->except(['page']), ['report_type' => 'transactions'])) }}"
+               class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition {{ ($reportType ?? 'transactions') === 'transactions' ? 'bg-white text-emerald-700 shadow-sm font-bold' : 'text-gray-600 hover:text-gray-900' }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                    <polyline points="10 9 9 9 8 9"/>
+                </svg>
+                1. Laporan Transaksi (Buku Besar)
+            </a>
+
+            <a href="{{ route('dashboard.gnucash.reports.index', array_merge(request()->except(['page', 'account_type']), ['report_type' => 'cash_flow'])) }}"
+               class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition {{ ($reportType ?? '') === 'cash_flow' ? 'bg-white text-emerald-700 shadow-sm font-bold' : 'text-gray-600 hover:text-gray-900' }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="1" x2="12" y2="23"/>
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                </svg>
+                2. Laporan Arus Kas (Cash Flow)
+                <span class="px-1.5 py-0.5 text-[10px] bg-emerald-100 text-emerald-800 rounded-full font-bold">Baru</span>
+            </a>
+        </div>
+
+        <!-- Quick Info Badge -->
+        <div class="text-xs text-gray-500 font-medium hidden md:block">
+            @if(($reportType ?? 'transactions') === 'cash_flow')
+                <span class="inline-flex items-center gap-1.5 text-emerald-700 font-semibold bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-100">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Mode Arus Kas: Penerimaan, Pengeluaran & Saldo Kas/Bank
+                </span>
+            @else
+                <span class="inline-flex items-center gap-1.5 text-gray-600 bg-gray-50 px-3 py-1 rounded-lg border border-gray-200">
+                    Mode Buku Besar: Mutasi Debit & Kredit Seluruh Akun
+                </span>
+            @endif
+        </div>
+    </div>
+
+    @if(($reportType ?? 'transactions') === 'cash_flow')
+        @include('gnucash.reports.cash_flow')
+    @else
     <!-- Top Action & Info Bar -->
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 no-print">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -1063,6 +1113,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 </table>
             </div>
         </div>
+    @endif
     @endif
 </div>
 @endsection

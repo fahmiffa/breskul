@@ -33,10 +33,19 @@ class GnucashReportController extends Controller
     ];
 
     /**
-     * Display the Account Transaction Report (Laporan Transaksi Berdasarkan Akun).
+     * Display the Account Transaction Report (Laporan Transaksi Berdasarkan Akun) or Cash Flow (Laporan Arus Kas).
      */
     public function index(Request $request)
     {
+        $reportType = $request->get('report_type', 'transactions');
+        if (!in_array($reportType, ['transactions', 'cash_flow'])) {
+            $reportType = 'transactions';
+        }
+
+        if ($reportType === 'cash_flow') {
+            return $this->renderCashFlowReport($request);
+        }
+
         $title = "Laporan Transaksi Berdasarkan Akun";
 
         $fromDate = $request->get('from_date');
@@ -229,6 +238,7 @@ class GnucashReportController extends Controller
         $closingBalance = $openingBalance + ($totalDebit - $totalCredit);
 
         return view('gnucash.reports.index', [
+            'reportType' => 'transactions',
             'title' => $title,
             'isSingleAccount' => true,
             'singleAccount' => $account,
@@ -462,6 +472,7 @@ class GnucashReportController extends Controller
         }
 
         return view('gnucash.reports.index', [
+            'reportType' => 'transactions',
             'title' => $title,
             'isSingleAccount' => false,
             'accountsSummary' => $accountsSummary,
@@ -491,6 +502,11 @@ class GnucashReportController extends Controller
      */
     public function export(Request $request): StreamedResponse
     {
+        $reportType = $request->get('report_type', 'transactions');
+        if ($reportType === 'cash_flow') {
+            return $this->exportCashFlow($request);
+        }
+
         $fromDate = $request->get('from_date');
         $toDate = $request->get('to_date');
         $accountType = strtoupper(trim((string)$request->get('account_type', '')));
@@ -760,5 +776,554 @@ class GnucashReportController extends Controller
         }
 
         return '--';
+    }
+
+    /**
+     * Render the Cash Flow Report (Laporan Arus Kas).
+     */
+    protected function renderCashFlowReport(Request $request)
+    {
+        $title = "Laporan Arus Kas (Cash Flow)";
+
+        $fromDate = $request->get('from_date');
+        $toDate = $request->get('to_date');
+        $selectedAccountId = $request->get('account_id');
+        $search = trim((string)$request->get('search', ''));
+        $viewMode = $request->get('view', 'summary'); // 'summary' or 'detail'
+        $perPage = max(10, min(100, (int)$request->get('per_page', 50)));
+
+        // Preload all accounts
+        $allAccounts = GnucashAccount::where('account_type', '!=', 'ROOT')->get()->keyBy('id');
+
+        $resolvePath = function ($acc) use (&$resolvePath, &$allAccounts) {
+            if (!$acc) return '-';
+            $parts = [$acc->name];
+            $curr = $acc;
+            while ($curr && $curr->parent_id && isset($allAccounts[$curr->parent_id])) {
+                $curr = $allAccounts[$curr->parent_id];
+                if ($curr->account_type === 'ROOT') break;
+                $parts[] = $curr->name;
+            }
+            return implode(' : ', array_reverse($parts));
+        };
+
+        // Filter Cash & Bank accounts only
+        $cashAccounts = $allAccounts->filter(function ($a) {
+            return in_array(strtoupper($a->account_type), ['CASH', 'BANK']);
+        })->sortBy(fn($a) => ($a->code ?: '999999') . '_' . $a->name);
+
+        $cashAccountOptions = $cashAccounts->map(function ($a) use (&$resolvePath) {
+            $a->resolved_path = $resolvePath($a);
+            return $a;
+        })->values();
+
+        $cashAccountOptionsJson = json_encode($cashAccountOptions->map(function ($a) {
+            return [
+                'id'            => (string) $a->id,
+                'name'          => (string) $a->name,
+                'code'          => (string) ($a->code ?? ''),
+                'account_type'  => strtoupper((string) ($a->account_type ?? '')),
+                'resolved_path' => (string) ($a->resolved_path ?? $a->name),
+            ];
+        })->values()->all(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
+
+        // Check if single cash account mode
+        $isSingleAccount = !empty($selectedAccountId) && isset($cashAccounts[$selectedAccountId]);
+        $activeAccountIds = $isSingleAccount ? [$selectedAccountId] : $cashAccounts->pluck('id')->toArray();
+        $selectedAccount = $isSingleAccount ? $cashAccounts[$selectedAccountId] : null;
+
+        // 1. Opening Balances
+        $openingCashBalance = 0.0;
+        $openingPerAccount = [];
+        if ($fromDate) {
+            $openingRows = DB::table('gnucash_splits as s')
+                ->join('gnucash_transactions as t', 's.transaction_id', '=', 't.id')
+                ->whereIn('s.account_id', $cashAccounts->pluck('id')->toArray())
+                ->where('t.post_date', '<', $fromDate . ' 00:00:00')
+                ->select('s.account_id', DB::raw('SUM(s.value) as total_val'))
+                ->groupBy('s.account_id')
+                ->get();
+
+            foreach ($openingRows as $r) {
+                $openingPerAccount[$r->account_id] = (float) $r->total_val;
+            }
+
+            if ($isSingleAccount) {
+                $openingCashBalance = $openingPerAccount[$selectedAccountId] ?? 0.0;
+            } else {
+                $openingCashBalance = array_sum($openingPerAccount);
+            }
+        }
+
+        // 2. Aggregate Cash Stats for period
+        $statsQuery = DB::table('gnucash_splits as s')
+            ->join('gnucash_transactions as t', 's.transaction_id', '=', 't.id')
+            ->whereIn('s.account_id', $activeAccountIds);
+
+        if ($fromDate) {
+            $statsQuery->where('t.post_date', '>=', $fromDate . ' 00:00:00');
+        }
+        if ($toDate) {
+            $statsQuery->where('t.post_date', '<=', $toDate . ' 23:59:59');
+        }
+        if ($search) {
+            $statsQuery->where(function ($q) use ($search) {
+                $q->where('t.description', 'like', "%{$search}%")
+                  ->orWhere('t.num', 'like', "%{$search}%")
+                  ->orWhere('s.memo', 'like', "%{$search}%");
+            });
+        }
+
+        $cashStats = (clone $statsQuery)->select(
+            DB::raw('COUNT(s.id) as total_tx'),
+            DB::raw('SUM(CASE WHEN s.value > 0 THEN s.value ELSE 0 END) as total_in'),
+            DB::raw('SUM(CASE WHEN s.value < 0 THEN ABS(s.value) ELSE 0 END) as total_out')
+        )->first();
+
+        $totalInflow = (float) ($cashStats->total_in ?? 0.0);
+        $totalOutflow = (float) ($cashStats->total_out ?? 0.0);
+        $netCashFlow = $totalInflow - $totalOutflow;
+        $closingCashBalance = $openingCashBalance + $netCashFlow;
+        $totalCashTx = (int) ($cashStats->total_tx ?? 0);
+
+        // 3. Per-account reconciliation table (Daftar Saldo Kas & Bank)
+        $periodPerAccount = DB::table('gnucash_splits as s')
+            ->join('gnucash_transactions as t', 's.transaction_id', '=', 't.id')
+            ->whereIn('s.account_id', $cashAccounts->pluck('id')->toArray())
+            ->when($fromDate, fn($q) => $q->where('t.post_date', '>=', $fromDate . ' 00:00:00'))
+            ->when($toDate, fn($q) => $q->where('t.post_date', '<=', $toDate . ' 23:59:59'))
+            ->select(
+                's.account_id',
+                DB::raw('COUNT(s.id) as tx_count'),
+                DB::raw('SUM(CASE WHEN s.value > 0 THEN s.value ELSE 0 END) as sum_in'),
+                DB::raw('SUM(CASE WHEN s.value < 0 THEN ABS(s.value) ELSE 0 END) as sum_out')
+            )
+            ->groupBy('s.account_id')
+            ->get()
+            ->keyBy('account_id');
+
+        $accountsReconciliation = [];
+        foreach ($cashAccounts as $acc) {
+            $op = (float) ($openingPerAccount[$acc->id] ?? 0.0);
+            $stat = $periodPerAccount->get($acc->id);
+            $in = (float) ($stat->sum_in ?? 0.0);
+            $out = (float) ($stat->sum_out ?? 0.0);
+            $cl = $op + ($in - $out);
+            $cnt = (int) ($stat->tx_count ?? 0);
+
+            $accountsReconciliation[] = [
+                'account' => $acc,
+                'opening' => $op,
+                'inflow'  => $in,
+                'outflow' => $out,
+                'net'     => $in - $out,
+                'closing' => $cl,
+                'tx_count'=> $cnt,
+            ];
+        }
+
+        // 4. Pos Penerimaan & Pos Pengeluaran (Category Breakdown)
+        $cashTxQuery = DB::table('gnucash_splits as s')
+            ->join('gnucash_transactions as t', 's.transaction_id', '=', 't.id')
+            ->whereIn('s.account_id', $activeAccountIds);
+
+        if ($fromDate) $cashTxQuery->where('t.post_date', '>=', $fromDate . ' 00:00:00');
+        if ($toDate) $cashTxQuery->where('t.post_date', '<=', $toDate . ' 23:59:59');
+        if ($search) {
+            $cashTxQuery->where(function ($q) use ($search) {
+                $q->where('t.description', 'like', "%{$search}%")
+                  ->orWhere('t.num', 'like', "%{$search}%")
+                  ->orWhere('s.memo', 'like', "%{$search}%");
+            });
+        }
+
+        $cashTxIds = $cashTxQuery->distinct()->pluck('s.transaction_id')->toArray();
+
+        $inflowCategories = [];
+        $outflowCategories = [];
+
+        if (!empty($cashTxIds)) {
+            $chunks = array_chunk($cashTxIds, 1000);
+            foreach ($chunks as $chunk) {
+                $allTxSplits = DB::table('gnucash_splits')
+                    ->whereIn('transaction_id', $chunk)
+                    ->get()
+                    ->groupBy('transaction_id');
+
+                foreach ($chunk as $txId) {
+                    $splits = $allTxSplits->get($txId);
+                    if (!$splits) continue;
+
+                    $cSplits = $splits->filter(fn($s) => in_array($s->account_id, $activeAccountIds));
+                    $otherSplits = $splits->filter(fn($s) => !in_array($s->account_id, $activeAccountIds));
+
+                    $cashNet = $cSplits->sum('value');
+
+                    if ($otherSplits->isEmpty()) {
+                        // Transfer between cash accounts
+                        if ($isSingleAccount) {
+                            $otherCash = $splits->filter(fn($s) => $s->account_id != $selectedAccountId);
+                            if ($otherCash->count() === 1) {
+                                $otherAcc = $allAccounts->get($otherCash->first()->account_id);
+                                $name = "Transfer: " . ($otherAcc ? $otherAcc->name : 'Kas/Bank Lain');
+                                if ($cashNet > 0) {
+                                    $inflowCategories[$name] = ($inflowCategories[$name] ?? ['name' => $name, 'amount' => 0, 'count' => 0, 'type' => 'TRANSFER']);
+                                    $inflowCategories[$name]['amount'] += $cashNet;
+                                    $inflowCategories[$name]['count']++;
+                                } elseif ($cashNet < 0) {
+                                    $outflowCategories[$name] = ($outflowCategories[$name] ?? ['name' => $name, 'amount' => 0, 'count' => 0, 'type' => 'TRANSFER']);
+                                    $outflowCategories[$name]['amount'] += abs($cashNet);
+                                    $outflowCategories[$name]['count']++;
+                                }
+                            }
+                        }
+                        continue;
+                    }
+
+                    if ($cashNet > 0) {
+                        foreach ($otherSplits as $os) {
+                            $amt = abs((float) $os->value);
+                            if ($amt == 0) continue;
+                            $acc = $allAccounts->get($os->account_id);
+                            $accName = $acc ? $acc->name : 'Lain-lain';
+                            $accType = $acc ? $acc->account_type : 'UNKNOWN';
+                            $inflowCategories[$accName] = ($inflowCategories[$accName] ?? ['name' => $accName, 'amount' => 0, 'count' => 0, 'type' => $accType]);
+                            $inflowCategories[$accName]['amount'] += $amt;
+                            $inflowCategories[$accName]['count']++;
+                        }
+                    } elseif ($cashNet < 0) {
+                        foreach ($otherSplits as $os) {
+                            $amt = abs((float) $os->value);
+                            if ($amt == 0) continue;
+                            $acc = $allAccounts->get($os->account_id);
+                            $accName = $acc ? $acc->name : 'Lain-lain';
+                            $accType = $acc ? $acc->account_type : 'UNKNOWN';
+                            $outflowCategories[$accName] = ($outflowCategories[$accName] ?? ['name' => $accName, 'amount' => 0, 'count' => 0, 'type' => $accType]);
+                            $outflowCategories[$accName]['amount'] += $amt;
+                            $outflowCategories[$accName]['count']++;
+                        }
+                    }
+                }
+            }
+        }
+
+        uasort($inflowCategories, fn($a, $b) => $b['amount'] <=> $a['amount']);
+        uasort($outflowCategories, fn($a, $b) => $b['amount'] <=> $a['amount']);
+
+        // 5. Detailed Cash Mutations (Paginated)
+        $detailQuery = GnucashSplit::with('transaction')
+            ->join('gnucash_transactions as t', 'gnucash_splits.transaction_id', '=', 't.id')
+            ->whereIn('gnucash_splits.account_id', $activeAccountIds)
+            ->select('gnucash_splits.*');
+
+        if ($fromDate) $detailQuery->where('t.post_date', '>=', $fromDate . ' 00:00:00');
+        if ($toDate) $detailQuery->where('t.post_date', '<=', $toDate . ' 23:59:59');
+        if ($search) {
+            $detailQuery->where(function ($q) use ($search) {
+                $q->where('t.description', 'like', "%{$search}%")
+                  ->orWhere('t.num', 'like', "%{$search}%")
+                  ->orWhere('gnucash_splits.memo', 'like', "%{$search}%");
+            });
+        }
+
+        $paginatedSplits = $detailQuery->orderBy('t.post_date', 'asc')
+            ->orderBy('gnucash_splits.id', 'asc')
+            ->paginate($perPage)
+            ->withQueryString();
+
+        $pageTxIds = collect($paginatedSplits->items())->pluck('transaction_id')->unique()->toArray();
+        $otherSplitsForPage = collect();
+        if (!empty($pageTxIds)) {
+            $otherSplitsForPage = DB::table('gnucash_splits')
+                ->whereIn('transaction_id', $pageTxIds)
+                ->get()
+                ->groupBy('transaction_id');
+        }
+
+        $priorNet = 0.0;
+        if ($paginatedSplits->currentPage() > 1 && count($paginatedSplits->items()) > 0) {
+            $firstItem = $paginatedSplits->items()[0];
+            $priorNet = (float) DB::table('gnucash_splits as s')
+                ->join('gnucash_transactions as t', 's.transaction_id', '=', 't.id')
+                ->whereIn('s.account_id', $activeAccountIds)
+                ->when($fromDate, fn($q) => $q->where('t.post_date', '>=', $fromDate . ' 00:00:00'))
+                ->where(function($q) use ($firstItem) {
+                    $q->where('t.post_date', '<', $firstItem->transaction->post_date)
+                      ->orWhere(function($sub) use ($firstItem) {
+                          $sub->where('t.post_date', '=', $firstItem->transaction->post_date)
+                              ->where('s.id', '<', $firstItem->id);
+                      });
+                })
+                ->when($search, fn($q) => $q->where(fn($sub) => $sub->where('t.description', 'like', "%{$search}%")
+                    ->orWhere('t.num', 'like', "%{$search}%")
+                    ->orWhere('s.memo', 'like', "%{$search}%")))
+                ->sum('s.value');
+        }
+
+        $runningBalance = $openingCashBalance + $priorNet;
+        $detailRows = [];
+
+        foreach ($paginatedSplits as $sp) {
+            $val = (float) $sp->value;
+            $inflow = $val > 0 ? $val : 0.0;
+            $outflow = $val < 0 ? abs($val) : 0.0;
+            $runningBalance += ($inflow - $outflow);
+
+            $acc = $allAccounts->get($sp->account_id);
+            $transfer = $this->resolveTransfer($sp, $otherSplitsForPage, $allAccounts);
+
+            $detailRows[] = [
+                'split' => $sp,
+                'tx' => $sp->transaction,
+                'account' => $acc,
+                'transfer' => $transfer,
+                'inflow' => $inflow,
+                'outflow' => $outflow,
+                'running_balance' => $runningBalance,
+            ];
+        }
+
+        return view('gnucash.reports.index', [
+            'reportType' => 'cash_flow',
+            'title' => $title,
+            'isSingleCashAccount' => $isSingleAccount,
+            'selectedCashAccount' => $selectedAccount,
+            'cashAccounts' => $cashAccounts,
+            'cashAccountOptions' => $cashAccountOptions,
+            'cashAccountOptionsJson' => $cashAccountOptionsJson,
+            'accountOptions' => $cashAccountOptions,
+            'accountOptionsJson' => $cashAccountOptionsJson,
+            'selectedAccountType' => '',
+            'accountTypes' => $this->accountTypes,
+            'openingCashBalance' => $openingCashBalance,
+            'closingCashBalance' => $closingCashBalance,
+            'totalInflow' => $totalInflow,
+            'totalOutflow' => $totalOutflow,
+            'netCashFlow' => $netCashFlow,
+            'totalCashTx' => $totalCashTx,
+            'accountsReconciliation' => $accountsReconciliation,
+            'inflowCategories' => $inflowCategories,
+            'outflowCategories' => $outflowCategories,
+            'paginatedSplits' => $paginatedSplits,
+            'detailRows' => $detailRows,
+            'fromDate' => $fromDate,
+            'toDate' => $toDate,
+            'selectedAccountId' => $selectedAccountId ?? '',
+            'search' => $search,
+            'viewMode' => $viewMode,
+            'perPage' => $perPage,
+        ]);
+    }
+
+    /**
+     * Export Cash Flow Report to Excel.
+     */
+    protected function exportCashFlow(Request $request): StreamedResponse
+    {
+        $fromDate = $request->get('from_date');
+        $toDate = $request->get('to_date');
+        $selectedAccountId = $request->get('account_id');
+        $search = trim((string)$request->get('search', ''));
+
+        $allAccounts = GnucashAccount::where('account_type', '!=', 'ROOT')->get()->keyBy('id');
+        $cashAccounts = $allAccounts->filter(fn($a) => in_array(strtoupper($a->account_type), ['CASH', 'BANK']))
+            ->sortBy(fn($a) => ($a->code ?: '999999') . '_' . $a->name);
+
+        $isSingleAccount = !empty($selectedAccountId) && isset($cashAccounts[$selectedAccountId]);
+        $activeAccountIds = $isSingleAccount ? [$selectedAccountId] : $cashAccounts->pluck('id')->toArray();
+        $selectedAccount = $isSingleAccount ? $cashAccounts[$selectedAccountId] : null;
+
+        // Opening balance
+        $openingCashBalance = 0.0;
+        $openingPerAccount = [];
+        if ($fromDate) {
+            $openingRows = DB::table('gnucash_splits as s')
+                ->join('gnucash_transactions as t', 's.transaction_id', '=', 't.id')
+                ->whereIn('s.account_id', $cashAccounts->pluck('id')->toArray())
+                ->where('t.post_date', '<', $fromDate . ' 00:00:00')
+                ->select('s.account_id', DB::raw('SUM(s.value) as total_val'))
+                ->groupBy('s.account_id')
+                ->get();
+
+            foreach ($openingRows as $r) {
+                $openingPerAccount[$r->account_id] = (float) $r->total_val;
+            }
+
+            $openingCashBalance = $isSingleAccount ? ($openingPerAccount[$selectedAccountId] ?? 0.0) : array_sum($openingPerAccount);
+        }
+
+        // Totals
+        $statsQuery = DB::table('gnucash_splits as s')
+            ->join('gnucash_transactions as t', 's.transaction_id', '=', 't.id')
+            ->whereIn('s.account_id', $activeAccountIds)
+            ->when($fromDate, fn($q) => $q->where('t.post_date', '>=', $fromDate . ' 00:00:00'))
+            ->when($toDate, fn($q) => $q->where('t.post_date', '<=', $toDate . ' 23:59:59'))
+            ->when($search, fn($q) => $q->where(fn($sub) => $sub->where('t.description', 'like', "%{$search}%")
+                ->orWhere('t.num', 'like', "%{$search}%")
+                ->orWhere('s.memo', 'like', "%{$search}%")));
+
+        $cashStats = (clone $statsQuery)->select(
+            DB::raw('COUNT(s.id) as total_tx'),
+            DB::raw('SUM(CASE WHEN s.value > 0 THEN s.value ELSE 0 END) as total_in'),
+            DB::raw('SUM(CASE WHEN s.value < 0 THEN ABS(s.value) ELSE 0 END) as total_out')
+        )->first();
+
+        $totalInflow = (float) ($cashStats->total_in ?? 0.0);
+        $totalOutflow = (float) ($cashStats->total_out ?? 0.0);
+        $netCashFlow = $totalInflow - $totalOutflow;
+        $closingCashBalance = $openingCashBalance + $netCashFlow;
+
+        $spreadsheet = new Spreadsheet();
+        $spreadsheet->getProperties()->setCreator('Breskul Accounting')->setTitle('Laporan Arus Kas (Cash Flow)');
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Arus Kas');
+
+        // Header Title
+        $sheet->setCellValue('A1', 'LAPORAN ARUS KAS (CASH FLOW STATEMENT)');
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(15)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FF166534'));
+
+        $accountTitle = $isSingleAccount ? $selectedAccount->name : 'Semua Rekening Kas & Bank';
+        $periodText = ($fromDate ?: 'Awal') . ' s/d ' . ($toDate ?: 'Sekarang');
+        $sheet->setCellValue('A2', "Periode: {$periodText} | Rekening: {$accountTitle} | Dicetak: " . date('d/m/Y H:i'));
+        $sheet->getStyle('A2')->getFont()->setSize(10)->setItalic(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FF4B5563'));
+
+        // Ringkasan Eksekutif Box
+        $sheet->setCellValue('A4', 'RINGKASAN ARUS KAS');
+        $sheet->getStyle('A4')->getFont()->setBold(true)->setSize(12);
+
+        $summaryHeaders = ['Saldo Awal Kas', 'Total Penerimaan Kas', 'Total Pengeluaran Kas', 'Arus Kas Bersih (Net Flow)', 'Saldo Akhir Kas'];
+        $cols = ['A', 'B', 'C', 'D', 'E'];
+        foreach ($summaryHeaders as $i => $h) {
+            $sheet->setCellValue($cols[$i] . '5', $h);
+            $sheet->getStyle($cols[$i] . '5')->getFont()->setBold(true)->setSize(10)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FFFFFFFF'));
+            $sheet->getStyle($cols[$i] . '5')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FF15803D');
+            $sheet->getStyle($cols[$i] . '5')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+        }
+        $sheet->getStyle('A5')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+
+        $sheet->setCellValue('A6', $openingCashBalance);
+        $sheet->setCellValue('B6', $totalInflow);
+        $sheet->setCellValue('C6', $totalOutflow);
+        $sheet->setCellValue('D6', $netCashFlow);
+        $sheet->setCellValue('E6', $closingCashBalance);
+
+        foreach ($cols as $c) {
+            $sheet->getStyle($c . '6')->getNumberFormat()->setFormatCode('#,##0.00');
+            $sheet->getStyle($c . '6')->getFont()->setBold(true);
+            $sheet->getStyle($c . '6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+        }
+
+        // Section: Rekonsiliasi Rekening
+        $rowIdx = 8;
+        $sheet->setCellValue('A' . $rowIdx, 'POSISI SALDO TIAP REKENING KAS & BANK');
+        $sheet->getStyle('A' . $rowIdx)->getFont()->setBold(true)->setSize(11);
+        $rowIdx++;
+
+        $reconHeaders = ['Nama Rekening / Akun', 'Tipe Akun', 'Saldo Awal', 'Kas Masuk', 'Kas Keluar', 'Arus Bersih', 'Saldo Akhir', 'Jumlah Tx'];
+        $reconCols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+        foreach ($reconHeaders as $i => $h) {
+            $sheet->setCellValue($reconCols[$i] . $rowIdx, $h);
+            $sheet->getStyle($reconCols[$i] . $rowIdx)->getFont()->setBold(true)->setSize(9)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FFFFFFFF'));
+            $sheet->getStyle($reconCols[$i] . $rowIdx)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FF374151');
+        }
+        $rowIdx++;
+
+        $periodPerAccount = DB::table('gnucash_splits as s')
+            ->join('gnucash_transactions as t', 's.transaction_id', '=', 't.id')
+            ->whereIn('s.account_id', $cashAccounts->pluck('id')->toArray())
+            ->when($fromDate, fn($q) => $q->where('t.post_date', '>=', $fromDate . ' 00:00:00'))
+            ->when($toDate, fn($q) => $q->where('t.post_date', '<=', $toDate . ' 23:59:59'))
+            ->select('s.account_id', DB::raw('COUNT(s.id) as cnt'), DB::raw('SUM(CASE WHEN s.value > 0 THEN s.value ELSE 0 END) as in_val'), DB::raw('SUM(CASE WHEN s.value < 0 THEN ABS(s.value) ELSE 0 END) as out_val'))
+            ->groupBy('s.account_id')
+            ->get()->keyBy('account_id');
+
+        foreach ($cashAccounts as $ca) {
+            $op = (float) ($openingPerAccount[$ca->id] ?? 0.0);
+            $stat = $periodPerAccount->get($ca->id);
+            $in = (float) ($stat->in_val ?? 0.0);
+            $out = (float) ($stat->out_val ?? 0.0);
+            $cl = $op + ($in - $out);
+            $cnt = (int) ($stat->cnt ?? 0);
+
+            $sheet->setCellValue('A' . $rowIdx, ($ca->code ? "[{$ca->code}] " : "") . $ca->name);
+            $sheet->setCellValue('B' . $rowIdx, $ca->account_type);
+            $sheet->setCellValue('C' . $rowIdx, $op);
+            $sheet->setCellValue('D' . $rowIdx, $in);
+            $sheet->setCellValue('E' . $rowIdx, $out);
+            $sheet->setCellValue('F' . $rowIdx, $in - $out);
+            $sheet->setCellValue('G' . $rowIdx, $cl);
+            $sheet->setCellValue('H' . $rowIdx, $cnt);
+
+            $sheet->getStyle('C' . $rowIdx . ':G' . $rowIdx)->getNumberFormat()->setFormatCode('#,##0.00');
+            $sheet->getStyle('H' . $rowIdx)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $rowIdx++;
+        }
+
+        // Section: Rincian Mutasi Arus Kas
+        $rowIdx += 2;
+        $sheet->setCellValue('A' . $rowIdx, 'RINCIAN MUTASI ARUS KAS');
+        $sheet->getStyle('A' . $rowIdx)->getFont()->setBold(true)->setSize(11);
+        $rowIdx++;
+
+        $mutHeaders = ['Tanggal', 'No. Ref', 'Rekening Kas/Bank', 'Lawan Akun / Kategori', 'Keterangan Transaksi', 'Memo', 'Kas Masuk (Inflow)', 'Kas Keluar (Outflow)'];
+        foreach ($mutHeaders as $i => $h) {
+            $sheet->setCellValue($reconCols[$i] . $rowIdx, $h);
+            $sheet->getStyle($reconCols[$i] . $rowIdx)->getFont()->setBold(true)->setSize(9)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FFFFFFFF'));
+            $sheet->getStyle($reconCols[$i] . $rowIdx)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FF047857');
+        }
+        $rowIdx++;
+
+        $detailSplitsQuery = GnucashSplit::with('transaction')
+            ->join('gnucash_transactions as t', 'gnucash_splits.transaction_id', '=', 't.id')
+            ->whereIn('gnucash_splits.account_id', $activeAccountIds)
+            ->when($fromDate, fn($q) => $q->where('t.post_date', '>=', $fromDate . ' 00:00:00'))
+            ->when($toDate, fn($q) => $q->where('t.post_date', '<=', $toDate . ' 23:59:59'))
+            ->when($search, fn($q) => $q->where(fn($sub) => $sub->where('t.description', 'like', "%{$search}%")
+                ->orWhere('t.num', 'like', "%{$search}%")
+                ->orWhere('gnucash_splits.memo', 'like', "%{$search}%")))
+            ->select('gnucash_splits.*')
+            ->orderBy('t.post_date', 'asc')
+            ->orderBy('gnucash_splits.id', 'asc');
+
+        $detailSplitsQuery->chunk(500, function ($splitsChunk) use (&$rowIdx, $sheet, $allAccounts) {
+            $txIds = $splitsChunk->pluck('transaction_id')->unique()->toArray();
+            $otherSplitsGrouped = DB::table('gnucash_splits')->whereIn('transaction_id', $txIds)->get()->groupBy('transaction_id');
+
+            foreach ($splitsChunk as $sp) {
+                $val = (float) $sp->value;
+                $inflow = $val > 0 ? $val : 0.0;
+                $outflow = $val < 0 ? abs($val) : 0.0;
+                $tx = $sp->transaction;
+                $acc = $allAccounts->get($sp->account_id);
+                $transfer = $this->resolveTransfer($sp, $otherSplitsGrouped, $allAccounts);
+
+                $sheet->setCellValue('A' . $rowIdx, $tx->post_date ? \Carbon\Carbon::parse($tx->post_date)->format('d/m/Y') : '-');
+                $sheet->setCellValue('B' . $rowIdx, $tx->num ?: '-');
+                $sheet->setCellValue('C' . $rowIdx, $acc ? $acc->name : '-');
+                $sheet->setCellValue('D' . $rowIdx, $transfer);
+                $sheet->setCellValue('E' . $rowIdx, $tx->description ?: '-');
+                $sheet->setCellValue('F' . $rowIdx, $sp->memo ?: '-');
+                $sheet->setCellValue('G' . $rowIdx, $inflow);
+                $sheet->setCellValue('H' . $rowIdx, $outflow);
+
+                $sheet->getStyle('G' . $rowIdx . ':H' . $rowIdx)->getNumberFormat()->setFormatCode('#,##0.00');
+                $rowIdx++;
+            }
+        });
+
+        foreach (range('A', 'H') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $filename = 'laporan-arus-kas-' . date('Ymd-His') . '.xlsx';
+        $writer = new Xlsx($spreadsheet);
+
+        return new StreamedResponse(function () use ($writer) {
+            $writer->save('php://output');
+        }, 200, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+            'Cache-Control' => 'max-age=0',
+        ]);
     }
 }
