@@ -93,6 +93,12 @@ Route::prefix('dashboard')->middleware('auth')->name('dashboard.')->group(functi
         Route::get('transactions/import', [App\Http\Controllers\GnucashTransactionController::class, 'importForm'])->name('transactions.import.form');
         Route::post('transactions/import', [App\Http\Controllers\GnucashTransactionController::class, 'import'])->name('transactions.import');
         Route::resource('transactions', App\Http\Controllers\GnucashTransactionController::class);
+
+        // Reports (Laporan Transaksi Berdasarkan Akun)
+        Route::get('reports', [App\Http\Controllers\GnucashReportController::class, 'index'])->name('reports.index');
+        Route::get('reports/export', [App\Http\Controllers\GnucashReportController::class, 'export'])->name('reports.export');
+        Route::get('laporan', [App\Http\Controllers\GnucashReportController::class, 'index'])->name('laporan.index');
+        Route::get('laporan/export', [App\Http\Controllers\GnucashReportController::class, 'export'])->name('laporan.export');
     });
 
     Route::prefix('master')->name('master.')->middleware('checkMaster')->group(function () {
