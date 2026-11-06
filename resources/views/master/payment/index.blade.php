@@ -31,7 +31,7 @@
                             <td class="px-4 py-2" x-text="((currentPage - 1) * perPage) + index + 1"></td>
                             <td class="px-4 py-2" x-text="row.name"></td>
                             <td class="px-4 py-2" x-text="formatNumber(row.nominal)"></td>
-                            <td class="px-4 py-2" x-text="row.jatuh_tempo ? row.jatuh_tempo.substring(0, 10) : '-'"></td>
+                            <td class="px-4 py-2" x-text="row.jatuh_tempo ? (row.auto_renew ? 'Setiap tgl ' + parseInt(row.jatuh_tempo.substring(8, 10)) : row.jatuh_tempo.substring(0, 10)) : '-'"></td>
                             <td class="px-4 py-2 text-center">
                                 <span class="px-2 py-0.5 text-xs font-semibold rounded-full"
                                     :class="row.auto_renew ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'"

@@ -40,7 +40,9 @@
                         value="{{ old('jatuh_tempo', isset($items) && $items->jatuh_tempo ? \Carbon\Carbon::parse($items->jatuh_tempo)->format('Y-m-d') : '') }}"
                         class="border border-gray-300 ring-0 rounded-xl px-3 py-2 w-full md:w-1/2 focus:outline-[#177245]">
                 </div>
-                <p class="text-gray-500 text-xs mt-1">Opsional: Tanggal batas pembayaran untuk proses otomatis potong saldo jika melewati jatuh tempo.</p>
+                <p class="text-gray-500 text-xs mt-1">
+                    Batas pembayaran untuk otomatis potong saldo jika melewati jatuh tempo. Jika opsi <strong>Auto Renew</strong> aktif, tanggal (hari) ini akan otomatis dijadikan batas jatuh tempo di setiap bulannya (contoh: tanggal 10 setiap bulan).
+                </p>
                 @error('jatuh_tempo')
                     <p class="text-red-500 text-xs italic mt-2">{{ $message }}</p>
                 @enderror

@@ -31,28 +31,51 @@ class ProcessAutoPayBills implements ShouldQueue
      */
     public function handle(): void
     {
-        // Ambil semua tagihan yang belum lunas (status = 0)
-        // dan pembayaran yang memiliki jatuh tempo serta sudah melewati tanggal jatuh tempo (jatuh_tempo < hari ini)
+        // Ambil semua tagihan yang belum lunas (status = 0) yang memiliki pembayaran dengan konfigurasi jatuh tempo
         // Gunakan chunk untuk memproses data dalam batch
         Bill::with(['payment', 'head.murid.saldo', 'head.murid.users'])
             ->where('status', 0)
             ->whereHas('payment', function ($query) {
-                $query->whereNotNull('jatuh_tempo')
-                      ->whereDate('jatuh_tempo', '<', now()->toDateString());
+                $query->whereNotNull('jatuh_tempo');
             })
             ->chunk(100, function ($bills) {
+                $today = now()->startOfDay();
+
                 foreach ($bills as $bill) {
                     try {
-                        DB::beginTransaction();
-
                         $payment = $bill->payment;
                         $head = $bill->head;
 
                         // Jika relasi data tidak lengkap, skip
-                        if (!$payment || !$head) {
-                            DB::rollBack();
+                        if (!$payment || !$head || !$payment->jatuh_tempo) {
                             continue;
                         }
+
+                        // Tentukan tanggal jatuh tempo efektif
+                        if ($payment->auto_renew) {
+                            // Untuk auto-renew (tagihan bulanan), ambil tanggal (hari) dari jatuh_tempo
+                            // lalu terapkan pada bulan dan tahun tagihan dibuat
+                            $billDate = $bill->created_at ?? now();
+                            $targetDay = (int) \Carbon\Carbon::parse($payment->jatuh_tempo)->day;
+                            $daysInMonth = (int) $billDate->daysInMonth;
+                            $effectiveDay = min($targetDay, $daysInMonth);
+
+                            $dueDate = \Carbon\Carbon::create(
+                                $billDate->year,
+                                $billDate->month,
+                                $effectiveDay
+                            )->startOfDay();
+                        } else {
+                            // Untuk pembayaran non-auto-renew, gunakan tanggal jatuh tempo spesifik
+                            $dueDate = \Carbon\Carbon::parse($payment->jatuh_tempo)->startOfDay();
+                        }
+
+                        // Hanya proses jika HARI INI sudah MELEWATI jatuh tempo
+                        if ($today->lte($dueDate)) {
+                            continue;
+                        }
+
+                        DB::beginTransaction();
 
                         $student = $head->murid;
                         if (!$student) {
