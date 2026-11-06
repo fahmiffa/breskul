@@ -32,9 +32,14 @@ class ProcessAutoPayBills implements ShouldQueue
     public function handle(): void
     {
         // Ambil semua tagihan yang belum lunas (status = 0)
+        // dan pembayaran yang memiliki jatuh tempo serta sudah melewati tanggal jatuh tempo (jatuh_tempo < hari ini)
         // Gunakan chunk untuk memproses data dalam batch
         Bill::with(['payment', 'head.murid.saldo', 'head.murid.users'])
             ->where('status', 0)
+            ->whereHas('payment', function ($query) {
+                $query->whereNotNull('jatuh_tempo')
+                      ->whereDate('jatuh_tempo', '<', now()->toDateString());
+            })
             ->chunk(100, function ($bills) {
                 foreach ($bills as $bill) {
                     try {

@@ -33,6 +33,19 @@
                 @enderror
             </div>
 
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-semibold mb-2">Tanggal Jatuh Tempo</label>
+                <div class="relative">
+                    <input type="date" name="jatuh_tempo"
+                        value="{{ old('jatuh_tempo', isset($items) && $items->jatuh_tempo ? \Carbon\Carbon::parse($items->jatuh_tempo)->format('Y-m-d') : '') }}"
+                        class="border border-gray-300 ring-0 rounded-xl px-3 py-2 w-full md:w-1/2 focus:outline-[#177245]">
+                </div>
+                <p class="text-gray-500 text-xs mt-1">Opsional: Tanggal batas pembayaran untuk proses otomatis potong saldo jika melewati jatuh tempo.</p>
+                @error('jatuh_tempo')
+                    <p class="text-red-500 text-xs italic mt-2">{{ $message }}</p>
+                @enderror
+            </div>
+
             <div class="mb-5">
                 <label class="flex items-center gap-2 cursor-pointer select-none">
                     <input type="checkbox" name="auto_renew" value="1"

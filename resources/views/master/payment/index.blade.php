@@ -20,6 +20,7 @@
                         <th class="px-4 py-2">No</th>
                         <th @click="sortBy('name')" class="cursor-pointer px-4 py-2">Nama</th>
                         <th class="cursor-pointer px-4 py-2">Nominal</th>
+                        <th class="cursor-pointer px-4 py-2">Jatuh Tempo</th>
                         <th class="px-4 py-2 text-center">Auto Renew</th>
                         <th class="px-4 py-2">Action</th>
                     </tr>
@@ -30,6 +31,7 @@
                             <td class="px-4 py-2" x-text="((currentPage - 1) * perPage) + index + 1"></td>
                             <td class="px-4 py-2" x-text="row.name"></td>
                             <td class="px-4 py-2" x-text="formatNumber(row.nominal)"></td>
+                            <td class="px-4 py-2" x-text="row.jatuh_tempo ? row.jatuh_tempo.substring(0, 10) : '-'"></td>
                             <td class="px-4 py-2 text-center">
                                 <span class="px-2 py-0.5 text-xs font-semibold rounded-full"
                                     :class="row.auto_renew ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'"
@@ -69,7 +71,7 @@
                         </tr>
                     </template>
                     <tr x-show="filteredData().length === 0">
-                        <td colspan="5" class="text-center px-4 py-2 text-gray-500">No results found.</td>
+                        <td colspan="6" class="text-center px-4 py-2 text-gray-500">No results found.</td>
                     </tr>
                 </tbody>
             </table>
