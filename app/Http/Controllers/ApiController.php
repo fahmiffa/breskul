@@ -320,6 +320,7 @@ class ApiController extends Controller
 
     public function push(Request $request)
     {
+        Log::channel('absensi')->info($request->all());
         $deviceId = $request->header('Device-ID', 'UNKNOWN_DEVICE');
         $device   = ApiKey::where('key', $deviceId)->first();
         $body     = $request->all();
