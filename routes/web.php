@@ -38,7 +38,7 @@ Route::middleware('guest')->group(function () {
     Route::get('/pengumuman/{id}', [AuthController::class, 'pengumuman'])->name('pengumuman');
 });
 
-Route::prefix('dashboard')->middleware('auth')->name('dashboard.')->group(function () {
+Route::prefix('dashboard')->middleware(['auth', 'app.context'])->name('dashboard.')->group(function () {
     Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/', [Home::class, 'index'])->name('home');
     Route::get('/panduan', [Home::class, 'panduan'])->name('panduan');
@@ -139,10 +139,12 @@ Route::prefix('dashboard')->middleware('auth')->name('dashboard.')->group(functi
         Route::resource('bank', App\Http\Controllers\BankController::class);
         Route::get('perangkat/data', [App\Http\Controllers\DeviceController::class, 'data'])->name('perangkat.data');
         Route::resource('perangkat', App\Http\Controllers\DeviceController::class);
-        Route::middleware(['isRole'])->group(function () {
+        Route::middleware(['isRole', 'role:0'])->group(function () {
             Route::resource('app', App\Http\Controllers\AppController::class);
             Route::resource('api', App\Http\Controllers\ApiKeyController::class);
             Route::resource('jabatan', App\Http\Controllers\JabatanController::class);
+            Route::resource('fitur', App\Http\Controllers\FeatureController::class);
+            Route::resource('feature', App\Http\Controllers\FeatureController::class)->names('feature');
         });
         Route::get('/', [Home::class, 'index'])->name('index');
     });

@@ -20,6 +20,7 @@
                         <th class="px-4 py-2">No</th>
                         <th @click="sortBy('name')" class="cursor-pointer px-4 py-2">Nama</th>
                         <th @click="sortBy('tahun')" class="cursor-pointer px-4 py-2">Email</th>
+                        <th class="px-4 py-2">Fitur</th>
                         <th class="px-4 py-2">Action</th>
                     </tr>
                 </thead>
@@ -28,7 +29,20 @@
                         <tr class="border-t border-gray-300">
                             <td class="px-4 py-2" x-text="((currentPage - 1) * perPage) + index + 1"></td>
                             <td class="px-4 py-2" x-text="row.name"></td>
-                            <td class="px-4 py-2" x-text="row.user.email"></td>
+                            <td class="px-4 py-2" x-text="row.user ? row.user.email : '-'"></td>
+                            <td class="px-4 py-2">
+                                <div class="flex flex-wrap gap-1">
+                                    <template x-if="row.features && row.features.length > 0">
+                                        <template x-for="feat in row.features" :key="feat.id">
+                                            <span class="bg-green-100 text-green-800 text-xs font-medium px-2 py-0.5 rounded-full"
+                                                x-text="feat.name"></span>
+                                        </template>
+                                    </template>
+                                    <template x-if="!row.features || row.features.length === 0">
+                                        <span class="text-xs text-gray-400 italic">Belum ada fitur</span>
+                                    </template>
+                                </div>
+                            </td>
                             <td class="px-4 py-2 flex items-center gap-1">
                                 <a :href="'/dashboard/master/app/' + row.id + '/edit'"
                                     class="text-green-600 hover:text-green-700">
@@ -63,7 +77,7 @@
                         </tr>
                     </template>
                     <tr x-show="filteredData().length === 0">
-                        <td colspan="3" class="text-center px-4 py-2 text-gray-500">No results found.</td>
+                        <td colspan="5" class="text-center px-4 py-2 text-gray-500">No results found.</td>
                     </tr>
                 </tbody>
             </table>

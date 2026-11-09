@@ -111,22 +111,24 @@
         </span> Jadwal
     </li>
 </a>
-<a href="{{ route('dashboard.master.halaqah.index') }}">
-    <li
-        class="flex flex-col justify-center items-center p-2.5 sm:p-4 border border-gray-200 rounded-xl shadow-sm hover:bg-green-100 bg-white text-center h-full text-xs sm:text-sm font-medium transition-colors {{ Route::is('dashboard.master.halaqah.*') ? 'bg-green-100' : null }}">
-        <span class="text-green-500 mb-1.5 sm:mb-2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                class="lucide lucide-book-open-text-icon lucide-book-open-text w-5 h-5 sm:w-6 sm:h-6">
-                <path d="M12 7v14" />
-                <path d="M16 12h2" />
-                <path d="M16 8h2" />
-                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-            </svg>
-        </span> Halaqah
-    </li>
-</a>
+@if(config('app.halaqoh'))
+    <a href="{{ route('dashboard.master.halaqah.index') }}">
+        <li
+            class="flex flex-col justify-center items-center p-2.5 sm:p-4 border border-gray-200 rounded-xl shadow-sm hover:bg-green-100 bg-white text-center h-full text-xs sm:text-sm font-medium transition-colors {{ Route::is('dashboard.master.halaqah.*') ? 'bg-green-100' : null }}">
+            <span class="text-green-500 mb-1.5 sm:mb-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="lucide lucide-book-open-text-icon lucide-book-open-text w-5 h-5 sm:w-6 sm:h-6">
+                    <path d="M12 7v14" />
+                    <path d="M16 12h2" />
+                    <path d="M16 8h2" />
+                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+                </svg>
+            </span> Halaqah
+        </li>
+    </a>
+@endif
 <a href="{{ route('dashboard.master.akademik.index') }}">
     <li
         class="flex flex-col justify-center items-center p-2.5 sm:p-4 border border-gray-200 rounded-xl shadow-sm hover:bg-green-100 bg-white text-center h-full cursor-pointer text-xs sm:text-sm font-medium transition-colors {{ Route::is('dashboard.master.akademik.*') ? 'bg-green-100' : null }}">
@@ -246,6 +248,8 @@
         </span> Kas
     </li>
 </a>
+
+@if(auth()->user()->role != 0 && config('app.jurnal'))
 <a href="{{ route('dashboard.gnucash.accounts.index') }}">
     <li
         class="flex flex-col justify-center items-center p-2.5 sm:p-4 border border-gray-200 rounded-xl shadow-sm hover:bg-green-100 bg-white text-center h-full text-xs sm:text-sm font-medium transition-colors {{ Route::is('dashboard.gnucash.accounts.*') ? 'bg-green-100' : null }}">
@@ -258,6 +262,7 @@
         </span> Jurnal
     </li>
 </a>
+@endif
 
 {{-- === PENGATURAN === --}}
 <li class="col-span-full border-b border-gray-200 mt-2 pb-2">
@@ -452,6 +457,20 @@
                 <rect width="7" height="7" x="3" y="14" rx="1" />
             </svg>
         </span> App
+    </li>
+</a>
+<a href="{{ route('dashboard.master.fitur.index') }}">
+    <li
+        class="flex flex-col justify-center items-center p-2.5 sm:p-4 border border-gray-200 rounded-xl shadow-sm hover:bg-green-100 bg-white text-center h-full text-xs sm:text-sm font-medium transition-colors {{ Route::is('dashboard.master.fitur.*') || Route::is('dashboard.master.feature.*') ? 'bg-green-100' : null }}">
+        <span class="text-green-500 mb-1.5 sm:mb-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" class="lucide lucide-layers-icon lucide-layers w-5 h-5 sm:w-6 sm:h-6">
+                <path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/>
+                <path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/>
+                <path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>
+            </svg>
+        </span> Fitur
     </li>
 </a>
 @endif

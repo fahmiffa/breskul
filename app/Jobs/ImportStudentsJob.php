@@ -61,6 +61,8 @@ class ImportStudentsJob implements ShouldQueue
         }
 
         $processed = 0;
+        $inserted = 0;
+        $updated = 0;
         $isSchoolMode = config('app.school_mode', true);
 
         DB::beginTransaction();
@@ -86,7 +88,7 @@ class ImportStudentsJob implements ShouldQueue
                 $hpSiswa = isset($row[5]) && trim((string) $row[5]) !== '' ? trim((string) $row[5]) : null;
                 $hpParent = isset($row[6]) && trim((string) $row[6]) !== '' ? trim((string) $row[6]) : null;
 
-                if ($name && $nis) {
+                if ($name) {
                     $genderUpper = strtoupper((string) $genderRaw);
                     if ($genderUpper === 'L' || $genderUpper === '1' || strtolower($genderUpper) === 'laki-laki') {
                         $gender = 1;
@@ -96,42 +98,110 @@ class ImportStudentsJob implements ShouldQueue
                         $gender = null;
                     }
 
-                    $username = self::usernameFromName($name);
+                    // Cek apakah murid dengan nama yang sama sudah ada (per app, tanpa beda huruf besar/kecil)
+                    $existing = DB::table('students')
+                        ->where('app', $this->appId)
+                        ->whereRaw('LOWER(TRIM(name)) = ?', [mb_strtolower($name)])
+                        ->orderBy('id')
+                        ->first();
 
-                    $userId = DB::table('users')->insertGetId([
-                        'name'       => $name,
-                        'username'   => $username,
-                        'password'   => Hash::make('breskul'),
-                        'role'       => 2,
-                        'status'     => 1,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
+                    if ($existing) {
+                        // ===== UPDATE =====
+                        $studentId = $existing->id;
 
-                    $studentId = DB::table('students')->insertGetId([
-                        'name'       => $name,
-                        'user'       => $userId,
-                        'app'        => $this->appId,
-                        'gender'     => $gender,
-                        'nis'        => $nis,
-                        'alamat'     => $alamat,
-                        'hp_siswa'   => $hpSiswa,
-                        'hp_parent'  => $hpParent,
-                        'boarding'   => false,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
+                        // Hanya kolom yang terisi di file yang akan menimpa data lama
+                        $studentData = array_filter([
+                            // 'nis'       => $nis,
+                            // 'gender'    => $gender,
+                            // 'alamat'    => $alamat,
+                            // 'hp_siswa'  => $hpSiswa,
+                            'hp_parent' => $hpParent,
+                        ], fn ($v) => $v !== null);
 
-                    DB::table('heads')->insert([
-                        'student_id'  => $studentId,
-                        'app'         => $this->appId,
-                        'academic_id' => $akademik->id,
-                        'class_id'    => $isSchoolMode ? $this->classId : null,
-                        'prodi_id'    => ! $isSchoolMode ? $this->classId : null,
-                        'status'      => 1,
-                        'created_at'  => now(),
-                        'updated_at'  => now(),
-                    ]);
+                        $studentData['updated_at'] = now();
+
+                        DB::table('students')
+                            ->where('id', $studentId)
+                            ->update($studentData);
+
+                        // Update user terkait (username & password tidak diubah)
+                        if (! empty($existing->user)) {
+                            DB::table('users')
+                                ->where('id', $existing->user)
+                                ->update([
+                                    // 'name'  => $name,
+                                    'nomor' => $hpParent,
+                                    // 'updated_at' => now()
+                                ]);
+                        }
+
+                        // Update head pada semester aktif
+                        $headData = [
+                            'class_id'   => $isSchoolMode ? $this->classId : null,
+                            'prodi_id'   => ! $isSchoolMode ? $this->classId : null,
+                            'status'     => 1,
+                            'updated_at' => now(),
+                        ];
+
+                        $headUpdated = DB::table('heads')
+                            ->where('student_id', $studentId)
+                            ->where('app', $this->appId)
+                            ->where('academic_id', $akademik->id)
+                            ->update($headData);
+
+                        // Murid lama yang belum punya head di semester aktif ini
+                        // dibuatkan head agar tetap masuk ke kelas.
+                        if ($headUpdated === 0) {
+                            DB::table('heads')->insert($headData + [
+                                'student_id'  => $studentId,
+                                'app'         => $this->appId,
+                                'academic_id' => $akademik->id,
+                                'created_at'  => now(),
+                            ]);
+                        }
+
+                        $updated++;
+                    } else {
+                        // ===== INSERT (murid baru) =====
+                        $username = self::usernameFromName($name);
+
+                        $userId = DB::table('users')->insertGetId([
+                            'name'       => $name,
+                            'username'   => $username,
+                            'password'   => Hash::make('breskul'),
+                            'role'       => 2,
+                            'status'     => 1,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+
+                        $studentId = DB::table('students')->insertGetId([
+                            'name'       => $name,
+                            'user'       => $userId,
+                            'app'        => $this->appId,
+                            'gender'     => $gender,
+                            'nis'        => $nis,
+                            'alamat'     => $alamat,
+                            'hp_siswa'   => $hpSiswa,
+                            'hp_parent'  => $hpParent,
+                            'boarding'   => false,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+
+                        DB::table('heads')->insert([
+                            'student_id'  => $studentId,
+                            'app'         => $this->appId,
+                            'academic_id' => $akademik->id,
+                            'class_id'    => $isSchoolMode ? $this->classId : null,
+                            'prodi_id'    => ! $isSchoolMode ? $this->classId : null,
+                            'status'      => 1,
+                            'created_at'  => now(),
+                            'updated_at'  => now(),
+                        ]);
+
+                        $inserted++;
+                    }
                 }
 
                 $processed++;
@@ -140,6 +210,7 @@ class ImportStudentsJob implements ShouldQueue
             }
 
             DB::commit();
+            Log::info("Job {$this->jobId} selesai: {$inserted} ditambahkan, {$updated} diperbarui.");
             Cache::put("job-progress-{$this->jobId}", 100, now()->addMinutes(10));
         } catch (\Throwable $e) {
             DB::rollBack();
@@ -163,5 +234,3 @@ class ImportStudentsJob implements ShouldQueue
         return $username;
     }
 }
-
-

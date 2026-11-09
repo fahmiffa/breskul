@@ -14,9 +14,12 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
 
         $middleware->alias([
+            'app.context' => \App\Http\Middleware\LoadAppContext::class,
             'isRole' => \App\Http\Middleware\isRole::class,
             'jwt'    => \App\Http\Middleware\JwtMiddleware::class,
             'checkMaster' => \App\Http\Middleware\CheckMasterAccess::class,
+            'role'   => \App\Http\Middleware\RolePermission::class,
+            'rolePermission' => \App\Http\Middleware\RolePermission::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {})->create();

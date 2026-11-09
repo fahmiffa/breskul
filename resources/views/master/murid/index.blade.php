@@ -91,12 +91,15 @@
                 @endforeach
             </select>
 
-            <select x-model="filterPesantren" @change="currentPage = 1"
-                class="border border-gray-300 ring-0 rounded-xl px-3 py-2 focus:outline-[#177245] bg-white text-sm">
-                <option value="">Semua Status</option>
-                <option value="1">Pesantren</option>
-                <option value="0">Bukan Pesantren</option>
-            </select>
+            @if(config('app.school_mode'))
+                <select x-model="filterPesantren" @change="currentPage = 1"
+                    class="border border-gray-300 ring-0 rounded-xl px-3 py-2 focus:outline-[#177245] bg-white text-sm">
+                    <option value="">Semua Status</option>
+                    <option value="1">Pesantren</option>
+                    <option value="0">Bukan Pesantren</option>
+                </select>
+            @endif
+
 
             <select x-model="perPage" @change="currentPage = 1"
                 class="border border-gray-300 ring-0 rounded-xl px-3 py-2 focus:outline-[#177245] bg-white text-sm">
@@ -199,6 +202,7 @@
                                     </svg>
                                 </button>
                             </form>
+
 
                             @if(config('app.rfid'))
                             <button @click="showRfidModal = true; selectedStudentId = row.id; rfid = row.rfid"
