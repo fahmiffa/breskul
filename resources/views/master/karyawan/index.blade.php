@@ -6,6 +6,14 @@
         importModal: false,
         filterJabatan: '{{ request('jabatan_id', '') }}',
 
+        exportUrl() {
+            let params = new URLSearchParams();
+            if (this.filterJabatan) params.append('jabatan_id', this.filterJabatan);
+            if (this.search) params.append('search', this.search);
+            let qs = params.toString();
+            return '{{ route('dashboard.master.karyawan.export') }}' + (qs ? '?' + qs : '');
+        },
+
         filteredData() {
             let temp = this.rows.filter((row) => {
                 const searchLower = this.search ? this.search.toLowerCase() : '';
@@ -97,6 +105,15 @@
             </div>
 
             <div class="flex gap-2 flex-wrap items-center justify-end shrink-0">
+                {{-- Export Button --}}
+                <a :href="exportUrl()"
+                    class="cursor-pointer bg-emerald-600 text-xs hover:bg-emerald-700 text-white font-semibold py-2 px-3 rounded-2xl flex items-center gap-1 shadow-sm transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Export Excel
+                </a>
+
                 {{-- Import Button --}}
                 <button @click="importModal = true"
                     class="cursor-pointer bg-blue-500 text-xs hover:bg-blue-700 text-white font-semibold py-2 px-3 rounded-2xl flex items-center gap-1">

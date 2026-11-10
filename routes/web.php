@@ -128,6 +128,7 @@ Route::prefix('dashboard')->middleware(['auth', 'app.context'])->name('dashboard
         Route::resource('halaqah', App\Http\Controllers\HalaqahController::class);
         Route::resource('absensi', App\Http\Controllers\AttendanceConfigController::class);
         Route::resource('izin', App\Http\Controllers\PermitController::class);
+        Route::get('karyawan/export', [App\Http\Controllers\EmployeeController::class, 'export'])->name('karyawan.export');
         Route::post('karyawan/import', [App\Http\Controllers\EmployeeController::class, 'import'])->name('karyawan.import');
         Route::get('karyawan/template', [App\Http\Controllers\EmployeeController::class, 'template'])->name('karyawan.template');
         Route::resource('karyawan', App\Http\Controllers\EmployeeController::class);

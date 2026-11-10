@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\EmployeeExport;
 use App\Models\Employee;
 use App\Models\Jabatan;
 use App\Models\Teach;
@@ -223,6 +224,19 @@ class EmployeeController extends Controller
         Teach::where('user_id', $karyawan->user_id)->delete();
         $karyawan->delete();
         return redirect()->route('dashboard.master.karyawan.index')->with('success', 'Berhasil menghapus karyawan.');
+    }
+
+    /**
+     * Export data karyawan ke file Excel.
+     */
+    public function export(Request $request)
+    {
+        $appId = (auth()->user()->role == 1 && auth()->user()->app) ? auth()->user()->app->id : null;
+        $jabatanId = $request->get('jabatan_id');
+        $search = $request->get('search');
+
+        $export = new EmployeeExport($appId, $jabatanId, $search);
+        return $export->export();
     }
 
     /**

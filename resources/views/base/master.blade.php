@@ -32,29 +32,31 @@
         </span> Absensi
     </li>
 </a>
-<a href="{{ route('dashboard.master.perangkat.index') }}">
-    <li
-        class="flex flex-col justify-center items-center p-2.5 sm:p-4 border border-gray-200 rounded-xl shadow-sm hover:bg-green-100 bg-white text-center h-full text-xs sm:text-sm font-medium transition-colors relative {{ Route::is('dashboard.master.perangkat.*') ? 'bg-green-100' : null }}">
-        <span class="text-green-500 mb-1.5 sm:mb-2 relative">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                class="lucide lucide-cpu-icon lucide-cpu w-5 h-5 sm:w-6 sm:h-6">
-                <rect width="16" height="16" x="4" y="4" rx="2" />
-                <rect width="6" height="6" x="9" y="9" rx="1" />
-                <path d="M15 2v2" />
-                <path d="M15 20v2" />
-                <path d="M2 15h2" />
-                <path d="M2 9h2" />
-                <path d="M20 15h2" />
-                <path d="M20 9h2" />
-                <path d="M9 2v2" />
-                <path d="M9 20v2" />
-            </svg>
-            <span class="device-pulse-indicator hidden absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse"></span>
-        </span> Perangkat
-        <span class="device-live-badge hidden text-[10px] font-semibold px-1.5 py-0.2 rounded-full mt-1 bg-emerald-100 text-emerald-800"></span>
-    </li>
-</a>
+@if(config('app.rfid'))
+    <a href="{{ route('dashboard.master.perangkat.index') }}">
+        <li
+            class="flex flex-col justify-center items-center p-2.5 sm:p-4 border border-gray-200 rounded-xl shadow-sm hover:bg-green-100 bg-white text-center h-full text-xs sm:text-sm font-medium transition-colors relative {{ Route::is('dashboard.master.perangkat.*') ? 'bg-green-100' : null }}">
+            <span class="text-green-500 mb-1.5 sm:mb-2 relative">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="lucide lucide-cpu-icon lucide-cpu w-5 h-5 sm:w-6 sm:h-6">
+                    <rect width="16" height="16" x="4" y="4" rx="2" />
+                    <rect width="6" height="6" x="9" y="9" rx="1" />
+                    <path d="M15 2v2" />
+                    <path d="M15 20v2" />
+                    <path d="M2 15h2" />
+                    <path d="M2 9h2" />
+                    <path d="M20 15h2" />
+                    <path d="M20 9h2" />
+                    <path d="M9 2v2" />
+                    <path d="M9 20v2" />
+                </svg>
+                <span class="device-pulse-indicator hidden absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse"></span>
+            </span> Perangkat
+            <span class="device-live-badge hidden text-[10px] font-semibold px-1.5 py-0.2 rounded-full mt-1 bg-emerald-100 text-emerald-800"></span>
+        </li>
+    </a>
+@endif
 <a href="{{ route('dashboard.master.izin.index') }}">
     <li
         class="flex flex-col justify-center items-center p-2.5 sm:p-4 border border-gray-200 rounded-xl shadow-sm hover:bg-green-100 bg-white text-center h-full text-xs sm:text-sm font-medium transition-colors {{ Route::is('dashboard.master.izin.*') ? 'bg-green-100' : null }}">
