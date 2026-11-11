@@ -134,13 +134,13 @@ class ApiController extends Controller
     public function izin()
     {
         $user = Auth::user();
-        
+
         if (!in_array($user->role, [3, 4])) {
             return response()->json(['success' => false, 'message' => 'Unauthorized role']);
         }
-        
+
         $employeeId = $user->employeeData->id ?? null;
-        
+
         if (!$employeeId) {
             return response()->json(['success' => false, 'message' => 'Employee data not found']);
         }
@@ -152,17 +152,17 @@ class ApiController extends Controller
     public function submitIzin(\Illuminate\Http\Request $request)
     {
         $user = Auth::user();
-    
+
         if (!in_array($user->role, [3, 4])) {
             return response()->json(['success' => false, 'message' => 'Unauthorized role']);
         }
-        
+
         $employeeId = $user->employeeData->id ?? null;
-        
+
         if (!$employeeId) {
             return response()->json(['success' => false, 'message' => 'Employee data not found']);
         }
-        
+
         $validator = \Validator::make($request->all(), [
             'keterangan' => 'required',
             'tanggal' => 'required|date',
@@ -175,27 +175,27 @@ class ApiController extends Controller
                 'received' => $request->all()
             ], 422);
         }
-        
+
         \App\Models\Permit::create([
             'employee_id' => $employeeId,
             'tanggal' => $request->tanggal,
             'keterangan' => $request->keterangan,
             'status' => 3
         ]);
-        
+
         return response()->json(['success' => true, 'message' => 'Izin berhasil diajukan']);
     }
 
     public function cancelIzin(\Illuminate\Http\Request $request)
     {
         $user = Auth::user();
-        
+
         if (!in_array($user->role, [3, 4])) {
             return response()->json(['success' => false, 'message' => 'Unauthorized role']);
         }
-        
+
         $employeeId = $user->employeeData->id ?? null;
-        
+
         if (!$employeeId) {
             return response()->json(['success' => false, 'message' => 'Employee data not found']);
         }
@@ -211,19 +211,19 @@ class ApiController extends Controller
                 'received' => $request->all()
             ], 422);
         }
-        
-        
+
+
         $permit = \App\Models\Permit::where('id', $request->id)->where('employee_id', $employeeId)->first();
         if (!$permit) {
             return response()->json(['success' => false, 'message' => 'Data izin tidak ditemukan']);
         }
-        
+
         if ($permit->status != 3) {
             return response()->json(['success' => false, 'message' => 'Hanya izin dengan status pending yang bisa dibatalkan']);
         }
 
         $permit->update(['status' => 0]);
-        
+
         return response()->json(['success' => true, 'message' => 'Izin berhasil dibatalkan']);
     }
 
@@ -360,7 +360,7 @@ class ApiController extends Controller
                 'msg'     => 'Perangkat error',
             ], 400);
         }
-        
+
     }
 
     public function state(Request $request)
@@ -411,7 +411,7 @@ class ApiController extends Controller
                     ->first();
 
         $now = now();
-        
+
         if ($config->clock_in_start && $config->clock_in_end && $now->between(
             Carbon::createFromTimeString($config->clock_in_start),
             Carbon::createFromTimeString($config->clock_in_end)
@@ -440,7 +440,7 @@ class ApiController extends Controller
                             ->whereDate('waktu',$today)
                             ->where('status',$type)
                             ->exists();
-        
+
         if($exists)
         {
           return response()->json([
@@ -776,7 +776,7 @@ class ApiController extends Controller
                 $user->is_lock = true;
                 $user->save();
             }
-            
+
         }
 
 
@@ -1648,6 +1648,19 @@ class ApiController extends Controller
         ]);
     }
 
+    public function fitur()
+    {
+        $id = Auth::user()->id;
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                "testing",
+                "informasi",
+                "user_{$id}"
+            ],
+        ]);
+    }
+
     private function calculateDistanceInMeters($lat1, $lon1, $lat2, $lon2)
     {
         $earthRadius = 6371000; // Radius bumi dalam meter
@@ -1834,7 +1847,7 @@ class ApiController extends Controller
                 }
             }
         } elseif ($type === 'pulang') {
-            
+
                 // Cek apakah sudah absensi masuk hari ini
                 $exists = Present::when($app, fn($q) => $q->where('app', $app))
                     ->when($user->role == 2, function ($q) use ($studentId) {
@@ -2004,7 +2017,7 @@ class ApiController extends Controller
             // Since QrisLogic is imported on line 9, we try to use it.
             $qrisLogic = new QrisLogic();
             $qrisString = $qrisLogic->generateDynamicQris(env("QRIS"), $totalAmount);
-            // If QrisLogic doesn't exist or we want to use the previous dummy logic, we would swap it here. 
+            // If QrisLogic doesn't exist or we want to use the previous dummy logic, we would swap it here.
             // But let's assume QrisLogic works.
 
             // Update Bill with QRIS Data
@@ -2945,7 +2958,7 @@ class ApiController extends Controller
 
         // Cari data murid berdasarkan rfid
         $student = Students::where('rfid', $request->rfid)->first();
-        
+
         if (!$student) {
             return response()->json([
                 'success' => false,

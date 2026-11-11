@@ -30,6 +30,7 @@ Route::prefix('fire')->group(function () {
 
 Route::middleware('jwt')->group(function () {
     Route::get('/topic', [ApiController::class, 'topic']);
+    Route::get('/fitur', [ApiController::class, 'fitur']);
     Route::post('/pass', [ApiController::class, 'upass']);
     Route::post('/pay', [Home::class, 'midtransPay']);
     Route::get('/absensi', [ApiController::class, 'absensi']);
