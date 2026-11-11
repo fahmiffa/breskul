@@ -51,6 +51,8 @@ Route::middleware('jwt')->group(function () {
     Route::get('/pengumuman', [ApiController::class, 'pengumuman']);
     Route::get('/pengumuman/{id}', [ApiController::class, 'pengumuman']);
     Route::post('/upload-image', [ApiController::class, 'uploadImage']);
+    Route::get('/face/master', [ApiController::class, 'getMasterFace']);
+    Route::post('/face/register', [ApiController::class, 'registerMasterFace']);
 
     // Saldo & Riwayat API (Role 2 / Siswa)
     Route::get('/saldo', [ApiController::class, 'getSaldo']);

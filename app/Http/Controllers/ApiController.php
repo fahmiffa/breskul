@@ -919,6 +919,62 @@ class ApiController extends Controller
         }
     }
 
+    public function getMasterFace()
+    {
+        $user = Auth::user();
+        $hasFace = !empty($user->face_embedding);
+
+        return response()->json([
+            'success' => true,
+            'registered' => $hasFace,
+            'data' => [
+                'has_master' => $hasFace,
+                'embedding' => $hasFace ? json_decode($user->face_embedding) : null,
+            ],
+        ]);
+    }
+
+    public function registerMasterFace(Request $request)
+    {
+        $user = Auth::user();
+
+        $embedding = $request->input('embedding');
+        if (is_string($embedding)) {
+            $embedding = json_decode($embedding, true);
+        }
+
+        if (empty($embedding) || !is_array($embedding)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data face embedding tidak valid.',
+            ], 400);
+        }
+
+        $user->face_embedding = json_encode($embedding);
+
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            if ($file->isValid()) {
+                $path = $file->store('faces', 'public');
+                // juga simpan sebagai foto jika belum ada foto profil
+                if (!$user->image) {
+                    $user->image = $path;
+                }
+            }
+        }
+
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Master wajah berhasil diregistrasikan.',
+            'data' => [
+                'has_master' => true,
+                'embedding' => $embedding,
+            ]
+        ]);
+    }
+
     /**
      * Endpoint Saldo untuk User Siswa (Role 2)
      * Model User -> Model Students (student) -> Model Saldo

@@ -123,6 +123,7 @@ class User extends Authenticatable implements JWTSubject
         'nomor',
         'image',
         'jabatan_id',
+        'face_embedding',
         'is_lock',
         'deviceId',
     ];
