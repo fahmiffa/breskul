@@ -878,6 +878,7 @@ class ApiController extends Controller
                         'status' => $user->status,
                         'image'  => $user->image ? asset('storage/' . $user->image) : null,
                         'app'    => $user->employeeData?->app?->name ?? $user->app?->name ?? '-',
+                        'gender' => $user->employeeData?->jenis_kelamin ?? null,
                     ],
                 ],
             ]);
