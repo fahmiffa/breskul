@@ -44,6 +44,7 @@ use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Carbon\Carbon;
 use Intervention\Image\Laravel\Facades\Image;
+use App\Models\FeatureApp;
 
 class ApiController extends Controller
 {
@@ -1650,14 +1651,38 @@ class ApiController extends Controller
 
     public function fitur()
     {
-        $id = Auth::user()->id;
+        $role = Auth::user()->role;
+        $feature = null;
+        if($role == 4)
+        {
+            $feature = Auth::user()->employeeData->app->features->map(function($q){
+                return [
+                    "id" => $q->id,
+                    "name" => $q->name,
+                ];
+            });
+        }
+
+        if($role == 2)
+        {
+            $feature = Auth::user()->studentData->apps->features->map(function($q){
+                return [
+                    "id" => $q->id,
+                    "name" => $q->name,
+                ];
+            });
+        }
+        
+        if($feature == null)
+        {
+            return response()->json([
+                'success' => false,
+            ],400);
+        }
+
         return response()->json([
             'success' => true,
-            'data'    => [
-                "testing",
-                "informasi",
-                "user_{$id}"
-            ],
+            'data'    => $feature,
         ]);
     }
 
