@@ -1672,6 +1672,16 @@ class ApiController extends Controller
                 ];
             });
         }
+
+        if($role == 3)
+        {
+            $feature = Auth::user()->teacherData->apps->features->map(function($q){
+                return [
+                    "id" => $q->id,
+                    "name" => $q->name,
+                ];
+            });
+        }
         
         if($feature == null)
         {
