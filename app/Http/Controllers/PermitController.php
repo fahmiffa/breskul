@@ -9,9 +9,18 @@ class PermitController extends Controller
     /**
      * Display a listing of the resource.
      */
+
     public function index()
     {
-        $items = \App\Models\Permit::with('employee')->latest()->get();
+        $app = auth()->user()->app->id;
+
+        $items = \App\Models\Permit::whereHas('employee', function ($q) use ($app) {
+            $q->where('app_id', $app);
+        })
+        ->with('employee')
+        ->latest()
+        ->get();
+
         return view('master.izin.index', compact('items'));
     }
 
