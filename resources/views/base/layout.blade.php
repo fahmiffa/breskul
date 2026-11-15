@@ -8,6 +8,21 @@
     <link rel="icon" href="{{ asset('icon.png') }}" type="image/png" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Dashboard')</title>
+
+    <!-- PWA Settings -->
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
+    <meta name="theme-color" content="#15803d">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="{{ config('app.name', 'Breskul') }}">
+    <link rel="apple-touch-icon" href="{{ asset('icons/apple-touch-icon.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('icons/apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('icons/icon-192x192.png') }}">
+    <link rel="icon" type="image/png" sizes="512x512" href="{{ asset('icons/icon-512x512.png') }}">
+    <meta name="msapplication-TileColor" content="#15803d">
+    <meta name="msapplication-TileImage" content="{{ asset('icons/icon-192x192.png') }}">
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('styles')
 </head>
@@ -126,6 +141,9 @@
     @else
         @yield('content')
     @endif
+
+    <!-- PWA Install Banner -->
+    @include('base.pwa-install')
 </body>
 @stack('script')
 
