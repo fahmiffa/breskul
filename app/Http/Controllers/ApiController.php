@@ -1929,14 +1929,14 @@ class ApiController extends Controller
                 $inStart = Carbon::createFromTimeString($config->clock_in_start);
                 $inEnd   = Carbon::createFromTimeString($config->clock_in_end);
                 $outStart   = Carbon::createFromTimeString($config->clock_out_start);
-                if (!$now->between($inStart, $outStart)) {
-                // if($now->lt($inStart)) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Waktu absensi masuk adalah ' . $config->clock_in_start . ' - ' . $config->clock_out_start . '.',
-                        //  'message' => 'Waktu absensi masuk dimulai ' . $config->clock_in_start,
-                    ], 400);
-                }
+                // if (!$now->between($inStart, $outStart)) {
+                // // if($now->lt($inStart)) {
+                //     return response()->json([
+                //         'success' => false,
+                //         'message' => 'Waktu absensi masuk adalah ' . $config->clock_in_start . ' - ' . $config->clock_out_start . '.',
+                //         //  'message' => 'Waktu absensi masuk dimulai ' . $config->clock_in_start,
+                //     ], 400);
+                // }
             }
         } elseif ($type === 'pulang') {
 
