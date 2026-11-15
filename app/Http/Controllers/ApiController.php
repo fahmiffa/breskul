@@ -768,6 +768,12 @@ class ApiController extends Controller
             $user->save();
         }
 
+        if($request->pwa)
+        {
+            $user->pwa = true;
+            $user->save();
+        }
+
         if($user->role != 2)
         {
             // Update deviceId jika kosong/null dan ubah is_lock menjadi true
@@ -2023,12 +2029,25 @@ class ApiController extends Controller
         $pres->save();
 
         if ($user->fcm) {
-            $message = [
-                "topic" => "user_" . $user->id,
+            if($user->pwa == 1)
+            {
+                $message = [
+                "token" => $user->fcm,
                 "title" => "Absensi Berhasil",
                 "body"  => "Anda berhasil absensi " . $type . " pada " . $pres->time,
-            ];
-            ProcessFcm::dispatch($message);
+                ];
+                ProcessPwa::dispatch($message);
+                
+            }
+            else
+            {
+                $message = [
+                    "topic" => "user_" . $user->id,
+                    "title" => "Absensi Berhasil",
+                    "body"  => "Anda berhasil absensi " . $type . " pada " . $pres->time,
+                ];
+                ProcessFcm::dispatch($message);
+            }
         }
 
         return response()->json([
