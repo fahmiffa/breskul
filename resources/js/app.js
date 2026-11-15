@@ -5,6 +5,7 @@ import "tom-select/dist/css/tom-select.css";
 import "trix";
 import "trix/dist/trix.css";
 import "./alignment-elements.js";
+import "./pwa.js";
 
 window.Swal = Swal;
 window.TomSelect = TomSelect;
