@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Jobs\ProcessFcm;
+use App\Jobs\ProcessPwa;
 use App\Models\Annoucement;
 use App\Models\ApiKey;
 use App\Models\Bill;
@@ -2032,9 +2033,13 @@ class ApiController extends Controller
             if($user->pwa == 1)
             {
                 $message = [
-                "token" => $user->fcm,
-                "title" => "Absensi Berhasil",
-                "body"  => "Anda berhasil absensi " . $type . " pada " . $pres->time,
+                    "message" => [
+                        "token" => $user->fcm,
+                        "notification" => [
+                            "title" => "Absensi Berhasil",
+                            "body"  => "Anda berhasil absensi " . $type . " pada " . $pres->time,
+                        ]
+                    ]
                 ];
                 ProcessPwa::dispatch($message);
                 

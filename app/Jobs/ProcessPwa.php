@@ -26,6 +26,6 @@ class ProcessPwa implements ShouldQueue
 
     public function handle(): void
     {
-        FirebaseMessage::sendFCMMessage($this->message['token'], $this->message['title'], $this->message['body']);
+        FirebaseMessage::sendFCMMessage($this->message);
     }
 }
