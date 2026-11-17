@@ -39,16 +39,60 @@
         </div>
     </div>
 
-    <!-- Tabs -->
-    <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-gray-200">
-        <template x-for="tab in tabs" :key="tab.id">
-            <button @click="activeTab = tab.id"
-                :class="activeTab === tab.id ? 'bg-green-600 text-white shadow-sm font-semibold' : 'bg-white text-gray-600 hover:bg-gray-100 hover:text-gray-900 border border-gray-200 font-medium'"
-                class="px-4 py-2.5 rounded-xl text-xs sm:text-sm whitespace-nowrap transition-all duration-150 flex items-center gap-2 cursor-pointer">
-                <span x-text="tab.icon"></span>
-                <span x-text="tab.label"></span>
+    <!-- Tabs Navigation Bar with Scroll & Move Controls -->
+    <div class="space-y-2">
+        <div class="relative flex items-center bg-white p-1.5 rounded-2xl shadow-sm border border-gray-200">
+            <!-- Button Geser Kiri -->
+            <button type="button" @click="scrollTabs('left')" title="Geser daftar tab ke kiri"
+                class="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition border border-gray-200/80 bg-white shadow-xs cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+                </svg>
             </button>
-        </template>
+
+            <!-- Scrollable Tabs List -->
+            <div x-ref="tabContainer" class="flex items-center gap-2 overflow-x-auto scroll-smooth scrollbar-none px-2 py-1 flex-1">
+                <template x-for="tab in tabs" :key="tab.id">
+                    <button type="button" :id="'tab-btn-' + tab.id" @click="goToTab(tab.id)"
+                        :class="activeTab === tab.id ? 'bg-green-600 text-white shadow-sm font-semibold' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900 border border-gray-200 font-medium'"
+                        class="px-4 py-2 rounded-xl text-xs sm:text-sm whitespace-nowrap transition-all duration-150 flex items-center gap-2 cursor-pointer flex-shrink-0">
+                        <span x-text="tab.icon"></span>
+                        <span x-text="tab.label"></span>
+                    </button>
+                </template>
+            </div>
+
+            <!-- Button Geser Kanan -->
+            <button type="button" @click="scrollTabs('right')" title="Geser daftar tab ke kanan"
+                class="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition border border-gray-200/80 bg-white shadow-xs cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Quick Switch Sub-Bar: Pindah Tab Sebelumnya & Selanjutnya -->
+        <div class="flex items-center justify-between px-1 text-xs text-gray-500">
+            <button type="button" @click="prevTab()" :disabled="!getPrevTab()"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-medium shadow-xs transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                <span>Sebelumnya <span x-show="getPrevTab()" class="hidden md:inline text-gray-500">(<span x-text="getPrevTab() ? getPrevTab().label : ''"></span>)</span></span>
+            </button>
+
+            <span class="text-[11px] font-medium text-gray-400">
+                Tab <span class="font-bold text-gray-700" x-text="getCurrentTabIndex() + 1"></span> / <span x-text="tabs.length"></span>: <span class="text-green-700 font-semibold" x-text="tabs[getCurrentTabIndex()] ? tabs[getCurrentTabIndex()].label : ''"></span>
+            </span>
+
+            <button type="button" @click="nextTab()" :disabled="!getNextTab()"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-medium shadow-xs transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">
+                <span>Selanjutnya <span x-show="getNextTab()" class="hidden md:inline text-gray-500">(<span x-text="getNextTab() ? getNextTab().label : ''"></span>)</span></span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+            </button>
+        </div>
     </div>
 
     <div class="space-y-6">
@@ -136,6 +180,124 @@
             </div>
         </div>
 
+        <!-- TAB: PEMBAYARAN (MASTER & OPERASIONAL) -->
+        <div x-show="activeTab === 'payment' && matchesSearch('pembayaran master tagihan verifikasi spp nominal jatuh tempo auto renew kas operasional')" class="bg-white rounded-2xl shadow-md p-6 sm:p-8 space-y-8" x-transition>
+            
+            <!-- HEADER -->
+            <div class="border-b border-gray-100 pb-4">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 text-green-800 text-xs font-semibold uppercase tracking-wider mb-2">Panduan Input & CRUD</div>
+                <h2 class="text-xl sm:text-2xl font-bold text-gray-800">Panduan Pembayaran (Master & Verifikasi Operasional)</h2>
+                <p class="text-xs sm:text-sm text-gray-500">Petunjuk langkah demi langkah input Master Pembayaran dan proses Verifikasi Pembayaran di menu Operasional</p>
+            </div>
+
+            <!-- BAGIAN 1: MASTER PEMBAYARAN -->
+            <div class="space-y-4">
+                <div class="flex items-center gap-2 pb-2 border-b border-gray-200">
+                    <span class="p-2 rounded-lg bg-green-500 text-white font-bold text-sm">1</span>
+                    <div>
+                        <h3 class="font-bold text-gray-800 text-base sm:text-lg">Tambah Master Pembayaran</h3>
+                        <p class="text-xs text-gray-500">Lokasi menu: <code>Master &gt; Pembayaran</code> (URL: <code>/dashboard/master/pembayaran</code>)</p>
+                    </div>
+                </div>
+
+                <div class="space-y-4 text-sm text-gray-600">
+                    <div class="border-l-4 border-green-500 pl-4 py-1">
+                        <h4 class="font-semibold text-gray-800"><span class="inline-flex w-6 h-6 mr-2 items-center justify-center rounded-full bg-green-600 text-white text-xs font-bold">1</span>Buka Menu Master Pembayaran</h4>
+                        <p class="mt-1">Pada Dashboard, gulir ke bagian <strong>Master</strong> lalu klik menu <strong>Pembayaran</strong>.</p>
+                    </div>
+
+                    <div class="border-l-4 border-green-500 pl-4 py-1">
+                        <h4 class="font-semibold text-gray-800"><span class="inline-flex w-6 h-6 mr-2 items-center justify-center rounded-full bg-green-600 text-white text-xs font-bold">2</span>Klik Tombol Tambah</h4>
+                        <p class="mt-1">Klik tombol hijau <strong>Tambah</strong> di pojok kanan atas tabel.</p>
+                    </div>
+
+                    <div class="border-l-4 border-green-500 pl-4 py-1">
+                        <h4 class="font-semibold text-gray-800"><span class="inline-flex w-6 h-6 mr-2 items-center justify-center rounded-full bg-green-600 text-white text-xs font-bold">3</span>Isi Formulir Input Pembayaran</h4>
+                        <div class="mt-2 space-y-2 bg-gray-50 rounded-xl p-4 border border-gray-200 text-xs sm:text-sm">
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-2 py-1 border-b border-gray-200">
+                                <span class="font-semibold text-gray-800">Nama <span class="text-red-500">*</span></span>
+                                <span class="md:col-span-3 text-gray-600">Ketik nama jenis pembayaran (contoh: <code>SPP Bulanan</code>, <code>Biaya Ujian</code>, <code>Uang Gedung</code>).</span>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-2 py-1 border-b border-gray-200">
+                                <span class="font-semibold text-gray-800">Nominal <span class="text-red-500">*</span></span>
+                                <span class="md:col-span-3 text-gray-600">Ketik nominal biaya (contoh: <code>250000</code>). Input otomatis terformat rupiah (Rp 250.000).</span>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-2 py-1 border-b border-gray-200">
+                                <span class="font-semibold text-gray-800">Tanggal Jatuh Tempo</span>
+                                <span class="md:col-span-3 text-gray-600">Pilih tanggal batas waktu pembayaran (opsional).</span>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-2 py-1">
+                                <span class="font-semibold text-gray-800">Auto Renew</span>
+                                <span class="md:col-span-3 text-gray-600">Centang kotak <strong>"Generate otomatis perbulan (Auto Renew)"</strong> jika tagihan berulang setiap bulan. Tanggal jatuh tempo akan diterapkan pada bulan berjalan.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="border-l-4 border-green-500 pl-4 py-1">
+                        <h4 class="font-semibold text-gray-800"><span class="inline-flex w-6 h-6 mr-2 items-center justify-center rounded-full bg-green-600 text-white text-xs font-bold">4</span>Simpan Data & Aksi Tabel (Edit / Hapus)</h4>
+                        <p class="mt-1">Klik tombol <strong>Simpan</strong>. Data baru langsung tersimpan dan muncul pada tabel.</p>
+                        <ul class="mt-2 list-disc list-inside text-xs text-gray-500 space-y-1">
+                            <li><strong>Edit:</strong> Klik ikon pensil hijau untuk mengubah nama, nominal, atau tanggal jatuh tempo.</li>
+                            <li><strong>Hapus:</strong> Klik ikon tempat sampah merah untuk menghapus jenis pembayaran.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BAGIAN 2: VERIFIKASI PEMBAYARAN DI MENU OPERASIONAL -->
+            <div class="space-y-4 pt-4 border-t border-gray-200">
+                <div class="flex items-center gap-2 pb-2 border-b border-gray-200">
+                    <span class="p-2 rounded-lg bg-blue-500 text-white font-bold text-sm">2</span>
+                    <div>
+                        <h3 class="font-bold text-gray-800 text-base sm:text-lg">Verifikasi Pembayaran & Assign Tagihan di Menu Operasional</h3>
+                        <p class="text-xs text-gray-500">Lokasi menu: <code>Operasional / Keuangan &gt; Pembayaran</code> (URL: <code>/dashboard/pembayaran</code>)</p>
+                    </div>
+                </div>
+
+                <div class="space-y-4 text-sm text-gray-600">
+                    <div class="border-l-4 border-blue-500 pl-4 py-1">
+                        <h4 class="font-semibold text-gray-800"><span class="inline-flex w-6 h-6 mr-2 items-center justify-center rounded-full bg-blue-600 text-white text-xs font-bold">1</span>Buka Menu Pembayaran</h4>
+                        <p class="mt-1">Pada Dashboard, buka menu <strong>Keuangan &gt; Pembayaran</strong> (atau Operasional).</p>
+                    </div>
+
+                    <div class="border-l-4 border-blue-500 pl-4 py-1">
+                        <h4 class="font-semibold text-gray-800"><span class="inline-flex w-6 h-6 mr-2 items-center justify-center rounded-full bg-blue-600 text-white text-xs font-bold">2</span>Cari Data Murid</h4>
+                        <p class="mt-1">Ketik NIS atau Nama pada kotak pencarian, atau gunakan filter <strong>Kelas / Prodi</strong> dan filter <strong>Bulan</strong>.</p>
+                    </div>
+
+                    <div class="border-l-4 border-blue-500 pl-4 py-1">
+                        <h4 class="font-semibold text-gray-800"><span class="inline-flex w-6 h-6 mr-2 items-center justify-center rounded-full bg-blue-600 text-white text-xs font-bold">3</span>Klik Tombol "Verifikasi"</h4>
+                        <p class="mt-1">Pada kolom <strong>Data Tagihan & Pembayaran</strong>, cari tagihan yang berstatus <span class="px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-700">Tagihan</span>, lalu klik tombol hijau <strong>Verifikasi</strong>.</p>
+                    </div>
+
+                    <div class="border-l-4 border-blue-500 pl-4 py-1">
+                        <h4 class="font-semibold text-gray-800"><span class="inline-flex w-6 h-6 mr-2 items-center justify-center rounded-full bg-blue-600 text-white text-xs font-bold">4</span>Konfirmasi Verifikasi</h4>
+                        <p class="mt-1">Pada dialog pop-up <em>"Verifikasi Pembayaran?"</em>, klik tombol <strong>Ya, Verifikasi!</strong>.</p>
+                        <div class="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-900 space-y-1">
+                            <p><strong>Hasil setelah verifikasi:</strong></p>
+                            <p>✓ Status tagihan otomatis berubah menjadi <span class="px-1.5 py-0.5 rounded font-semibold bg-green-100 text-green-700">Lunas</span>.</p>
+                            <p>✓ Transaksi pemasukan otomatis tercatat pada <strong>Buku Kas</strong>.</p>
+                            <p>✓ Notifikasi push dikirimkan ke aplikasi mobile siswa/wali murid.</p>
+                        </div>
+                    </div>
+
+                    <!-- Tambahan: Input Tagihan ke Murid -->
+                    <div class="border-l-4 border-purple-500 pl-4 py-1 bg-purple-50/40 rounded-r-xl p-3">
+                        <h4 class="font-semibold text-gray-800 flex items-center gap-1.5">
+                            <span class="inline-flex w-6 h-6 items-center justify-center rounded-full bg-purple-600 text-white text-xs font-bold">+</span>
+                            Cara Tambah / Assign Tagihan ke Murid:
+                        </h4>
+                        <ol class="mt-2 list-decimal list-inside space-y-1 text-xs text-gray-700">
+                            <li>Centang kotak (checkbox) pada nama murid yang ingin ditagihkan (atau klik tombol <strong>Pilih Semua</strong>).</li>
+                            <li>Klik tombol biru <strong>+ Tambah Pembayaran</strong> di kanan atas tabel.</li>
+                            <li>Pilih jenis pembayaran pada dropdown modal pop-up, lalu klik <strong>Simpan</strong>.</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
         <!-- TAB 3: ABSENSI -->
         <div x-show="activeTab === 'attendance' && matchesSearch('absensi presensi rfid qrcode scan jam masuk pulang denda')" class="bg-white rounded-2xl shadow-md p-6 sm:p-8 space-y-6" x-transition>
             <div class="border-b border-gray-100 pb-4">
@@ -168,9 +330,8 @@
                 <div class="space-y-3 border rounded-2xl p-5">
                     <h3 class="font-bold text-gray-800 text-base">💳 Tagihan & Pembayaran SPP</h3>
                     <ul class="space-y-2 text-xs sm:text-sm">
-                        <li>• <strong>Master Jenis Pembayaran:</strong> Dibuat di <code>Master &gt; Pembayaran</code> (contoh: SPP Bulanan, Biaya Ujian, Uang Gedung).</li>
-                        <li>• <strong>Assign Tagihan:</strong> Buka <code>Keuangan &gt; Pembayaran</code>, pilih siswa/kelas lalu klik tambahkan tagihan.</li>
-                        <li>• <strong>Verifikasi Manual:</strong> Admin dapat mengonfirmasi pembayaran tunai secara manual yang otomatis mencatat pemasukan pada Buku Kas.</li>
+                        <li>• <strong>Master Jenis Pembayaran:</strong> Dibuat di <code>Master &gt; Pembayaran</code>. <button type="button" @click="activeTab = 'payment'" class="text-green-600 hover:underline font-semibold cursor-pointer">Buka Panduan CRUD &rarr;</button></li>
+                        <li>• <strong>Assign & Verifikasi:</strong> Buka <code>Keuangan &gt; Pembayaran</code> untuk input tagihan dan verifikasi pembayaran. <button type="button" @click="activeTab = 'payment'" class="text-green-600 hover:underline font-semibold cursor-pointer">Buka Panduan CRUD &rarr;</button></li>
                     </ul>
                 </div>
                 <div class="space-y-3 border rounded-2xl p-5">
@@ -227,6 +388,29 @@
             </div>
         </div>
 
+        <!-- Bottom Tab Navigation (Pindah Tab di Bawah Konten) -->
+        <div class="flex items-center justify-between gap-3 pt-4 border-t border-gray-200 bg-white p-4 rounded-2xl shadow-sm">
+            <button type="button" @click="prevTab()" :disabled="!getPrevTab()"
+                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-xs sm:text-sm font-semibold shadow-xs transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                <span>&larr; <span x-text="getPrevTab() ? getPrevTab().label : 'Sebelumnya'"></span></span>
+            </button>
+
+            <span class="text-xs text-gray-400 font-medium hidden sm:inline">
+                Topik <span class="font-bold text-gray-700" x-text="getCurrentTabIndex() + 1"></span> dari <span x-text="tabs.length"></span>
+            </span>
+
+            <button type="button" @click="nextTab()" :disabled="!getNextTab()"
+                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm font-semibold shadow-xs transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">
+                <span><span x-text="getNextTab() ? getNextTab().label : 'Selanjutnya'"></span> &rarr;</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+            </button>
+        </div>
+
     </div>
 </div>
 </main>
@@ -240,8 +424,9 @@ function panduanApp() {
             { id: 'overview', label: 'Pengenalan', icon: 'ℹ️' },
             { id: 'users', label: 'Pengguna & Akun', icon: '👥' },
             { id: 'student', label: 'Tambah Murid', icon: '🎓' },
+            { id: 'payment', label: 'Pembayaran', icon: '💳' },
             { id: 'attendance', label: 'Presensi & RFID', icon: '⏰' },
-            { id: 'finance', label: 'Keuangan & Kas', icon: '💳' },
+            { id: 'finance', label: 'Keuangan & Kas', icon: '💰' },
             { id: 'academic', label: 'Akademik & Ujian', icon: '📚' },
             { id: 'mobile', label: 'Aplikasi Mobile', icon: '📱' },
             { id: 'faq', label: 'FAQ & Kendala', icon: '❓' }
@@ -255,6 +440,47 @@ function panduanApp() {
         matchesSearch(keywords) {
             if (!this.searchQuery.trim()) return true;
             return keywords.toLowerCase().includes(this.searchQuery.toLowerCase());
+        },
+        getCurrentTabIndex() {
+            return this.tabs.findIndex(t => t.id === this.activeTab);
+        },
+        getPrevTab() {
+            const idx = this.getCurrentTabIndex();
+            return idx > 0 ? this.tabs[idx - 1] : null;
+        },
+        getNextTab() {
+            const idx = this.getCurrentTabIndex();
+            return idx >= 0 && idx < this.tabs.length - 1 ? this.tabs[idx + 1] : null;
+        },
+        goToTab(tabId) {
+            this.activeTab = tabId;
+            this.$nextTick(() => {
+                const btn = document.getElementById('tab-btn-' + tabId);
+                if (btn) {
+                    btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                }
+            });
+        },
+        prevTab() {
+            const prev = this.getPrevTab();
+            if (prev) {
+                this.goToTab(prev.id);
+                window.scrollTo({ top: 120, behavior: 'smooth' });
+            }
+        },
+        nextTab() {
+            const next = this.getNextTab();
+            if (next) {
+                this.goToTab(next.id);
+                window.scrollTo({ top: 120, behavior: 'smooth' });
+            }
+        },
+        scrollTabs(direction) {
+            const container = this.$refs.tabContainer;
+            if (container) {
+                const amount = direction === 'left' ? -250 : 250;
+                container.scrollBy({ left: amount, behavior: 'smooth' });
+            }
         }
     }
 }
