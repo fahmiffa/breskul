@@ -1,5 +1,5 @@
 @extends('base.layout')
-@section('title', 'Dashboard Absensi')
+@section('title', 'Dashboard Akun')
 @push('styles')
 <style>
     [x-cloak] {
@@ -20,6 +20,9 @@
                 <option value="Guru">Guru</option>
                 <option value="Siswa">Siswa</option>
                 <option value="Karyawan">Karyawan</option>
+                <option value="Petugas">Petugas</option>
+                <option value="Keuangan">Keuangan</option>
+                <option value="Akademik">Akademik</option>
             </select>
             <select x-model="filterKelas" x-show="filterRole === 'Siswa' || filterRole === ''" @change="currentPage = 1"
                 class="border border-gray-300 ring-0 rounded-xl px-3 py-2 focus:outline-[#177245]">

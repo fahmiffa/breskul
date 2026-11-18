@@ -12,9 +12,18 @@ class MapelController extends Controller
      */
     public function index()
     {
+        if(auth()->user()->role == 1)
+        {
+            $appId = auth()->user()->app ? auth()->user()->app->id : null;   
+        }
+        else
+        {
+            $appId = auth()->user()->employeeData->app_id; 
+        }
+
         $items = Mapel::latest()
-            ->when(auth()->user()->role == 1 && auth()->user()->app, function ($query) {
-                $query->where('app', auth()->user()->app->id);
+            ->when($appId, function ($query) use ($appId) {
+                $query->where('app', $appId);
             })
             ->get();
         $title = "Master " . (config('app.school_mode') ? 'Mata Pelajaran' : 'Mata Kuliah');

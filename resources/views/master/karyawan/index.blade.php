@@ -252,6 +252,8 @@
                             <option value="">-- Pilih Role --</option>
                             <option value="3">Guru</option>
                             <option value="4">Petugas</option>
+                            <option value="5">Keuangan</option>
+                            <option value="6">Akademik</option>
                         </select>
                     </div>
 

@@ -16,9 +16,16 @@ class AppContext
             return;
         }
 
-        $app = $user->app()
-            ->with('features')
-            ->first();
+        if ($user->role == 0) {
+            $app = $user->app()
+                ->with('features')
+                ->first();
+        } else {
+            $app = $user->employeeData?->app()
+                ->with('features')
+                ->first();
+        }
+
 
         if (!$app) {
             return;
@@ -36,7 +43,6 @@ class AppContext
             'features'    => $features,
         ];
 
-        // dd($this->settings);
     }
 
     public function get(string $key, mixed $default = null): mixed

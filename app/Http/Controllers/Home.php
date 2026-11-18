@@ -176,7 +176,7 @@ class Home extends Controller
         $isAppUser = auth()->user()->role == 1 && $appId;
 
         $items = User::latest()
-            ->whereIN('role', [2, 3, 4]) // Role 2 is Siswa, Role 3 is Guru, Role 4 is Karyawan
+            ->whereIN('role', [2, 3, 4, 5, 6]) // Role 2 is Siswa, Role 3 is Guru, Role 4 is Karyawan, Role 5 is Keuangan, Role 6 is Akademik
             ->when($isAppUser, function ($query) use ($appId) {
                 $query->where(function ($q) use ($appId) {
                     $q->whereHas('teacherData', function ($q) use ($appId) {

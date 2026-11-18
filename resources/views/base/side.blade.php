@@ -1,4 +1,17 @@
 @php
+    $menuService = app(\App\Services\MenuService::class);
+    $user = auth()->user();
+    $section = Route::is('dashboard.master.*') ? 'master' : 'home';
+    $groupedMenus = $menuService->getMenusForUser($user, $section);
+
+    // Dynamic title mapping berdasarkan school_mode
+    $dynamicTitles = [
+        'dynamic:murid' => config('app.school_mode') ? 'Murid' : 'Mahasiswa',
+        'dynamic:guru'  => config('app.school_mode') ? 'Guru' : 'Dosen',
+        'dynamic:kelas' => 'Kelas',
+        'dynamic:mapel' => config('app.school_mode') ? 'Mapel' : 'Makul',
+    ];
+
     $dashboardItem = '<a href="'.route('dashboard.home').'"><li class="flex items-center gap-2 px-4 py-2.5 hover:bg-green-50 text-gray-700 font-semibold text-sm transition-colors '.(Route::is('dashboard.home') ? 'bg-green-100 text-green-700' : '').'"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-600"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> Dashboard</li></a>';
 @endphp
 

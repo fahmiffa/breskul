@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Cache;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class User extends Authenticatable implements JWTSubject
@@ -40,6 +41,14 @@ class User extends Authenticatable implements JWTSubject
 
         if ($this->role == 4) {
             return "Petugas";
+        }
+
+        if ($this->role == 5) {
+            return "Keuangan";
+        }
+
+        if ($this->role == 6) {
+            return "Akademik";
         }
 
         return "User";
@@ -98,6 +107,86 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->belongsTo(Jabatan::class);
     }
+
+    // ==========================================
+    // RBAC Relations & Methods
+    // ==========================================
+
+    /**
+     * Relasi many-to-many ke Role model (RBAC)
+     */
+    public function rolesRelation()
+    {
+        return $this->belongsToMany(Role::class);
+    }
+
+    /**
+     * Cek apakah user punya permission tertentu (dengan cache)
+     */
+    public function hasPermission(string $permission): bool
+    {
+        $permissions = $this->getCachedPermissions();
+        return in_array($permission, $permissions);
+    }
+
+    /**
+     * Cek apakah user punya salah satu dari beberapa permission
+     */
+    public function hasAnyPermission(array $permissions): bool
+    {
+        $userPermissions = $this->getCachedPermissions();
+        return !empty(array_intersect($permissions, $userPermissions));
+    }
+
+    /**
+     * Cek apakah user punya role tertentu (by name)
+     */
+    public function hasRoleName(string $roleName): bool
+    {
+        $roleNames = $this->getCachedRoleNames();
+        return in_array($roleName, $roleNames);
+    }
+
+    /**
+     * Ambil semua permissions user (dari semua role) - cached
+     */
+    public function getCachedPermissions(): array
+    {
+        return Cache::remember("user-{$this->id}-permissions", 300, function () {
+            return $this->rolesRelation()
+                ->with('permissions')
+                ->get()
+                ->pluck('permissions')
+                ->flatten()
+                ->pluck('name')
+                ->unique()
+                ->values()
+                ->toArray();
+        });
+    }
+
+    /**
+     * Ambil semua role names user - cached
+     */
+    public function getCachedRoleNames(): array
+    {
+        return Cache::remember("user-{$this->id}-roles", 300, function () {
+            return $this->rolesRelation()->pluck('name')->toArray();
+        });
+    }
+
+    /**
+     * Clear cache permission & role user ini
+     */
+    public function clearRbacCache(): void
+    {
+        Cache::forget("user-{$this->id}-permissions");
+        Cache::forget("user-{$this->id}-roles");
+    }
+
+    // ==========================================
+    // Existing Methods
+    // ==========================================
 
     /**
      * The attributes that are mass assignable.

@@ -742,7 +742,7 @@ class ApiController extends Controller
         $user = \App\Models\User::where('email', $login)
             ->where('status', 1)
             ->orWhere('username', $login)
-            ->whereIn('role', [2, 3, 4])
+            ->whereIn('role', [2, 3, 4, 5, 6])
             ->first();
 
         if (! $user) {

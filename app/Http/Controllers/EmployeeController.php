@@ -156,7 +156,7 @@ class EmployeeController extends Controller
                     'max:255',
                     Rule::unique('users', 'email')->ignore($karyawan->user_id),
                 ],
-                'role'          => 'required|in:3,4',
+                'role'          => 'required|in:3,4,5,6',
             ],
             [
                 'required' => 'Field wajib diisi',

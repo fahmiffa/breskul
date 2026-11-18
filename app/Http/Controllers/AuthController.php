@@ -49,14 +49,14 @@ class AuthController extends Controller
             $user = Auth::user();
 
             // Jika login menggunakan username, pastikan role-nya adalah 3 (Guru)
-            if (!$isEmail && $user->role != 3) {
+            if (!$isEmail && !in_array($user->role, [0, 1, 4, 5, 6])) {
                 Auth::logout();
                 return back()->withErrors([
-                    'email' => 'Login menggunakan username hanya diperbolehkan untuk Guru.',
+                    'email' => 'Login menggunakan username hanya diperbolehkan untuk Karyawan (Petugas/Keuangan/Akademik).',
                 ])->onlyInput('email');
             }
 
-            if ($user->status != 1) {
+            if (!in_array($user->role, [0, 1, 4, 5, 6])) {
                 Auth::logout();
 
                 // Hapus session dan CSRF token

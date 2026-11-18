@@ -2,7 +2,7 @@
     <div class="max-w-7xl mx-auto flex items-center justify-between px-5 md:px-6 py-3">
         <div class="text-2xl font-bold">
             <a href="{{ route('dashboard.home') }}" class="hover:opacity-90 transition-opacity">
-                {{ auth()->user()->role == 0 ? (auth()->user()->app->name ?? env('APP_NAME')) : (auth()->user()->data->apps->name ?? env('APP_NAME')) }}
+                {{ auth()->user()->role == 0 ? (auth()->user()->app->name ?? env('APP_NAME')) : (auth()->user()->employeeData->app->name ?? env('APP_NAME')) }}
             </a>
         </div>
         {{-- <nav class="space-x-6 flex items-center">
@@ -17,7 +17,10 @@
             </a>
         </nav> --}}
         <div class="flex space-x-4 items-center">
-            <div class="font-semibold hidden md:flex">{{auth()->user()->name}}</div>
+            <div class="font-semibold">
+                {{auth()->user()->name}}
+                (<span class="text-sm opacity-80"> {{auth()->user()->roles}} </span>)
+            </div>
             <a href="{{ route('dashboard.setting') }}" title="Pengaturan" class="hover:text-green-200 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" class="size-5" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"

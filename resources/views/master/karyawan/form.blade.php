@@ -68,8 +68,9 @@
                         <option value="">Pilih Role</option>
                         <option value="3" @selected(old('role', isset($items) ? $items->user->role : '') == '3')>Guru</option>
                         <option value="4" @selected(old('role', isset($items) ? $items->user->role : '') == '4')>Petugas</option>
+                        <option value="5" @selected(old('role', isset($items) ? $items->user->role : '') == '5')>Keuangan</option>
+                        <option value="6" @selected(old('role', isset($items) ? $items->user->role : '') == '6')>Akademik</option>
                     </select>
-
                     @error('role')
                         <p class="text-red-500 text-xs italic mt-2">{{ $message }}</p>
                     @enderror

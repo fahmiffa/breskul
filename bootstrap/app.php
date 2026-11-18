@@ -20,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'checkMaster' => \App\Http\Middleware\CheckMasterAccess::class,
             'role'   => \App\Http\Middleware\RolePermission::class,
             'rolePermission' => \App\Http\Middleware\RolePermission::class,
+            'permission' => \App\Http\Middleware\CheckMenuPermission::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {})->create();
