@@ -176,7 +176,7 @@
                     <select x-model="selectedClass" required
                         class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
                         <option value="">-- Pilih Pembayaran --</option>
-                        @foreach (\App\Models\Payment::latest()->get() as $item)
+                        @foreach (\App\Models\Payment::where('app',auth()->user()->app->id)->latest()->get() as $item)
                         <option value="{{ $item->id }}">{{ $item->name }} (Rp {{ number_format($item->nominal, 0, ',', '.') }})</option>
                         @endforeach
                     </select>
