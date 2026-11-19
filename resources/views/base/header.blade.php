@@ -1,21 +1,17 @@
 <header class="bg-green-700 text-white">
-    <div class="max-w-7xl mx-auto flex items-center justify-between px-5 md:px-6 py-3">
+    <div class="max-w-7xl mx-auto block md:hidden items-center justify-between px-5 md:px-6 py-3">
         <div class="text-2xl font-bold">
             <a href="{{ route('dashboard.home') }}" class="hover:opacity-90 transition-opacity">
-                {{ auth()->user()->role == 0 ? (auth()->user()->app->name ?? env('APP_NAME')) : (auth()->user()->employeeData->app->name ?? env('APP_NAME')) }}
+                {{ auth()->user()->role == 1 ? (auth()->user()->app->name ?? env('APP_NAME')) : (auth()->user()->employeeData->app->name ?? env('APP_NAME')) }}
             </a>
         </div>
-        {{-- <nav class="space-x-6 flex items-center">
-            <a href="{{ route('dashboard.home') }}" class="font-semibold inline-flex items-center gap-1.5 hover:text-green-200 transition-colors {{ Route::is('dashboard.home') ? 'underline underline-offset-4 decoration-2' : '' }}">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-layout-dashboard">
-                    <rect width="7" height="9" x="3" y="3" rx="1"/>
-                    <rect width="7" height="5" x="14" y="3" rx="1"/>
-                    <rect width="7" height="9" x="14" y="12" rx="1"/>
-                    <rect width="7" height="5" x="3" y="16" rx="1"/>
-                </svg>
-                Dashboard
+    </div>
+     <div class="max-w-7xl mx-auto flex items-center justify-between px-5 md:px-6 py-3">
+        <div class="text-xl font-bold">
+            <a href="{{ route('dashboard.home') }}" class="hover:opacity-90 transition-opacity hidden md:block">
+                {{ auth()->user()->role == 1 ? (auth()->user()->app->name ?? env('APP_NAME')) : (auth()->user()->employeeData->app->name ?? env('APP_NAME')) }}
             </a>
-        </nav> --}}
+        </div>
         <div class="flex space-x-4 items-center">
             <div class="font-semibold">
                 {{auth()->user()->name}}

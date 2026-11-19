@@ -16,7 +16,7 @@ class AppContext
             return;
         }
 
-        if ($user->role == 0) {
+        if ($user->role == 1) {
             $app = $user->app()
                 ->with('features')
                 ->first();
