@@ -111,7 +111,19 @@
                     <tr class="hover:bg-gray-50/80 transition-colors">
                         <td class="px-4 py-3 text-gray-500 text-xs text-center font-medium" x-text="((currentPage - 1) * perPage) + index + 1"></td>
                         <td class="px-4 py-3">
-                            <div class="font-semibold text-gray-800" x-text="row.name || (row.murid ? row.murid.name : (row.employee ? row.employee.name : '-'))"></div>
+                            <template x-if="row.employee_id">
+                                <a :href="'/dashboard/absensi/karyawan/' + row.employee_id" 
+                                   class="font-semibold text-green-700 hover:text-green-800 hover:underline inline-flex items-center gap-1.5 transition-colors group cursor-pointer"
+                                   title="Lihat detail grafik absensi karyawan">
+                                    <span x-text="row.name || (row.employee ? row.employee.name : '-')"></span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-green-600 opacity-60 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                    </svg>
+                                </a>
+                            </template>
+                            <template x-if="!row.employee_id">
+                                <div class="font-semibold text-gray-800" x-text="row.name || (row.murid ? row.murid.name : '-')"></div>
+                            </template>
                             <div class="text-[11px] text-gray-400 font-normal mt-0.5" x-show="row.date" x-text="row.date"></div>
                         </td>
                         <td class="px-4 py-3 text-center">

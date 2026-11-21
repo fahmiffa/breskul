@@ -73,6 +73,7 @@ Route::prefix('dashboard')->middleware(['auth', 'app.context'])->name('dashboard
     Route::middleware('permission:menu.absensi')->group(function () {
         Route::get('/absensi', [Home::class, 'absensi'])->name('absensi');
         Route::get('/absensi/export', [Home::class, 'exportAbsensiExcel'])->name('absensi.export');
+        Route::get('/absensi/karyawan/{id}', [Home::class, 'absensiKaryawanDetail'])->name('absensi.karyawan');
     });
 
     Route::get('setting', [Home::class, 'setting'])->name('setting');

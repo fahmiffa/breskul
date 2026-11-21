@@ -22,6 +22,8 @@ use App\Models\Mapel;
 use App\Models\Teach;
 use App\Models\Extracurricular;
 use App\Models\Prodi;
+use App\Models\Employee;
+use App\Models\AttendanceConfig;
 use Carbon\Carbon;
 
 class Home extends Controller
@@ -193,6 +195,173 @@ class Home extends Controller
         })->values();
 
         return view('home.present.index', compact('items', 'start', 'end', 'type'));
+    }
+
+    public function absensiKaryawanDetail(Request $request, $id)
+    {
+        $employee = Employee::with(['jabatan', 'user', 'attendanceConfig', 'app'])->findOrFail($id);
+
+        if (auth()->check() && auth()->user()->role == 1 && auth()->user()->app) {
+            if ($employee->app_id && $employee->app_id != auth()->user()->app->id) {
+                abort(403, 'Akses tidak diizinkan.');
+            }
+        }
+
+        $month = $request->get('month', date('Y-m'));
+        try {
+            $carbonMonth = Carbon::createFromFormat('Y-m', $month);
+        } catch (\Exception $e) {
+            $carbonMonth = Carbon::now();
+            $month = $carbonMonth->format('Y-m');
+        }
+
+        $startOfMonth = $carbonMonth->copy()->startOfMonth()->startOfDay();
+        $endOfMonth   = $carbonMonth->copy()->endOfMonth()->endOfDay();
+        $daysInMonth  = $carbonMonth->daysInMonth;
+
+        // Jadwal absensi karyawan (AttendanceConfig)
+        $config = AttendanceConfig::where('employee_id', $employee->id)->first();
+        if (!$config && $employee->app_id) {
+            $config = AttendanceConfig::whereNull('employee_id')->where('app', $employee->app_id)->first();
+        }
+
+        // Ambil data absensi karyawan di bulan terpilih
+        $presents = Present::query()
+            ->where('employee_id', $employee->id)
+            ->whereBetween('waktu', [$startOfMonth, $endOfMonth])
+            ->orderBy('waktu', 'asc')
+            ->get();
+
+        $presentsByDate = $presents->groupBy(function ($item) {
+            return Carbon::parse($item->waktu)->format('Y-m-d');
+        });
+
+        // Persiapan data grafik dan statistik
+        $chartLabels = [];
+        $chartMasukHours = [];
+        $chartPulangHours = [];
+        $chartMasukTimes = [];
+        $chartPulangTimes = [];
+
+        $totalHadir = 0;
+        $totalTepatWaktu = 0;
+        $totalTerlambat = 0;
+
+        $dailyHistory = [];
+
+        for ($day = 1; $day <= $daysInMonth; $day++) {
+            $date = Carbon::create($carbonMonth->year, $carbonMonth->month, $day);
+            $dateStr = $date->format('Y-m-d');
+            $chartLabels[] = $day;
+
+            $records = $presentsByDate->get($dateStr, collect());
+
+            $masukRecord = $records->filter(function ($r) {
+                return strtolower(trim($r->status ?? '')) === 'masuk';
+            })->sortBy(function ($r) {
+                return Carbon::parse($r->waktu)->timestamp;
+            })->first();
+
+            $pulangRecord = $records->filter(function ($r) {
+                return strtolower(trim($r->status ?? '')) === 'pulang';
+            })->sortByDesc(function ($r) {
+                return Carbon::parse($r->waktu)->timestamp;
+            })->first();
+
+            if (!$masukRecord && !$pulangRecord && $records->isNotEmpty()) {
+                $masukRecord = $records->first();
+            }
+
+            $masukTime = null;
+            $masukHourDecimal = null;
+            $masukLate = null;
+            $isLate = false;
+
+            if ($masukRecord) {
+                $cMasuk = Carbon::parse($masukRecord->waktu)->locale('id');
+                $masukTime = $cMasuk->format('H:i:s');
+                $masukHourDecimal = round($cMasuk->hour + ($cMasuk->minute / 60) + ($cMasuk->second / 3600), 2);
+                $masukLate = $masukRecord->late_time;
+                $isLate = !empty($masukLate);
+            }
+
+            $pulangTime = null;
+            $pulangHourDecimal = null;
+            if ($pulangRecord) {
+                $cPulang = Carbon::parse($pulangRecord->waktu)->locale('id');
+                $pulangTime = $cPulang->format('H:i:s');
+                $pulangHourDecimal = round($cPulang->hour + ($cPulang->minute / 60) + ($cPulang->second / 3600), 2);
+            }
+
+            $chartMasukHours[] = $masukHourDecimal;
+            $chartPulangHours[] = $pulangHourDecimal;
+            $chartMasukTimes[] = $masukTime;
+            $chartPulangTimes[] = $pulangTime;
+
+            if ($masukRecord || $pulangRecord) {
+                $totalHadir++;
+                if ($isLate) {
+                    $totalTerlambat++;
+                } else {
+                    $totalTepatWaktu++;
+                }
+
+                $dailyHistory[] = [
+                    'id'          => $masukRecord?->id ?? $pulangRecord?->id,
+                    'date_raw'    => $dateStr,
+                    'day_name'    => $date->locale('id')->translatedFormat('l'),
+                    'date'        => $date->locale('id')->translatedFormat('d M Y'),
+                    'date_full'   => $date->locale('id')->translatedFormat('l, d F Y'),
+                    'masuk'       => $masukRecord ? [
+                        'id'        => $masukRecord->id,
+                        'time'      => $masukTime,
+                        'full_time' => Carbon::parse($masukRecord->waktu)->locale('id')->translatedFormat('l, d F Y H:i:s'),
+                        'img'       => $masukRecord->img,
+                        'late_time' => $masukLate,
+                        'is_late'   => $isLate,
+                    ] : null,
+                    'pulang'      => $pulangRecord ? [
+                        'id'        => $pulangRecord->id,
+                        'time'      => $pulangTime,
+                        'full_time' => Carbon::parse($pulangRecord->waktu)->locale('id')->translatedFormat('l, d F Y H:i:s'),
+                        'img'       => $pulangRecord->img,
+                    ] : null,
+                    'is_late'     => $isLate,
+                ];
+            }
+        }
+
+        // Urutkan riwayat absensi dari tanggal terbaru ke terlama
+        $dailyHistory = array_reverse($dailyHistory);
+
+        $persentaseTepatWaktu = $totalHadir > 0 ? round(($totalTepatWaktu / $totalHadir) * 100) : 0;
+
+        // Deadline masuk untuk baseline chart (jika ada config)
+        $targetInHour = null;
+        if ($config && $config->clock_in_end) {
+            $parts = explode(':', $config->clock_in_end);
+            $h = isset($parts[0]) ? (int)$parts[0] : 0;
+            $m = isset($parts[1]) ? (int)$parts[1] : 0;
+            $targetInHour = round($h + ($m / 60), 2);
+        }
+
+        return view('home.present.karyawan', compact(
+            'employee',
+            'month',
+            'carbonMonth',
+            'config',
+            'totalHadir',
+            'totalTepatWaktu',
+            'totalTerlambat',
+            'persentaseTepatWaktu',
+            'chartLabels',
+            'chartMasukHours',
+            'chartPulangHours',
+            'chartMasukTimes',
+            'chartPulangTimes',
+            'targetInHour',
+            'dailyHistory'
+        ));
     }
 
     public function exportAbsensiExcel(Request $request)

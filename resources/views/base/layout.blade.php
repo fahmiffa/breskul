@@ -146,5 +146,6 @@
     @include('base.pwa-install')
 </body>
 @stack('script')
+@stack('scripts')
 
 </html>
