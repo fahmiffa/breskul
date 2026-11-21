@@ -50,7 +50,7 @@
         @include('base.header')
 
         <!-- MAIN CONTENT -->
-        <main class="max-w-7xl mx-auto mt-6 px-6 grid grid-cols-1 gap-6">
+        <main class="max-w-7xl mx-auto mt-4 sm:mt-6 px-3.5 sm:px-6 grid grid-cols-1 gap-4 sm:gap-6">
 
             <!-- CONTENT -->
             <section class="col-span-1">

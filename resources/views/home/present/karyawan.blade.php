@@ -77,46 +77,46 @@
     </div>
 
     {{-- Kartu Profil & Filter Bulan --}}
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-        <div class="flex items-start sm:items-center gap-4">
-            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-700 text-white flex items-center justify-center font-bold text-xl sm:text-2xl shadow-md shrink-0">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4 sm:gap-6">
+        <div class="flex items-start sm:items-center gap-3.5 sm:gap-4 min-w-0">
+            <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-700 text-white flex items-center justify-center font-bold text-lg sm:text-2xl shadow-md shrink-0">
                 {{ strtoupper(substr($employee->name, 0, 2)) }}
             </div>
-            <div class="flex flex-col gap-1">
-                <div class="flex flex-wrap items-center gap-2">
-                    <h1 class="text-lg sm:text-xl font-bold text-gray-900">{{ $employee->name }}</h1>
-                    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 border border-purple-200">
+            <div class="flex flex-col gap-1 min-w-0">
+                <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                    <h1 class="text-base sm:text-xl font-bold text-gray-900 truncate">{{ $employee->name }}</h1>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold bg-purple-100 text-purple-700 border border-purple-200 shrink-0">
                         Karyawan
                     </span>
                     @if($employee->jabatan)
-                        <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 shrink-0">
                             {{ $employee->jabatan->name }}
                         </span>
                     @endif
                 </div>
-                <div class="flex flex-wrap items-center gap-y-1 gap-x-4 text-xs text-gray-500">
+                <div class="flex flex-wrap items-center gap-y-1 gap-x-3 text-[11px] sm:text-xs text-gray-500">
                     @if($employee->jenis)
-                        <span>Jenis Kelamin: <strong class="text-gray-700">{{ $employee->jenis }}</strong></span>
+                        <span>JK: <strong class="text-gray-700">{{ $employee->jenis }}</strong></span>
                     @endif
                     @if($employee->alamat)
-                        <span>Alamat: <strong class="text-gray-700">{{ $employee->alamat }}</strong></span>
+                        <span class="truncate max-w-[180px] sm:max-w-none">Alamat: <strong class="text-gray-700">{{ $employee->alamat }}</strong></span>
                     @endif
                     @if($config && $config->clock_in_end)
-                        <span>Batas Jam Masuk: <strong class="text-green-700">{{ substr($config->clock_in_end, 0, 5) }}</strong></span>
+                        <span>Batas Masuk: <strong class="text-green-700">{{ substr($config->clock_in_end, 0, 5) }}</strong></span>
                     @endif
                 </div>
             </div>
         </div>
 
         {{-- Form Filter Bulan --}}
-        <form action="{{ route('dashboard.absensi.karyawan', $employee->id) }}" method="GET" class="flex flex-wrap items-center gap-2">
-            <div class="flex flex-col gap-1">
+        <form action="{{ route('dashboard.absensi.karyawan', $employee->id) }}" method="GET" class="flex flex-col sm:flex-row sm:items-end gap-2 w-full lg:w-auto">
+            <div class="flex flex-col gap-1 w-full sm:w-auto">
                 <label class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Periode Bulan</label>
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 w-full">
                     <input type="month" name="month" value="{{ $month }}"
-                           class="border border-gray-300 rounded-xl px-3.5 py-2 text-sm focus:outline-green-500 focus:ring-1 focus:ring-green-500 bg-white shadow-xs cursor-pointer font-medium text-gray-700" />
+                           class="flex-1 sm:w-auto border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-green-500 focus:ring-1 focus:ring-green-500 bg-white shadow-xs cursor-pointer font-medium text-gray-700" />
                     <button type="submit" 
-                            class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-xl transition duration-200 text-sm flex items-center gap-1.5 shadow-xs cursor-pointer">
+                            class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-xl transition duration-200 text-sm flex items-center justify-center gap-1.5 shadow-xs cursor-pointer shrink-0">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                         </svg>
@@ -128,58 +128,58 @@
     </div>
 
     {{-- Kartu Ringkasan KPI --}}
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         {{-- Total Hadir --}}
-        <div class="bg-white rounded-2xl shadow-xs border border-gray-100 p-5 flex items-center justify-between">
-            <div class="flex flex-col">
-                <span class="text-xs font-semibold uppercase tracking-wider text-gray-500">Total Hadir</span>
-                <span class="text-2xl sm:text-3xl font-extrabold text-gray-800 mt-1">{{ $totalHadir }}</span>
-                <span class="text-[11px] text-gray-400 mt-0.5">Hari Kehadiran</span>
+        <div class="bg-white rounded-2xl shadow-xs border border-gray-100 p-3.5 sm:p-5 flex items-center justify-between">
+            <div class="flex flex-col min-w-0">
+                <span class="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-gray-500 truncate">Total Hadir</span>
+                <span class="text-xl sm:text-3xl font-extrabold text-gray-800 mt-0.5 sm:mt-1">{{ $totalHadir }}</span>
+                <span class="text-[10px] sm:text-[11px] text-gray-400 mt-0.5">Hari Hadir</span>
             </div>
-            <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
             </div>
         </div>
 
         {{-- Tepat Waktu --}}
-        <div class="bg-white rounded-2xl shadow-xs border border-gray-100 p-5 flex items-center justify-between">
-            <div class="flex flex-col">
-                <span class="text-xs font-semibold uppercase tracking-wider text-gray-500">Tepat Waktu</span>
-                <span class="text-2xl sm:text-3xl font-extrabold text-emerald-600 mt-1">{{ $totalTepatWaktu }}</span>
-                <span class="text-[11px] text-gray-400 mt-0.5">Hari Masuk Tepat</span>
+        <div class="bg-white rounded-2xl shadow-xs border border-gray-100 p-3.5 sm:p-5 flex items-center justify-between">
+            <div class="flex flex-col min-w-0">
+                <span class="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-gray-500 truncate">Tepat Waktu</span>
+                <span class="text-xl sm:text-3xl font-extrabold text-emerald-600 mt-0.5 sm:mt-1">{{ $totalTepatWaktu }}</span>
+                <span class="text-[10px] sm:text-[11px] text-gray-400 mt-0.5">Hari Tepat</span>
             </div>
-            <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             </div>
         </div>
 
         {{-- Terlambat --}}
-        <div class="bg-white rounded-2xl shadow-xs border border-gray-100 p-5 flex items-center justify-between">
-            <div class="flex flex-col">
-                <span class="text-xs font-semibold uppercase tracking-wider text-gray-500">Terlambat</span>
-                <span class="text-2xl sm:text-3xl font-extrabold text-rose-600 mt-1">{{ $totalTerlambat }}</span>
-                <span class="text-[11px] text-gray-400 mt-0.5">Hari Terlambat</span>
+        <div class="bg-white rounded-2xl shadow-xs border border-gray-100 p-3.5 sm:p-5 flex items-center justify-between">
+            <div class="flex flex-col min-w-0">
+                <span class="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-gray-500 truncate">Terlambat</span>
+                <span class="text-xl sm:text-3xl font-extrabold text-rose-600 mt-0.5 sm:mt-1">{{ $totalTerlambat }}</span>
+                <span class="text-[10px] sm:text-[11px] text-gray-400 mt-0.5">Hari Telat</span>
             </div>
-            <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             </div>
         </div>
 
         {{-- Persentase Ketepatan --}}
-        <div class="bg-white rounded-2xl shadow-xs border border-gray-100 p-5 flex items-center justify-between">
-            <div class="flex flex-col">
-                <span class="text-xs font-semibold uppercase tracking-wider text-gray-500">Disiplin Waktu</span>
-                <span class="text-2xl sm:text-3xl font-extrabold text-green-600 mt-1">{{ $persentaseTepatWaktu }}%</span>
-                <span class="text-[11px] text-gray-400 mt-0.5">Rasio Tepat Waktu</span>
+        <div class="bg-white rounded-2xl shadow-xs border border-gray-100 p-3.5 sm:p-5 flex items-center justify-between">
+            <div class="flex flex-col min-w-0">
+                <span class="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-gray-500 truncate">Disiplin</span>
+                <span class="text-xl sm:text-3xl font-extrabold text-green-600 mt-0.5 sm:mt-1">{{ $persentaseTepatWaktu }}%</span>
+                <span class="text-[10px] sm:text-[11px] text-gray-400 mt-0.5">Rasio Tepat</span>
             </div>
-            <div class="w-12 h-12 rounded-2xl bg-green-50 text-green-600 flex items-center justify-center shrink-0">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-green-50 text-green-600 flex items-center justify-center shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                 </svg>
             </div>
@@ -187,20 +187,20 @@
     </div>
 
     {{-- Bagian Grafik Absensi --}}
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {{-- Grafik Garis / Tren Jam Masuk & Pulang Harian --}}
-        <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6 flex flex-col justify-between">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+        <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 flex flex-col justify-between">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 sm:mb-4">
                 <div>
                     <h2 class="text-base sm:text-lg font-bold text-gray-800">Grafik Jam Kehadiran</h2>
                     <p class="text-xs text-gray-500">Tren jam masuk dan jam pulang per tanggal di bulan {{ $carbonMonth->locale('id')->translatedFormat('F Y') }}</p>
                 </div>
-                <div class="flex items-center gap-3 text-xs">
+                <div class="flex flex-wrap items-center gap-2 sm:gap-3 text-xs">
                     <span class="inline-flex items-center gap-1.5 text-emerald-700 font-medium">
-                        <span class="w-3 h-3 rounded-full bg-emerald-500"></span> Jam Masuk
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Jam Masuk
                     </span>
                     <span class="inline-flex items-center gap-1.5 text-blue-700 font-medium">
-                        <span class="w-3 h-3 rounded-full bg-blue-500"></span> Jam Pulang
+                        <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Jam Pulang
                     </span>
                     @if($targetInHour)
                     <span class="inline-flex items-center gap-1.5 text-rose-600 font-medium">
@@ -210,7 +210,7 @@
                 </div>
             </div>
 
-            <div class="relative w-full h-80">
+            <div class="relative w-full h-64 sm:h-80">
                 @if($totalHadir == 0)
                     <div class="absolute inset-0 flex flex-col items-center justify-center bg-white/90 z-10 text-gray-400 gap-2 rounded-xl">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -224,13 +224,13 @@
         </div>
 
         {{-- Grafik Donat Komposisi Kehadiran --}}
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6 flex flex-col justify-between">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 flex flex-col justify-between">
             <div>
                 <h2 class="text-base sm:text-lg font-bold text-gray-800">Komposisi Kehadiran</h2>
                 <p class="text-xs text-gray-500">Perbandingan tepat waktu vs terlambat</p>
             </div>
 
-            <div class="relative w-full h-56 my-auto flex items-center justify-center">
+            <div class="relative w-full h-48 sm:h-56 my-auto flex items-center justify-center">
                 @if($totalHadir > 0)
                     <canvas id="employeePieChart"></canvas>
                 @else
@@ -262,9 +262,9 @@
         </div>
     </div>
 
-    {{-- Tabel Riwayat Absensi Karyawan --}}
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+    {{-- Tabel & Kartu Riwayat Absensi Karyawan --}}
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-3.5 sm:p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2 mb-4">
             <div>
                 <h2 class="text-base sm:text-lg font-bold text-gray-800">Riwayat Absensi Harian</h2>
                 <p class="text-xs text-gray-500">Daftar kehadiran harian {{ $employee->name }} periode {{ $carbonMonth->locale('id')->translatedFormat('F Y') }}</p>
@@ -274,7 +274,8 @@
             </div>
         </div>
 
-        <div class="overflow-x-auto rounded-xl border border-gray-200">
+        {{-- Tampilan Tabel Desktop (Layar md ke atas >= 768px) --}}
+        <div class="hidden md:block overflow-x-auto rounded-xl border border-gray-200">
             <table class="min-w-full bg-white text-sm">
                 <thead>
                     <tr class="bg-green-600 text-left text-white">
@@ -394,6 +395,158 @@
                 </tbody>
             </table>
         </div>
+
+        {{-- Tampilan Mobile Cards (Hanya Tampil di Layar < 768px) --}}
+        <div class="md:hidden flex flex-col gap-3">
+            @forelse($dailyHistory as $idx => $row)
+                <div class="bg-white rounded-2xl border border-gray-200/90 shadow-xs p-3.5 flex flex-col gap-3 hover:border-green-300 transition-colors">
+                    <!-- Header Kartu: Hari, Tanggal & Status Badge -->
+                    <div class="flex items-center justify-between gap-2 border-b border-gray-100 pb-2.5">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <div class="w-8 h-8 rounded-xl bg-green-50 text-green-700 border border-green-200 flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+                                {{ $idx + 1 }}
+                            </div>
+                            <div class="flex flex-col min-w-0">
+                                <div class="font-bold text-sm text-gray-800">{{ $row['day_name'] }}</div>
+                                <div class="text-[11px] text-gray-500 font-medium">{{ $row['date'] }}</div>
+                            </div>
+                        </div>
+
+                        <!-- Status Badge -->
+                        <div class="shrink-0">
+                            @if($row['is_late'])
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-100 text-rose-700 border border-rose-200">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
+                                    Terlambat
+                                </span>
+                            @elseif($row['masuk'])
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                                    Tepat Waktu
+                                </span>
+                            @else
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-gray-100 text-gray-600">
+                                    Hadir
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+
+                    <!-- Bagian Foto & Jam: 2 Kolom Sejajar (Masuk & Pulang) -->
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <!-- Kotak Absensi Masuk -->
+                        <div class="bg-gray-50/90 rounded-xl p-2.5 border border-gray-100 flex flex-col justify-between gap-2">
+                            <div class="flex items-center justify-between text-[11px] font-bold">
+                                <span class="flex items-center gap-1 text-emerald-700">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                    Masuk
+                                </span>
+                                @if($row['masuk'])
+                                    <span class="font-bold text-gray-800 text-xs">{{ $row['masuk']['time'] }}</span>
+                                @endif
+                            </div>
+
+                            <!-- Foto Masuk -->
+                            @if($row['masuk'] && $row['masuk']['img'])
+                                <div @click="openPhotoModal({ name: '{{ addslashes($employee->name) }}', tipe: 'Karyawan', img: '{{ $row['masuk']['img'] }}', time: '{{ $row['masuk']['full_time'] }}', status: 'Masuk' })"
+                                     class="relative w-full aspect-4/3 rounded-xl overflow-hidden border border-gray-200 shadow-xs cursor-pointer group active:scale-95 transition-transform bg-gray-100">
+                                    <img src="{{ str_starts_with($row['masuk']['img'], 'http') || str_starts_with($row['masuk']['img'], '/') ? $row['masuk']['img'] : '/storage/' . $row['masuk']['img'] }}" 
+                                         class="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105" 
+                                         alt="Foto Masuk">
+                                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end justify-between p-1.5">
+                                        <span class="text-[10px] text-white font-medium flex items-center gap-1 drop-shadow">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            </svg>
+                                            Foto
+                                        </span>
+                                        <span class="bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded-full backdrop-blur-xs flex items-center gap-0.5 font-medium">
+                                            🔍 Perbesar
+                                        </span>
+                                    </div>
+                                </div>
+                            @elseif($row['masuk'])
+                                <div class="w-full aspect-4/3 rounded-xl bg-gray-100 border border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 gap-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    <span class="text-[10px] text-gray-400 font-medium">Tanpa Foto</span>
+                                </div>
+                            @else
+                                <div class="w-full aspect-4/3 rounded-xl bg-gray-100/60 border border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 gap-1">
+                                    <span class="text-xs text-gray-400 italic">Belum Masuk</span>
+                                </div>
+                            @endif
+
+                            <!-- Badge Terlambat -->
+                            @if($row['masuk'] && $row['masuk']['late_time'])
+                                <div class="mt-0.5">
+                                    <span class="inline-block w-full text-center px-1.5 py-0.5 rounded-lg text-[10px] font-bold bg-red-100 text-red-600 border border-red-200">
+                                        {{ preg_replace_callback('/(\d+(?:\.\d+)?)/', fn($m) => ceil((float)$m[1]), $row['masuk']['late_time']) }}
+                                    </span>
+                                </div>
+                            @endif
+                        </div>
+
+                        <!-- Kotak Absensi Pulang -->
+                        <div class="bg-gray-50/90 rounded-xl p-2.5 border border-gray-100 flex flex-col justify-between gap-2">
+                            <div class="flex items-center justify-between text-[11px] font-bold">
+                                <span class="flex items-center gap-1 text-blue-700">
+                                    <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                                    Pulang
+                                </span>
+                                @if($row['pulang'])
+                                    <span class="font-bold text-gray-800 text-xs">{{ $row['pulang']['time'] }}</span>
+                                @endif
+                            </div>
+
+                            <!-- Foto Pulang -->
+                            @if($row['pulang'] && $row['pulang']['img'])
+                                <div @click="openPhotoModal({ name: '{{ addslashes($employee->name) }}', tipe: 'Karyawan', img: '{{ $row['pulang']['img'] }}', time: '{{ $row['pulang']['full_time'] }}', status: 'Pulang' })"
+                                     class="relative w-full aspect-4/3 rounded-xl overflow-hidden border border-gray-200 shadow-xs cursor-pointer group active:scale-95 transition-transform bg-gray-100">
+                                    <img src="{{ str_starts_with($row['pulang']['img'], 'http') || str_starts_with($row['pulang']['img'], '/') ? $row['pulang']['img'] : '/storage/' . $row['pulang']['img'] }}" 
+                                         class="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105" 
+                                         alt="Foto Pulang">
+                                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end justify-between p-1.5">
+                                        <span class="text-[10px] text-white font-medium flex items-center gap-1 drop-shadow">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            </svg>
+                                            Foto
+                                        </span>
+                                        <span class="bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded-full backdrop-blur-xs flex items-center gap-0.5 font-medium">
+                                            🔍 Perbesar
+                                        </span>
+                                    </div>
+                                </div>
+                            @elseif($row['pulang'])
+                                <div class="w-full aspect-4/3 rounded-xl bg-gray-100 border border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 gap-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    <span class="text-[10px] text-gray-400 font-medium">Tanpa Foto</span>
+                                </div>
+                            @else
+                                <div class="w-full aspect-4/3 rounded-xl bg-gray-100/60 border border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 gap-1">
+                                    <span class="text-xs text-gray-400 italic">Belum Pulang</span>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            @empty
+                <div class="text-center py-10 bg-gray-50 rounded-2xl border border-dashed border-gray-200 text-gray-400">
+                    <div class="flex flex-col items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span class="text-sm font-medium">Tidak ada catatan absensi untuk periode {{ $carbonMonth->locale('id')->translatedFormat('F Y') }}.</span>
+                    </div>
+                </div>
+            @endforelse
+        </div>
     </div>
 
     {{-- Photo Modal with Zoom In / Out --}}
@@ -413,16 +566,16 @@
              class="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] border border-gray-100">
             
             {{-- Modal Header --}}
-            <div class="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between bg-white z-10">
-                <div class="flex items-center gap-2">
-                    <div class="font-bold text-gray-800 text-sm sm:text-base" x-text="activePhoto ? (activePhoto.name || 'Foto Absen') : 'Foto Absen'"></div>
-                    <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-purple-100 text-purple-700 border border-purple-200">
+            <div class="px-4 sm:px-5 py-3 border-b border-gray-100 flex items-center justify-between bg-white z-10 gap-2">
+                <div class="flex items-center gap-2 min-w-0 flex-1">
+                    <div class="font-bold text-gray-800 text-sm sm:text-base truncate" x-text="activePhoto ? (activePhoto.name || 'Foto Absen') : 'Foto Absen'"></div>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-semibold bg-purple-100 text-purple-700 border border-purple-200 shrink-0">
                         Karyawan
                     </span>
                 </div>
                 
                 <button @click="closePhotoModal()" type="button" 
-                    class="text-gray-400 hover:text-gray-700 p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
+                    class="text-gray-400 hover:text-gray-700 p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer shrink-0">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -431,25 +584,27 @@
             </div>
 
             {{-- Image Display Area --}}
-            <div class="relative flex-1 overflow-auto bg-gray-950 flex items-center justify-center min-h-[300px] max-h-[65vh] p-4 select-none"
+            <div class="relative flex-1 overflow-auto bg-gray-950 flex items-center justify-center min-h-[220px] max-h-[55vh] sm:max-h-[65vh] p-3 sm:p-4 select-none"
                  @wheel.prevent="handleWheel($event)">
                 <template x-if="activePhoto && activePhoto.img">
                     <img :src="activePhoto.img.startsWith('http') || activePhoto.img.startsWith('/') ? activePhoto.img : '/storage/' + activePhoto.img" 
-                         class="max-w-full max-h-[58vh] object-contain rounded-lg transition-transform duration-150 origin-center cursor-zoom-in"
+                         @click="zoomLevel === 1 ? zoomLevel = 2 : zoomLevel = 1"
+                         class="max-w-full max-h-[52vh] sm:max-h-[58vh] object-contain rounded-lg transition-transform duration-150 origin-center cursor-zoom-in"
                          :style="`transform: scale(${zoomLevel});`"
+                         title="Klik untuk zoom 2x / reset"
                          alt="Foto Absensi" />
                 </template>
             </div>
 
             {{-- Modal Footer with Info & Zoom Controls --}}
-            <div class="px-5 py-3 border-t border-gray-100 bg-white flex flex-wrap items-center justify-between gap-3 text-xs">
-                <div class="text-gray-500 font-medium" x-text="activePhoto ? ((activePhoto.time || '') + (activePhoto.status ? ' • ' + activePhoto.status.toUpperCase() : '')) : ''"></div>
+            <div class="px-4 sm:px-5 py-2.5 sm:py-3 border-t border-gray-100 bg-white flex flex-col sm:flex-row items-center justify-between gap-2.5 text-xs">
+                <div class="text-gray-600 font-medium text-center sm:text-left w-full sm:w-auto" x-text="activePhoto ? ((activePhoto.time || '') + (activePhoto.status ? ' • ' + activePhoto.status.toUpperCase() : '')) : ''"></div>
                 
                 {{-- Zoom Controls Toolbar --}}
-                <div class="flex items-center gap-1.5 bg-gray-100 p-1 rounded-xl border border-gray-200">
+                <div class="flex items-center gap-1.5 bg-gray-100 p-1 rounded-xl border border-gray-200 shrink-0">
                     <button type="button" @click="zoomOut()" :disabled="zoomLevel <= 0.5" 
                         title="Perkecil (Zoom Out)"
-                        class="p-1.5 text-gray-700 hover:bg-white hover:text-green-600 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer shadow-sm">
+                        class="p-1.5 text-gray-700 hover:bg-white hover:text-green-600 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer shadow-xs">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 12H4" />
                         </svg>
@@ -457,19 +612,21 @@
 
                     <button type="button" @click="resetZoom()" 
                         title="Reset Zoom (100%)"
-                        class="px-2.5 py-1 text-xs font-bold text-gray-700 hover:bg-white hover:text-green-600 rounded-lg transition cursor-pointer shadow-sm min-w-[50px] text-center"
+                        class="px-2.5 py-1 text-xs font-bold text-gray-700 hover:bg-white hover:text-green-600 rounded-lg transition cursor-pointer shadow-xs min-w-[50px] text-center"
                         x-text="Math.round(zoomLevel * 100) + '%'">
                     </button>
 
                     <button type="button" @click="zoomIn()" :disabled="zoomLevel >= 3.5" 
                         title="Perbesar (Zoom In)"
-                        class="p-1.5 text-gray-700 hover:bg-white hover:text-green-600 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer shadow-sm">
+                        class="p-1.5 text-gray-700 hover:bg-white hover:text-green-600 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer shadow-xs">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
                         </svg>
                     </button>
                 </div>
             </div>
+        </div>
+    </div>
 
         </div>
     </div>
