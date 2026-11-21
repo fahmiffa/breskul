@@ -322,11 +322,24 @@ class ApiController extends Controller
 
     public function push(Request $request)
     {
-        Log::channel('absensi')->info($request->all());
+        $da = [
+            'input' => $request->all(),
+            'headers' => $request->headers->all(),
+        ];
+
+        Log::channel('absensi')->info("cek data",$da);
         $deviceId = $request->header('Device-ID', 'UNKNOWN_DEVICE');
         $device   = ApiKey::where('key', $deviceId)->first();
         $body     = $request->all();
         if ($device) {
+
+            if(!$request->uid)
+            {
+                return response()->json([
+                    'success' => false,
+                    'msg'     => 'kartu error',
+                ], 400);
+            }
 
             $student = Students::where('rfid', $request->uid)->first();
             if ($student) {
@@ -406,7 +419,7 @@ class ApiController extends Controller
 
     public function absenGate(Students $student)
     {
-        $app = $user->studentData->app ?? null;
+        $app = $student->app;
         $config = AttendanceConfig::whereNull('employee_id')
                     ->when($app, fn($q) => $q->where('app', $app))
                     ->where('students', 1)
@@ -433,6 +446,9 @@ class ApiController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Waktu Tidak Valid',
+                "config" => $config,
+                "app"  => $app,
+                "murid" => $student
             ], 400);
         }
 
@@ -462,7 +478,7 @@ class ApiController extends Controller
             $message = [
                 "topic" => "user_" . $student->users->id,
                 "title" => "Absensi Berhasil",
-                "body"  => "Anda berhasil absensi " . $status . " pada " . $pres->time,
+                "body"  => "Anda berhasil absensi " . $type . " pada " . $pres->time,
             ];
             ProcessFcm::dispatch($message);
         }

@@ -98,6 +98,8 @@ class Home extends Controller
         $end   = $request->get('end_date', date('Y-m-d'));
         $type  = $request->get('type');
 
+        $role = auth()->user()->role;
+
         $items = Present::query()
             ->whereDate('waktu', '>=', $start)
             ->whereDate('waktu', '<=', $end)
