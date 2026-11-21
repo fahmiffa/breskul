@@ -22,6 +22,7 @@ use App\Models\Mapel;
 use App\Models\Teach;
 use App\Models\Extracurricular;
 use App\Models\Prodi;
+use Carbon\Carbon;
 
 class Home extends Controller
 {
@@ -100,7 +101,7 @@ class Home extends Controller
 
         $role = auth()->user()->role;
 
-        $items = Present::query()
+        $presents = Present::query()
             ->whereDate('waktu', '>=', $start)
             ->whereDate('waktu', '<=', $end)
             ->when(auth()->check() && auth()->user()->role == 1 && auth()->user()->app, function ($query) {
@@ -113,8 +114,83 @@ class Home extends Controller
                 $query->whereNotNull('employee_id');
             })
             ->with(['murid', 'employee.jabatan'])
-            ->latest('waktu')
+            ->orderBy('waktu', 'desc')
             ->get();
+
+        // Kelompokkan data absensi per tanggal dan per orang agar 1 baris per nama
+        $grouped = $presents->groupBy(function ($item) {
+            $date = Carbon::parse($item->waktu)->format('Y-m-d');
+            $userKey = $item->student_id ? 's_' . $item->student_id : ($item->employee_id ? 'e_' . $item->employee_id : 'n_' . ($item->name ?: 'unknown'));
+            return $date . '_' . $userKey;
+        });
+
+        $items = $grouped->map(function ($records) {
+            $first = $records->first();
+            $dateCarbon = Carbon::parse($first->waktu)->locale('id');
+
+            // Record masuk: status 'masuk', ambil yang paling awal
+            $masukRecord = $records->filter(function ($r) {
+                return strtolower(trim($r->status ?? '')) === 'masuk';
+            })->sortBy(function ($r) {
+                return Carbon::parse($r->waktu)->timestamp;
+            })->first();
+
+            // Record pulang: status 'pulang', ambil yang paling akhir
+            $pulangRecord = $records->filter(function ($r) {
+                return strtolower(trim($r->status ?? '')) === 'pulang';
+            })->sortByDesc(function ($r) {
+                return Carbon::parse($r->waktu)->timestamp;
+            })->first();
+
+            // Fallback jika tidak ada status masuk maupun pulang eksplisit
+            if (!$masukRecord && !$pulangRecord && $first) {
+                $masukRecord = $first;
+            }
+
+            $name = $first->name ?: ($first->murid?->name ?? $first->employee?->name ?? '-');
+            $tipe = $first->employee_id ? 'Karyawan' : 'Murid';
+
+            $masukData = null;
+            if ($masukRecord) {
+                $masukCarbon = Carbon::parse($masukRecord->waktu)->locale('id');
+                $masukData = [
+                    'id'        => $masukRecord->id,
+                    'time'      => $masukCarbon->format('H:i:s'),
+                    'full_time' => $masukCarbon->translatedFormat('l, d F Y H:i:s'),
+                    'img'       => $masukRecord->img,
+                    'late_time' => $masukRecord->late_time,
+                ];
+            }
+
+            $pulangData = null;
+            if ($pulangRecord) {
+                $pulangCarbon = Carbon::parse($pulangRecord->waktu)->locale('id');
+                $pulangData = [
+                    'id'        => $pulangRecord->id,
+                    'time'      => $pulangCarbon->format('H:i:s'),
+                    'full_time' => $pulangCarbon->translatedFormat('l, d F Y H:i:s'),
+                    'img'       => $pulangRecord->img,
+                ];
+            }
+
+            $searchTime = trim(($masukData ? $masukData['time'] . ' ' . $masukData['full_time'] : '') . ' ' . ($pulangData ? $pulangData['time'] . ' ' . $pulangData['full_time'] : '') . ' ' . $dateCarbon->translatedFormat('d F Y'));
+            $searchStatus = ($masukData ? 'masuk ' : '') . ($pulangData ? 'pulang' : '');
+
+            return [
+                'id'          => $first->id,
+                'name'        => $name,
+                'tipe'        => $tipe,
+                'student_id'  => $first->student_id,
+                'employee_id' => $first->employee_id,
+                'date'        => $dateCarbon->translatedFormat('d M Y'),
+                'date_full'   => $dateCarbon->translatedFormat('l, d F Y'),
+                'date_raw'    => $dateCarbon->format('Y-m-d'),
+                'masuk'       => $masukData,
+                'pulang'      => $pulangData,
+                'time'        => $searchTime,
+                'status'      => $searchStatus,
+            ];
+        })->values();
 
         return view('home.present.index', compact('items', 'start', 'end', 'type'));
     }
@@ -128,7 +204,15 @@ class Home extends Controller
             $month = \Carbon\Carbon::parse($request->get('start_date'))->format('Y-m');
         }
 
-        $appId = auth()->check() && auth()->user()->role == 1 && auth()->user()->app ? auth()->user()->app->id : null;
+        if(auth()->user()->role == 1)
+        {
+            $appId = auth()->user()->app->id;
+        }
+        else
+        {
+            $appId = auth()->user()->employeeData->app_id ?? null;
+        }
+
 
         $export = new \App\Exports\AbsensiExport($type, $month, $appId);
         return $export->export();

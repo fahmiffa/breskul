@@ -94,79 +94,107 @@
         <table class="min-w-full bg-white text-sm">
             <thead>
                 <tr class="bg-green-600 text-left text-white">
-                    <th class="px-4 py-3 text-xs uppercase tracking-wider font-semibold">No</th>
+                    <th class="px-4 py-3 text-xs uppercase tracking-wider font-semibold w-12 text-center">No</th>
                     <th @click="sortBy('name')" class="cursor-pointer px-4 py-3 text-xs uppercase tracking-wider font-semibold hover:bg-green-700 transition-colors">
                         <div class="flex items-center gap-1">
                             <span>Nama</span>
                             <span class="text-xs" x-show="sortColumn === 'name'" x-text="sortAsc ? '↑' : '↓'"></span>
                         </div>
                     </th>
-                    <th class="px-4 py-3 text-xs uppercase tracking-wider font-semibold text-center">Tipe</th>
-                    <th class="px-4 py-3 text-xs uppercase tracking-wider font-semibold text-center">Jabatan</th>
-                    <th class="px-4 py-3 text-xs uppercase tracking-wider font-semibold">Waktu</th>
-                    <th class="px-4 py-3 text-xs uppercase tracking-wider font-semibold text-center">Status</th>
-                    <th class="px-4 py-3 text-xs uppercase tracking-wider font-semibold text-center">Foto</th>
+                    <th class="px-4 py-3 text-xs uppercase tracking-wider font-semibold text-center w-28">Tipe</th>
+                    <th class="px-4 py-3 text-xs uppercase tracking-wider font-semibold">Absensi Masuk</th>
+                    <th class="px-4 py-3 text-xs uppercase tracking-wider font-semibold">Absensi Pulang</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
                 <template x-for="(row, index) in paginatedData()" :key="row.id">
                     <tr class="hover:bg-gray-50/80 transition-colors">
-                        <td class="px-4 py-3 text-gray-500 text-xs" x-text="((currentPage - 1) * perPage) + index + 1"></td>
-                        <td class="px-4 py-3 font-semibold text-gray-800" x-text="row.name || (row.murid ? row.murid.name : (row.employee ? row.employee.name : '-'))"></td>
+                        <td class="px-4 py-3 text-gray-500 text-xs text-center font-medium" x-text="((currentPage - 1) * perPage) + index + 1"></td>
+                        <td class="px-4 py-3">
+                            <div class="font-semibold text-gray-800" x-text="row.name || (row.murid ? row.murid.name : (row.employee ? row.employee.name : '-'))"></div>
+                            <div class="text-[11px] text-gray-400 font-normal mt-0.5" x-show="row.date" x-text="row.date"></div>
+                        </td>
                         <td class="px-4 py-3 text-center">
-                            <span class="px-2.5 py-1 rounded-full text-xs font-semibold"
+                            <span class="px-2.5 py-1 rounded-full text-xs font-semibold inline-block"
                                 :class="row.employee_id ? 'bg-purple-100 text-purple-700 border border-purple-200' : 'bg-blue-100 text-blue-700 border border-blue-200'"
                                 x-text="row.employee_id ? 'Karyawan' : 'Murid'">
                             </span>
                         </td>
-                        <td class="px-4 py-3 text-center text-xs" x-text="row.employee_id && row.employee && row.employee.jabatan ? row.employee.jabatan.name : '-'"></td>
-                        <td class="px-4 py-3 text-gray-600 whitespace-nowrap text-xs sm:text-sm" x-text="row.time"></td>
-                        <td class="px-4 py-3 text-center">
-                            <template x-if="row.status">
-                                <div class="flex flex-col items-center gap-1">
-                                    <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
-                                        :class="{
-                                            'bg-green-100 text-green-700 border border-green-200': row.status.toLowerCase() === 'masuk',
-                                            'bg-orange-100 text-orange-700 border border-orange-200': row.status.toLowerCase() === 'pulang',
-                                            'bg-gray-100 text-gray-700 border border-gray-200': row.status.toLowerCase() !== 'masuk' && row.status.toLowerCase() !== 'pulang'
-                                        }"
-                                        x-text="row.status">
-                                    </span>
-                                    <template x-if="row.status.toLowerCase() === 'masuk' && row.late_time">
-                                        <span  class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-600 border border-red-200"
-                                            x-text="row.late_time.replace(/(\d+(?:\.\d+)?)/, m => Math.ceil(Number(m)))"
-                                        ></span>
+                        {{-- Kolom Absensi Masuk (Foto & Waktu) --}}
+                        <td class="px-4 py-3">
+                            <template x-if="row.masuk">
+                                <div class="flex items-center gap-3">
+                                    <template x-if="row.masuk.img">
+                                        <div @click="openPhotoModal({ name: row.name, tipe: row.tipe, employee_id: row.employee_id, img: row.masuk.img, time: row.masuk.full_time, status: 'Masuk' })" 
+                                             class="group relative inline-block cursor-pointer rounded-lg overflow-hidden border border-gray-200 shadow-xs hover:shadow-md transition-all shrink-0">
+                                            <img :src="row.masuk.img.startsWith('http') || row.masuk.img.startsWith('/') ? row.masuk.img : '/storage/' + row.masuk.img" 
+                                                 class="h-11 w-11 object-cover transition-transform duration-200 group-hover:scale-110" 
+                                                 alt="Foto Masuk">
+                                            <div class="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white drop-shadow" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                                                </svg>
+                                            </div>
+                                        </div>
                                     </template>
-                                </div>
-                            </template>
-                            <template x-if="!row.status">
-                                <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-gray-100 text-gray-700">
-                                    -
-                                </span>
-                            </template>
-                        </td>
-                        <td class="px-4 py-3 text-center">
-                            <template x-if="row.img">
-                                <div @click="openPhotoModal(row)" 
-                                     class="group relative inline-block cursor-pointer rounded-lg overflow-hidden border border-gray-200 shadow-xs hover:shadow-md transition-all">
-                                    <img :src="'/storage/' + row.img" 
-                                         class="h-10 w-10 sm:h-12 sm:w-12 object-cover transition-transform duration-200 group-hover:scale-110" 
-                                         alt="Foto Absen">
-                                    <div class="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white drop-shadow" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                                        </svg>
+                                    <template x-if="!row.masuk.img">
+                                        <div class="h-11 w-11 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-400 shrink-0" title="Tidak ada foto">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                        </div>
+                                    </template>
+                                    <div class="flex flex-col">
+                                        <span class="font-bold text-gray-800 text-xs sm:text-sm" x-text="row.masuk.time"></span>
+                                        <template x-if="row.masuk.late_time">
+                                            <span class="mt-0.5 inline-block w-fit px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-600 border border-red-200"
+                                                x-text="row.masuk.late_time.replace(/(\d+(?:\.\d+)?)/, m => Math.ceil(Number(m)))">
+                                            </span>
+                                        </template>
                                     </div>
                                 </div>
                             </template>
-                            <template x-if="!row.img">
-                                <span class="text-xs text-gray-400">-</span>
+                            <template x-if="!row.masuk">
+                                <span class="text-xs text-gray-400 italic font-medium">-</span>
+                            </template>
+                        </td>
+                        {{-- Kolom Absensi Pulang (Foto & Waktu) --}}
+                        <td class="px-4 py-3">
+                            <template x-if="row.pulang">
+                                <div class="flex items-center gap-3">
+                                    <template x-if="row.pulang.img">
+                                        <div @click="openPhotoModal({ name: row.name, tipe: row.tipe, employee_id: row.employee_id, img: row.pulang.img, time: row.pulang.full_time, status: 'Pulang' })" 
+                                             class="group relative inline-block cursor-pointer rounded-lg overflow-hidden border border-gray-200 shadow-xs hover:shadow-md transition-all shrink-0">
+                                            <img :src="row.pulang.img.startsWith('http') || row.pulang.img.startsWith('/') ? row.pulang.img : '/storage/' + row.pulang.img" 
+                                                 class="h-11 w-11 object-cover transition-transform duration-200 group-hover:scale-110" 
+                                                 alt="Foto Pulang">
+                                            <div class="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white drop-shadow" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </template>
+                                    <template x-if="!row.pulang.img">
+                                        <div class="h-11 w-11 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-400 shrink-0" title="Tidak ada foto">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                        </div>
+                                    </template>
+                                    <div class="flex flex-col">
+                                        <span class="font-bold text-gray-800 text-xs sm:text-sm" x-text="row.pulang.time"></span>
+                                    </div>
+                                </div>
+                            </template>
+                            <template x-if="!row.pulang">
+                                <span class="text-xs text-gray-400 italic font-medium">-</span>
                             </template>
                         </td>
                     </tr>
                 </template>
                 <tr x-show="filteredData().length === 0">
-                    <td colspan="6" class="text-center py-10 text-gray-400">
+                    <td colspan="5" class="text-center py-10 text-gray-400">
                         <div class="flex flex-col items-center justify-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -237,7 +265,7 @@
             <div class="relative flex-1 overflow-auto bg-gray-950 flex items-center justify-center min-h-[300px] max-h-[65vh] p-4 select-none"
                  @wheel.prevent="handleWheel($event)">
                 <template x-if="activePhoto && activePhoto.img">
-                    <img :src="'/storage/' + activePhoto.img" 
+                    <img :src="activePhoto.img.startsWith('http') || activePhoto.img.startsWith('/') ? activePhoto.img : '/storage/' + activePhoto.img" 
                          class="max-w-full max-h-[58vh] object-contain rounded-lg transition-transform duration-150 origin-center cursor-zoom-in"
                          :style="`transform: scale(${zoomLevel});`"
                          alt="Foto Absensi" />
