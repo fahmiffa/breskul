@@ -54,9 +54,7 @@
                         @endif
                         <th class="py-3 px-6 text-left">Nama</th>
                         <th class="py-3 px-6 text-left">Target</th>
-                        <th class="py-3 px-6 text-center">Masuk</th>
-                        <th class="py-3 px-6 text-center">Pulang</th>
-                        <th class="py-3 px-6 text-center">Koordinat</th>
+                        <th class="py-3 px-6 text-center">Hari & Jadwal</th>
                         <th class="py-3 px-6 text-center">Aksi</th>
                     </tr>
                 </thead>
@@ -87,22 +85,31 @@
                             </td>
 
                             <td class="py-3 px-6 text-center">
-                                {{ substr($item->clock_in_start, 0, 5) }} - {{ substr($item->clock_in_end, 0, 5) }}
-                            </td>
-                            <td class="py-3 px-6 text-center">
-                                {{ substr($item->clock_out_start, 0, 5) }} - {{ substr($item->clock_out_end, 0, 5) }}
-                            </td>
-                            <td class="py-3 px-6 text-center">
-                                @if($item->lat && $item->lng)
-                                    <a href="https://www.google.com/maps?q={{ $item->lat }},{{ $item->lng }}" target="_blank" rel="noopener noreferrer" class="text-xs text-blue-500 hover:text-blue-700 hover:underline inline-flex items-center gap-1">
-                                        {{ $item->lat }}, {{ $item->lng }}
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                        </svg>
-                                    </a>
-                                    <div class="text-[10px] text-gray-400">R: {{ $item->radius }}m</div>
+                                @if($item->times && $item->times->count() > 0)
+                                    <div class="space-y-1">
+                                        @foreach($item->times as $time)
+                                            <div class="flex items-center justify-center gap-2 text-xs">
+                                                <span class="bg-blue-100 text-blue-700 py-0.5 px-2 rounded font-semibold min-w-[52px]">{{ $time->day }}</span>
+                                                <span class="text-gray-600">
+                                                    {{ substr($time->clock_in_start, 0, 5) }}-{{ substr($time->clock_in_end, 0, 5) }}
+                                                    /
+                                                    {{ substr($time->clock_out_start, 0, 5) }}-{{ substr($time->clock_out_end, 0, 5) }}
+                                                </span>
+                                                @if($time->lat && $time->lng)
+                                                    <a href="https://www.google.com/maps?q={{ $time->lat }},{{ $time->lng }}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-700 hover:underline inline-flex items-center gap-0.5" title="Lihat lokasi">
+                                                        📍<span class="text-[10px]">{{ $time->radius }}m</span>
+                                                    </a>
+                                                @endif
+                                            </div>
+                                        @endforeach
+                                    </div>
                                 @else
-                                    <span class="text-xs text-gray-400">Belum diset</span>
+                                    {{-- Fallback: data lama tanpa times --}}
+                                    <div class="text-xs text-gray-500">
+                                        {{ substr($item->clock_in_start, 0, 5) }}-{{ substr($item->clock_in_end, 0, 5) }}
+                                        /
+                                        {{ substr($item->clock_out_start, 0, 5) }}-{{ substr($item->clock_out_end, 0, 5) }}
+                                    </div>
                                 @endif
                             </td>
                             <td class="py-3 px-6 text-center">
@@ -126,7 +133,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ auth()->user()->role == 0 ? 7 : 6 }}" class="py-3 px-6 text-center">Belum ada data konfigurasi.</td>
+                            <td colspan="{{ auth()->user()->role == 0 ? 5 : 4 }}" class="py-3 px-6 text-center">Belum ada data konfigurasi.</td>
                         </tr>
                     @endforelse
                 </tbody>

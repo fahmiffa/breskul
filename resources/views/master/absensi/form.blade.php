@@ -4,6 +4,12 @@
     <div class="flex flex-col bg-white rounded-lg shadow-md p-6">
         <h2 class="text-xl font-bold text-gray-800 mb-4">{{ $title }}</h2>
 
+        @if(session('error'))
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                {{ session('error') }}
+            </div>
+        @endif
+
         <form action="{{ isset($item) ? route('dashboard.master.absensi.update', $item->id) : route('dashboard.master.absensi.store') }}" method="POST">
             @csrf
             @if(isset($item))
@@ -41,14 +47,7 @@
                     <select id="copy_config" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" onchange="copyConfig(this)">
                         <option value="">-- Copy Konfigurasi yang Sudah Ada --</option>
                         @foreach($existingConfigs as $config)
-                            <option value="{{ $config->id }}" 
-                                data-clock-in-start="{{ $config->clock_in_start }}"
-                                data-clock-in-end="{{ $config->clock_in_end }}"
-                                data-clock-out-start="{{ $config->clock_out_start }}"
-                                data-clock-out-end="{{ $config->clock_out_end }}"
-                                data-lat="{{ $config->lat }}"
-                                data-lng="{{ $config->lng }}"
-                                data-radius="{{ $config->radius }}">
+                            <option value="{{ $config->id }}" data-times="{{ json_encode($config->times) }}">
                                 {{ $config->name }} {{ $config->employee ? '('.$config->employee->name.')' : '(Murid)' }}
                             </option>
                         @endforeach
@@ -122,41 +121,22 @@
                     </div>
                 </div>
                 @endif
+            </div>
 
-                <!-- Clock In -->
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Jam Masuk (Awal) <span class="text-green-600">WIB</span></label>
-                    <input type="time" name="clock_in_start" value="{{ old('clock_in_start', isset($item) ? $item->clock_in_start : '') }}" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                </div>
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Jam Masuk (Akhir) <span class="text-green-600">WIB</span></label>
-                    <input type="time" name="clock_in_end" value="{{ old('clock_in_end', isset($item) ? $item->clock_in_end : '') }}" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                </div>
+            <hr class="my-6">
 
-                <!-- Clock Out -->
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Jam Pulang (Awal) <span class="text-green-600">WIB</span></label>
-                    <input type="time" name="clock_out_start" value="{{ old('clock_out_start', isset($item) ? $item->clock_out_start : '') }}" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            <!-- Konfigurasi Waktu Per Hari -->
+            <div class="mb-4">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-lg font-bold text-gray-800">Konfigurasi Waktu Per Hari</h3>
+                    <button type="button" onclick="addDayRow()" class="bg-green-500 hover:bg-green-700 text-white text-xs font-semibold py-2 px-3 rounded-lg focus:outline-none">
+                        + Tambah Hari
+                    </button>
                 </div>
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Jam Pulang (Akhir) <span class="text-green-600">WIB</span></label>
-                    <input type="time" name="clock_out_end" value="{{ old('clock_out_end', isset($item) ? $item->clock_out_end : '') }}" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                </div>
+                @error('days') <p class="text-red-500 text-xs italic mb-2">{{ $message }}</p> @enderror
 
-                <hr class="md:col-span-2 my-4">
-
-                <!-- Coordinates -->
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Latitude</label>
-                    <input type="text" name="lat" value="{{ old('lat', isset($item) ? $item->lat : '') }}" placeholder="-6.xxxx" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                </div>
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Longitude</label>
-                    <input type="text" name="lng" value="{{ old('lng', isset($item) ? $item->lng : '') }}" placeholder="106.xxxx" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                </div>
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Radius (Meter)</label>
-                    <input type="number" name="radius" value="{{ old('radius', isset($item) ? $item->radius : '100') }}" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                <div id="day_rows_container" class="space-y-4">
+                    {{-- Rows akan di-generate via JS --}}
                 </div>
             </div>
 
@@ -170,6 +150,107 @@
     </div>
 
     <script>
+        const allDays = @json($dayList);
+        let dayRowIndex = 0;
+
+        // Data yang sudah ada (edit mode)
+        const existingTimes = @json(isset($item) ? $item->times : []);
+
+        function addDayRow(dayData = null) {
+            const container = document.getElementById('day_rows_container');
+            const idx = dayRowIndex++;
+
+            const row = document.createElement('div');
+            row.className = 'day-row border rounded-lg p-4 bg-gray-50 relative';
+            row.setAttribute('data-index', idx);
+
+            const selectedDay = dayData ? dayData.day : '';
+            const clockInStart = dayData ? (dayData.clock_in_start || '').substring(0, 5) : '';
+            const clockInEnd = dayData ? (dayData.clock_in_end || '').substring(0, 5) : '';
+            const clockOutStart = dayData ? (dayData.clock_out_start || '').substring(0, 5) : '';
+            const clockOutEnd = dayData ? (dayData.clock_out_end || '').substring(0, 5) : '';
+            const lat = dayData ? (dayData.lat || '') : '';
+            const lng = dayData ? (dayData.lng || '') : '';
+            const radius = dayData ? (dayData.radius || 100) : 100;
+
+            let dayOptions = `<option value="">-- Pilih Hari --</option>`;
+            allDays.forEach(d => {
+                dayOptions += `<option value="${d}" ${d === selectedDay ? 'selected' : ''}>${d}</option>`;
+            });
+
+            row.innerHTML = `
+                <button type="button" onclick="removeDayRow(this)" class="absolute top-2 right-2 text-red-500 hover:text-red-700 text-lg font-bold" title="Hapus hari">&times;</button>
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-3 mb-3">
+                    <div>
+                        <label class="block text-gray-600 text-xs font-semibold mb-1">Hari <span class="text-red-500">*</span></label>
+                        <select name="days[${idx}]" required class="border rounded w-full py-2 px-3 text-sm text-gray-700 focus:outline-none">
+                            ${dayOptions}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-600 text-xs font-semibold mb-1">Masuk (Awal) <span class="text-green-600">WIB</span></label>
+                        <input type="time" name="times[${idx}][clock_in_start]" value="${clockInStart}" required class="border rounded w-full py-2 px-3 text-sm text-gray-700 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-gray-600 text-xs font-semibold mb-1">Masuk (Akhir) <span class="text-green-600">WIB</span></label>
+                        <input type="time" name="times[${idx}][clock_in_end]" value="${clockInEnd}" required class="border rounded w-full py-2 px-3 text-sm text-gray-700 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-gray-600 text-xs font-semibold mb-1">Pulang (Awal) <span class="text-green-600">WIB</span></label>
+                        <input type="time" name="times[${idx}][clock_out_start]" value="${clockOutStart}" required class="border rounded w-full py-2 px-3 text-sm text-gray-700 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-gray-600 text-xs font-semibold mb-1">Pulang (Akhir) <span class="text-green-600">WIB</span></label>
+                        <input type="time" name="times[${idx}][clock_out_end]" value="${clockOutEnd}" required class="border rounded w-full py-2 px-3 text-sm text-gray-700 focus:outline-none">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-gray-600 text-xs font-semibold mb-1">Latitude</label>
+                        <input type="text" name="times[${idx}][lat]" value="${lat}" placeholder="-6.xxxx" class="border rounded w-full py-2 px-3 text-sm text-gray-700 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-gray-600 text-xs font-semibold mb-1">Longitude</label>
+                        <input type="text" name="times[${idx}][lng]" value="${lng}" placeholder="106.xxxx" class="border rounded w-full py-2 px-3 text-sm text-gray-700 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-gray-600 text-xs font-semibold mb-1">Radius (Meter)</label>
+                        <input type="number" name="times[${idx}][radius]" value="${radius}" class="border rounded w-full py-2 px-3 text-sm text-gray-700 focus:outline-none">
+                    </div>
+                </div>
+            `;
+
+            container.appendChild(row);
+        }
+
+        function removeDayRow(btn) {
+            const row = btn.closest('.day-row');
+            const container = document.getElementById('day_rows_container');
+            if (container.querySelectorAll('.day-row').length > 1) {
+                row.remove();
+            } else {
+                alert('Minimal harus ada 1 konfigurasi hari.');
+            }
+        }
+
+        function copyConfig(selectElement) {
+            const selectedOption = selectElement.options[selectElement.selectedIndex];
+            if (!selectedOption || !selectedOption.value) return;
+
+            const timesJson = selectedOption.getAttribute('data-times');
+            if (!timesJson) return;
+
+            const times = JSON.parse(timesJson);
+            if (!times || times.length === 0) return;
+
+            // Hapus semua row lama
+            document.getElementById('day_rows_container').innerHTML = '';
+            dayRowIndex = 0;
+
+            // Buat row baru dari data copy
+            times.forEach(t => addDayRow(t));
+        }
+
         function filterEmployees() {
             const appId = document.getElementById('select_app') ? document.getElementById('select_app').value : null;
             const jabatanId = document.getElementById('filter_jabatan').value;
@@ -187,39 +268,11 @@
                 if (searchInput && itemName && !itemName.includes(searchInput)) show = false;
 
                 item.style.display = show ? '' : 'none';
-                
-                // uncheck if hidden
                 if (!show) {
                     item.querySelector('.emp-checkbox').checked = false;
                 }
             });
             updateCheckAllStatus();
-        }
-
-        function copyConfig(selectElement) {
-            const selectedOption = selectElement.options[selectElement.selectedIndex];
-            if (!selectedOption || !selectedOption.value) return;
-
-            const fields = [
-                {name: 'clock_in_start', val: selectedOption.getAttribute('data-clock-in-start')},
-                {name: 'clock_in_end', val: selectedOption.getAttribute('data-clock-in-end')},
-                {name: 'clock_out_start', val: selectedOption.getAttribute('data-clock-out-start')},
-                {name: 'clock_out_end', val: selectedOption.getAttribute('data-clock-out-end')},
-                {name: 'lat', val: selectedOption.getAttribute('data-lat')},
-                {name: 'lng', val: selectedOption.getAttribute('data-lng')},
-                {name: 'radius', val: selectedOption.getAttribute('data-radius')}
-            ];
-
-            fields.forEach(f => {
-                const input = document.querySelector(`input[name="${f.name}"]`);
-                if (input && f.val) {
-                    input.value = f.val;
-                    // Trigger change for time inputs preview
-                    if (input.type === 'time') {
-                        input.dispatchEvent(new Event('change'));
-                    }
-                }
-            });
         }
 
         function toggleRoleTarget(role) {
@@ -230,7 +283,6 @@
                     filterEmployees();
                 } else {
                     section.style.display = 'none';
-                    // Uncheck all employees
                     document.querySelectorAll('.emp-checkbox').forEach(cb => cb.checked = false);
                     document.getElementById('check_all_employees').checked = false;
                 }
@@ -252,11 +304,11 @@
                 .map(item => item.querySelector('.emp-checkbox'));
             
             const checkAllCb = document.getElementById('check_all_employees');
+            if (!checkAllCb) return;
             if (visibleCheckboxes.length === 0) {
                 checkAllCb.checked = false;
                 return;
             }
-            
             const allChecked = visibleCheckboxes.every(cb => cb.checked);
             checkAllCb.checked = allChecked;
         }
@@ -280,29 +332,11 @@
             filterEmployees();
         }
 
-        document.querySelectorAll('input[type="time"]').forEach(input => {
-            input.addEventListener('change', function() {
-                const label = this.previousElementSibling;
-                const value = this.value;
-                if (value) {
-                    const previewId = 'preview-' + this.name;
-                    let preview = document.getElementById(previewId);
-                    if (!preview) {
-                        preview = document.createElement('span');
-                        preview.id = previewId;
-                        preview.className = 'ml-2 text-xs font-normal text-blue-600 italic';
-                        label.appendChild(preview);
-                    }
-                    preview.textContent = '(Set ke ' + value + ' WIB)';
-                }
-            });
-        });
-        
         document.querySelectorAll('.emp-checkbox').forEach(cb => {
             cb.addEventListener('change', updateCheckAllStatus);
         });
 
-        // Trigger on load for edited items or old input
+        // Inisialisasi
         window.addEventListener('load', () => {
             const appSelect = document.getElementById('select_app');
             if (appSelect && appSelect.value) {
@@ -314,11 +348,12 @@
                 toggleRoleTarget(roleTarget.value);
             }
 
-            document.querySelectorAll('input[type="time"]').forEach(input => {
-                if (input.value) {
-                    input.dispatchEvent(new Event('change'));
-                }
-            });
+            // Load existing times atau buat 1 default row
+            if (existingTimes && existingTimes.length > 0) {
+                existingTimes.forEach(t => addDayRow(t));
+            } else {
+                addDayRow();
+            }
         });
     </script>
 @push('styles')

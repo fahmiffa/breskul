@@ -420,21 +420,35 @@ class ApiController extends Controller
     public function absenGate(Students $student)
     {
         $app = $student->app;
-        $config = AttendanceConfig::whereNull('employee_id')
+        $config = AttendanceConfig::with('times')->whereNull('employee_id')
                     ->when($app, fn($q) => $q->where('app', $app))
                     ->where('students', 1)
                     ->first();
 
         $now = now();
 
-        if ($config->clock_in_start && $config->clock_in_end && $now->between(
-            Carbon::createFromTimeString($config->clock_in_start),
-            Carbon::createFromTimeString($config->clock_in_end)
+        // Ambil konfigurasi waktu hari aktif
+        $todayName = AttendanceConfig::todayDayName();
+        $timeConfig = null;
+
+        if ($config && $config->times->count() > 0) {
+            $timeConfig = $config->times->where('day', $todayName)->first();
+        }
+
+        // Fallback ke kolom lama jika belum ada data times
+        $clockInStart = $timeConfig->clock_in_start ?? $config->clock_in_start ?? null;
+        $clockInEnd = $timeConfig->clock_in_end ?? $config->clock_in_end ?? null;
+        $clockOutStart = $timeConfig->clock_out_start ?? $config->clock_out_start ?? null;
+        $clockOutEnd = $timeConfig->clock_out_end ?? $config->clock_out_end ?? null;
+
+        if ($clockInStart && $clockInEnd && $now->between(
+            Carbon::createFromTimeString($clockInStart),
+            Carbon::createFromTimeString($clockInEnd)
         )) {
             $type = 'masuk';
-        } elseif ($config->clock_out_start && $config->clock_out_end && $now->between(
-            Carbon::createFromTimeString($config->clock_out_start),
-            Carbon::createFromTimeString($config->clock_out_end)
+        } elseif ($clockOutStart && $clockOutEnd && $now->between(
+            Carbon::createFromTimeString($clockOutStart),
+            Carbon::createFromTimeString($clockOutEnd)
         )) {
             $type = 'pulang';
         }
@@ -1793,34 +1807,65 @@ class ApiController extends Controller
         return $angle * $earthRadius;
     }
 
+    /**
+     * Ambil AttendanceConfig + AttendanceConfigTime hari aktif.
+     * Mengembalikan [config, timeConfig] agar field waktu dan koordinat
+     * dibaca dari tabel attendance_config_times sesuai hari berjalan.
+     */
     private function getUserAttendanceConfig($user)
     {
         $config = null;
 
         if ($user->role == 2) {
-            // Murid: cari config tanpa employee_id (berlaku umum untuk murid)
             $app = $user->studentData->app ?? null;
-            $config = AttendanceConfig::whereNull('employee_id')
+            $config = AttendanceConfig::with('times')->whereNull('employee_id')
                 ->when($app, fn($q) => $q->where('app', $app))
                 ->first();
         } else {
-            // Karyawan: cari config berdasarkan employee_id
             $employee = $user->employeeData;
             $app = $employee->app_id ?? null;
 
             if ($employee) {
-                $config = AttendanceConfig::where('employee_id', $employee->id)->first();
+                $config = AttendanceConfig::with('times')->where('employee_id', $employee->id)->first();
             }
 
-            // Fallback: cari config tanpa employee_id berdasarkan app
             if (!$config) {
-                $config = AttendanceConfig::whereNull('employee_id')
+                $config = AttendanceConfig::with('times')->whereNull('employee_id')
                     ->when($app, fn($q) => $q->where('app', $app))
                     ->first();
             }
         }
 
         return $config;
+    }
+
+    /**
+     * Ambil konfigurasi waktu hari aktif dari AttendanceConfigTime.
+     * Fallback ke kolom lama di AttendanceConfig jika belum ada data times.
+     */
+    private function getActiveDayConfig($config)
+    {
+        if (!$config) return null;
+
+        $todayName = AttendanceConfig::todayDayName();
+        $timeConfig = $config->times->where('day', $todayName)->first();
+
+        // Fallback: jika belum ada data di tabel times, buat object sementara dari kolom lama
+        if (!$timeConfig && $config->clock_in_start) {
+            $timeConfig = new \App\Models\AttendanceConfigTime([
+                'attendance_config_id' => $config->id,
+                'day' => $todayName,
+                'clock_in_start' => $config->clock_in_start,
+                'clock_in_end' => $config->clock_in_end,
+                'clock_out_start' => $config->clock_out_start,
+                'clock_out_end' => $config->clock_out_end,
+                'lat' => $config->lat,
+                'lng' => $config->lng,
+                'radius' => $config->radius,
+            ]);
+        }
+
+        return $timeConfig;
     }
 
     public function getAbsensiConfig()
@@ -1836,6 +1881,9 @@ class ApiController extends Controller
             ], 404);
         }
 
+        // Ambil konfigurasi waktu hari aktif
+        $timeConfig = $this->getActiveDayConfig($config);
+
         // Load relasi employee beserta jabatan-nya
         $config->load('employee.jabatan');
 
@@ -1849,15 +1897,16 @@ class ApiController extends Controller
             'name'            => $config->name,
             'jabatan_id'      => $jabatan?->id,
             'role'            => $employee ? 3 : 2,
-            'clock_in_start'  => $config->clock_in_start,
-            'clock_in_end'    => $config->clock_in_end,
-            'clock_out_start' => $config->clock_out_start,
-            'clock_out_end'   => $config->clock_out_end,
+            'day'             => $timeConfig?->day,
+            'clock_in_start'  => $timeConfig?->clock_in_start ?? $config->clock_in_start,
+            'clock_in_end'    => $timeConfig?->clock_in_end ?? $config->clock_in_end,
+            'clock_out_start' => $timeConfig?->clock_out_start ?? $config->clock_out_start,
+            'clock_out_end'   => $timeConfig?->clock_out_end ?? $config->clock_out_end,
             'created_at'      => $config->created_at,
             'updated_at'      => $config->updated_at,
-            'lat'             => $config->lat,
-            'lng'             => $config->lng,
-            'radius'          => $config->radius,
+            'lat'             => $timeConfig?->lat ?? $config->lat,
+            'lng'             => $timeConfig?->lng ?? $config->lng,
+            'radius'          => $timeConfig?->radius ?? $config->radius,
             'jabatan'         => $jabatan ? [
                 'id'         => $jabatan->id,
                 'app_id'     => $jabatan->app_id,
@@ -1865,6 +1914,7 @@ class ApiController extends Controller
                 'created_at' => $jabatan->created_at,
                 'updated_at' => $jabatan->updated_at,
             ] : null,
+            'has_schedule_today' => $timeConfig !== null,
         ];
 
         return response()->json([
@@ -1897,8 +1947,18 @@ class ApiController extends Controller
             ], 400);
         }
 
-        // Validasi titik koordinat GPS dari model AttendanceConfig
-        if (!empty($config->lat) && !empty($config->lng)) {
+        // Ambil konfigurasi waktu hari aktif
+        $timeConfig = $this->getActiveDayConfig($config);
+
+        if (!$timeConfig) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak ada jadwal absensi untuk hari ini (' . AttendanceConfig::todayDayName() . ').',
+            ], 400);
+        }
+
+        // Validasi titik koordinat GPS dari konfigurasi hari aktif
+        if (!empty($timeConfig->lat) && !empty($timeConfig->lng)) {
             $userLat = $request->input('lat') ?? $request->input('latitude');
             $userLng = $request->input('lng') ?? $request->input('longitude');
 
@@ -1909,8 +1969,8 @@ class ApiController extends Controller
                 ], 400);
             }
 
-            $distance = $this->calculateDistanceInMeters($userLat, $userLng, $config->lat, $config->lng);
-            $maxRadius = $config->radius ?: 100;
+            $distance = $this->calculateDistanceInMeters($userLat, $userLng, $timeConfig->lat, $timeConfig->lng);
+            $maxRadius = $timeConfig->radius ?: 100;
 
             if ($distance > $maxRadius) {
                 return response()->json([
@@ -1926,14 +1986,14 @@ class ApiController extends Controller
         $now = now();
 
         if (!$type) {
-            if ($config->clock_in_start && $config->clock_in_end && $now->between(
-                Carbon::createFromTimeString($config->clock_in_start),
-                Carbon::createFromTimeString($config->clock_in_end)
+            if ($timeConfig->clock_in_start && $timeConfig->clock_in_end && $now->between(
+                Carbon::createFromTimeString($timeConfig->clock_in_start),
+                Carbon::createFromTimeString($timeConfig->clock_in_end)
             )) {
                 $type = 'masuk';
-            } elseif ($config->clock_out_start && $config->clock_out_end && $now->between(
-                Carbon::createFromTimeString($config->clock_out_start),
-                Carbon::createFromTimeString($config->clock_out_end)
+            } elseif ($timeConfig->clock_out_start && $timeConfig->clock_out_end && $now->between(
+                Carbon::createFromTimeString($timeConfig->clock_out_start),
+                Carbon::createFromTimeString($timeConfig->clock_out_end)
             )) {
                 $type = 'pulang';
             }
@@ -1948,18 +2008,10 @@ class ApiController extends Controller
 
         // Validasi jam kerja jika status masuk/pulang
         if ($type === 'masuk') {
-            if ($config->clock_in_start && $config->clock_in_end) {
-                $inStart = Carbon::createFromTimeString($config->clock_in_start);
-                $inEnd   = Carbon::createFromTimeString($config->clock_in_end);
-                $outStart   = Carbon::createFromTimeString($config->clock_out_start);
-                // if (!$now->between($inStart, $outStart)) {
-                // // if($now->lt($inStart)) {
-                //     return response()->json([
-                //         'success' => false,
-                //         'message' => 'Waktu absensi masuk adalah ' . $config->clock_in_start . ' - ' . $config->clock_out_start . '.',
-                //         //  'message' => 'Waktu absensi masuk dimulai ' . $config->clock_in_start,
-                //     ], 400);
-                // }
+            if ($timeConfig->clock_in_start && $timeConfig->clock_in_end) {
+                $inStart = Carbon::createFromTimeString($timeConfig->clock_in_start);
+                $inEnd   = Carbon::createFromTimeString($timeConfig->clock_in_end);
+                $outStart   = Carbon::createFromTimeString($timeConfig->clock_out_start);
             }
         } elseif ($type === 'pulang') {
 
@@ -1981,15 +2033,14 @@ class ApiController extends Controller
                     ], 400);
                 }
 
-            if ($config->clock_out_start && $config->clock_out_end) {
-                $outStart = Carbon::createFromTimeString($config->clock_out_start);
-                $outEnd   = Carbon::createFromTimeString($config->clock_out_end);
-                // if (!$now->between($outStart, $outEnd)) {
+            if ($timeConfig->clock_out_start && $timeConfig->clock_out_end) {
+                $outStart = Carbon::createFromTimeString($timeConfig->clock_out_start);
+                $outEnd   = Carbon::createFromTimeString($timeConfig->clock_out_end);
                 if($now->lt($outStart)) {
                     return response()->json([
                         'success' => false,
-                        // 'message' => 'Waktu absensi pulang adalah ' . $config->clock_out_start . ' - ' . $config->clock_out_end . '.',
-                        'message' => 'Waktu absensi pulang dimulai ' . $config->clock_out_start,
+                        // 'message' => 'Waktu absensi pulang adalah ' . $timeConfig->clock_out_start . ' - ' . $timeConfig->clock_out_end . '.',
+                        'message' => 'Waktu absensi pulang dimulai ' . $timeConfig->clock_out_start,
                     ], 400);
                 }
             }

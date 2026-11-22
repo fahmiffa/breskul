@@ -34,27 +34,34 @@ class Present extends Model
 
         $config = null;
         if ($this->employee_id) {
-            $config = \App\Models\AttendanceConfig::where('employee_id', $this->employee_id)->first();
+            $config = \App\Models\AttendanceConfig::with('times')->where('employee_id', $this->employee_id)->first();
             if (!$config && $this->employee) {
-                $config = \App\Models\AttendanceConfig::whereNull('employee_id')->where('app', $this->employee->app_id)->first();
+                $config = \App\Models\AttendanceConfig::with('times')->whereNull('employee_id')->where('app', $this->employee->app_id)->first();
             }
         } elseif ($this->student_id) {
             if ($this->murid) {
-                $config = \App\Models\AttendanceConfig::whereNull('employee_id')->where('app', $this->murid->app)->where('students',1)->first();
+                $config = \App\Models\AttendanceConfig::with('times')->whereNull('employee_id')->where('app', $this->murid->app)->where('students',1)->first();
             }
         } else {
-            $config = \App\Models\AttendanceConfig::whereNull('employee_id')->where('app', $this->app)->first();
+            $config = \App\Models\AttendanceConfig::with('times')->whereNull('employee_id')->where('app', $this->app)->first();
         }
 
-        if (!$config || !$config->clock_in_end) {
+        if (!$config) {
+            return null;
+        }
+
+        $waktu = Carbon::parse($this->waktu);
+        $dayName = \App\Models\AttendanceConfig::dayNameFromDate($waktu);
+        $timeConfig = $config->getTimeForDay($dayName);
+        $clockInEndVal = $timeConfig?->clock_in_end ?? $config->clock_in_end;
+
+        if (!$clockInEndVal) {
             return null;
         }
 
         try {
-            $waktu = Carbon::parse($this->waktu);
-            
             // clock_in_end bisa berupa 'H:i:s' atau 'H:i'
-            $timeParts = explode(':', $config->clock_in_end);
+            $timeParts = explode(':', $clockInEndVal);
             $hour = isset($timeParts[0]) ? (int)$timeParts[0] : 0;
             $minute = isset($timeParts[1]) ? (int)$timeParts[1] : 0;
             $second = isset($timeParts[2]) ? (int)$timeParts[2] : 0;

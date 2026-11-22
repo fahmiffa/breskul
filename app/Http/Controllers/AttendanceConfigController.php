@@ -4,17 +4,21 @@ namespace App\Http\Controllers;
 
 use App\Models\App;
 use App\Models\AttendanceConfig;
+use App\Models\AttendanceConfigTime;
 use App\Models\Jabatan;
 use App\Models\Employee;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class AttendanceConfigController extends Controller
 {
+    private $dayList = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+
     public function index(Request $request)
     {
         $user = Auth::user();
-        $query = AttendanceConfig::with(['employee.jabatan', 'employee.app', 'appData']);
+        $query = AttendanceConfig::with(['employee.jabatan', 'employee.app', 'appData', 'times']);
 
         $appId = ($user->role == 1 && $user->app) ? $user->app->id : null;
 
@@ -68,6 +72,7 @@ class AttendanceConfigController extends Controller
         $apps = [];
         $employees = [];
         $existingConfigs = [];
+        $dayList = $this->dayList;
 
         if ($user->role == 1 && $user->app) {
             $appId = $user->app->id;
@@ -78,17 +83,17 @@ class AttendanceConfigController extends Controller
                 ->where('app_id', $appId)
                 ->whereDoesntHave('attendanceConfig')
                 ->orderBy('name')->get();
-            $existingConfigs = AttendanceConfig::where('app', $appId)->orderBy('name')->get();
+            $existingConfigs = AttendanceConfig::with('times')->where('app', $appId)->orderBy('name')->get();
         } else {
             $apps = App::orderBy('name')->get();
             $jabatans = Jabatan::with('app')->orderBy('name')->get();
             $employees = Employee::with('jabatan', 'app')
                 ->whereDoesntHave('attendanceConfig')
                 ->orderBy('name')->get();
-            $existingConfigs = AttendanceConfig::orderBy('name')->get();
+            $existingConfigs = AttendanceConfig::with('times')->orderBy('name')->get();
         }
 
-        return view('master.absensi.form', compact('title', 'jabatans', 'apps', 'employees', 'existingConfigs'));
+        return view('master.absensi.form', compact('title', 'jabatans', 'apps', 'employees', 'existingConfigs', 'dayList'));
     }
 
     public function store(Request $request)
@@ -101,62 +106,94 @@ class AttendanceConfigController extends Controller
             'app' => $isRole0 ? 'required|exists:apps,id' : 'nullable',
             'role_target' => 'required|in:murid,karyawan',
             'employee_ids' => 'required_if:role_target,karyawan|array',
-            'clock_in_start' => 'required',
-            'clock_in_end' => 'required',
-            'clock_out_start' => 'required',
-            'clock_out_end' => 'required',
-            'lat' => 'nullable',
-            'lng' => 'nullable',
-            'radius' => 'nullable|numeric',
+            'days' => 'required|array|min:1',
+            'days.*' => 'required|in:' . implode(',', $this->dayList),
+            'times' => 'required|array',
+            'times.*.clock_in_start' => 'required',
+            'times.*.clock_in_end' => 'required',
+            'times.*.clock_out_start' => 'required',
+            'times.*.clock_out_end' => 'required',
+            'times.*.lat' => 'nullable',
+            'times.*.lng' => 'nullable',
+            'times.*.radius' => 'nullable|numeric',
         ]);
 
         $appId = $request->app ?? $user->app?->id ?? ($user->studentData->app ?? $user->teacherData->app ?? null);
 
-        $commonData = [
-            'app' => $appId,
-            'name' => $request->name,
-            'clock_in_start' => $request->clock_in_start,
-            'clock_in_end' => $request->clock_in_end,
-            'clock_out_start' => $request->clock_out_start,
-            'clock_out_end' => $request->clock_out_end,
-            'lat' => $request->lat,
-            'lng' => $request->lng,
-            'radius' => $request->radius ?? 100,
-            'students' => $request->role_target == "karyawan" ? 0 : 1
-        ];
+        DB::beginTransaction();
+        try {
+            $commonData = [
+                'app' => $appId,
+                'name' => $request->name,
+                'students' => $request->role_target == "karyawan" ? 0 : 1,
+                // Simpan data hari pertama sebagai default di tabel lama (backward compat)
+                'clock_in_start' => $request->times[0]['clock_in_start'] ?? null,
+                'clock_in_end' => $request->times[0]['clock_in_end'] ?? null,
+                'clock_out_start' => $request->times[0]['clock_out_start'] ?? null,
+                'clock_out_end' => $request->times[0]['clock_out_end'] ?? null,
+                'lat' => $request->times[0]['lat'] ?? null,
+                'lng' => $request->times[0]['lng'] ?? null,
+                'radius' => $request->times[0]['radius'] ?? 100,
+            ];
 
-        if ($request->role_target === 'karyawan' && !empty($request->employee_ids)) {
-            foreach ($request->employee_ids as $empId) {
-                $data = $commonData;
-                $data['employee_id'] = $empId;
-                
-                // Jika isRole0 dan tidak pilih app, coba ambil dari employee
-                if (!$appId) {
-                    $emp = \App\Models\Employee::find($empId);
-                    if ($emp && $emp->app_id) {
-                        $data['app'] = $emp->app_id;
-                    }
+            $createConfigWithTimes = function ($data) use ($request) {
+                $config = AttendanceConfig::create($data);
+
+                // Simpan konfigurasi per hari
+                foreach ($request->times as $index => $timeData) {
+                    if (!isset($request->days[$index])) continue;
+                    
+                    $config->times()->create([
+                        'day' => $request->days[$index],
+                        'clock_in_start' => $timeData['clock_in_start'],
+                        'clock_in_end' => $timeData['clock_in_end'],
+                        'clock_out_start' => $timeData['clock_out_start'],
+                        'clock_out_end' => $timeData['clock_out_end'],
+                        'lat' => $timeData['lat'] ?? null,
+                        'lng' => $timeData['lng'] ?? null,
+                        'radius' => $timeData['radius'] ?? 100,
+                    ]);
                 }
 
-                AttendanceConfig::create($data);
-            }
-        } else {
-            // Untuk Murid (employee_id null)
-            $commonData['employee_id'] = null;
-            AttendanceConfig::create($commonData);
-        }
+                return $config;
+            };
 
-        return redirect()->route('dashboard.master.absensi.index')->with('success', 'Konfigurasi berhasil ditambahkan');
+            if ($request->role_target === 'karyawan' && !empty($request->employee_ids)) {
+                foreach ($request->employee_ids as $empId) {
+                    $data = $commonData;
+                    $data['employee_id'] = $empId;
+                    
+                    if (!$appId) {
+                        $emp = Employee::find($empId);
+                        if ($emp && $emp->app_id) {
+                            $data['app'] = $emp->app_id;
+                        }
+                    }
+
+                    $createConfigWithTimes($data);
+                }
+            } else {
+                $commonData['employee_id'] = null;
+                $createConfigWithTimes($commonData);
+            }
+
+            DB::commit();
+            return redirect()->route('dashboard.master.absensi.index')->with('success', 'Konfigurasi berhasil ditambahkan');
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return redirect()->back()->withInput()->with('error', 'Gagal menyimpan: ' . $e->getMessage());
+        }
     }
 
     public function edit($id)
     {
-        $item = AttendanceConfig::findOrFail($id);
+        $item = AttendanceConfig::with('times')->findOrFail($id);
         $title = "Edit Konfigurasi Absensi";
         $user = Auth::user();
         $apps = [];
         $employees = [];
         $existingConfigs = [];
+        $dayList = $this->dayList;
 
         if ($user->role == 1 && $user->app) {
             $appId = $user->app->id;
@@ -164,15 +201,15 @@ class AttendanceConfigController extends Controller
                 $q->where('app_id', $appId)->orWhereNull('app_id');
             })->orderBy('name')->get();
             $employees = Employee::with('jabatan')->where('app_id', $appId)->orderBy('name')->get();
-            $existingConfigs = AttendanceConfig::where('app', $appId)->where('id', '!=', $id)->orderBy('name')->get();
+            $existingConfigs = AttendanceConfig::with('times')->where('app', $appId)->where('id', '!=', $id)->orderBy('name')->get();
         } else {
             $apps = App::orderBy('name')->get();
             $jabatans = Jabatan::with('app')->orderBy('name')->get();
             $employees = Employee::with('jabatan', 'app')->orderBy('name')->get();
-            $existingConfigs = AttendanceConfig::where('id', '!=', $id)->orderBy('name')->get();
+            $existingConfigs = AttendanceConfig::with('times')->where('id', '!=', $id)->orderBy('name')->get();
         }
 
-        return view('master.absensi.form', compact('item', 'title', 'jabatans', 'apps', 'employees', 'existingConfigs'));
+        return view('master.absensi.form', compact('item', 'title', 'jabatans', 'apps', 'employees', 'existingConfigs', 'dayList'));
     }
 
     public function update(Request $request, $id)
@@ -183,33 +220,71 @@ class AttendanceConfigController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'app' => $isRole0 ? 'nullable|exists:apps,id' : 'nullable',
-            'clock_in_start' => 'required',
-            'clock_in_end' => 'required',
-            'clock_out_start' => 'required',
-            'clock_out_end' => 'required',
-            'lat' => 'nullable',
-            'lng' => 'nullable',
-            'radius' => 'nullable|numeric',
+            'days' => 'required|array|min:1',
+            'days.*' => 'required|in:' . implode(',', $this->dayList),
+            'times' => 'required|array',
+            'times.*.clock_in_start' => 'required',
+            'times.*.clock_in_end' => 'required',
+            'times.*.clock_out_start' => 'required',
+            'times.*.clock_out_end' => 'required',
+            'times.*.lat' => 'nullable',
+            'times.*.lng' => 'nullable',
+            'times.*.radius' => 'nullable|numeric',
         ]);
 
-        $item = AttendanceConfig::findOrFail($id);
+        DB::beginTransaction();
+        try {
+            $item = AttendanceConfig::findOrFail($id);
 
-        $data = $request->except(['_token', '_method', 'role_target', 'employee_ids']);
-        if ($isRole0 && $request->filled('app')) {
-            $data['app'] = $request->app;
+            $data = [
+                'name' => $request->name,
+                'students' => $request->role_target == "karyawan" ? 0 : 1,
+                // Backward compat: simpan data hari pertama
+                'clock_in_start' => $request->times[0]['clock_in_start'] ?? null,
+                'clock_in_end' => $request->times[0]['clock_in_end'] ?? null,
+                'clock_out_start' => $request->times[0]['clock_out_start'] ?? null,
+                'clock_out_end' => $request->times[0]['clock_out_end'] ?? null,
+                'lat' => $request->times[0]['lat'] ?? null,
+                'lng' => $request->times[0]['lng'] ?? null,
+                'radius' => $request->times[0]['radius'] ?? 100,
+            ];
+
+            if ($isRole0 && $request->filled('app')) {
+                $data['app'] = $request->app;
+            }
+
+            $item->update($data);
+
+            // Hapus semua waktu lama, buat ulang
+            $item->times()->delete();
+
+            foreach ($request->times as $index => $timeData) {
+                if (!isset($request->days[$index])) continue;
+
+                $item->times()->create([
+                    'day' => $request->days[$index],
+                    'clock_in_start' => $timeData['clock_in_start'],
+                    'clock_in_end' => $timeData['clock_in_end'],
+                    'clock_out_start' => $timeData['clock_out_start'],
+                    'clock_out_end' => $timeData['clock_out_end'],
+                    'lat' => $timeData['lat'] ?? null,
+                    'lng' => $timeData['lng'] ?? null,
+                    'radius' => $timeData['radius'] ?? 100,
+                ]);
+            }
+
+            DB::commit();
+            return redirect()->route('dashboard.master.absensi.index')->with('success', 'Konfigurasi berhasil diperbarui');
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return redirect()->back()->withInput()->with('error', 'Gagal menyimpan: ' . $e->getMessage());
         }
-
-        $data['students'] = $request->role_target == "karyawan" ? 0 : 1;
-
-        $item->update($data);
-
-        return redirect()->route('dashboard.master.absensi.index')->with('success', 'Konfigurasi berhasil diperbarui');
     }
 
     public function destroy($id)
     {
         $item = AttendanceConfig::findOrFail($id);
-        $item->delete();
+        $item->delete(); // cascade akan hapus times juga
         return redirect()->route('dashboard.master.absensi.index')->with('success', 'Konfigurasi berhasil dihapus');
     }
 }
