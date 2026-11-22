@@ -2083,7 +2083,7 @@ class ApiController extends Controller
                 ], 400);
             }
 
-            $filename = 'absensi/' . Str::uuid() . '.jpg';
+            $filename = 'absensi/' . $app . '/' . now()->format('Y/m/d') . '/' . Str::uuid() . '.jpg';
 
             $image = Image::read($file->getRealPath())
                 ->scaleDown(width: 1024)   // perkecil jika lebih lebar dari 1024px
