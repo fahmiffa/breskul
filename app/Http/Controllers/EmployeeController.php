@@ -33,8 +33,10 @@ class EmployeeController extends Controller
                 }
             })
             ->get();
+    
+        $app = auth()->user()->role == 1 ? auth()->user()->app : auth()->user()->employeeData?->app_id;
 
-        $jabatans = Jabatan::where('app_id', auth()->user()->app->id)->orderBy('name', 'asc')->get();
+        $jabatans = Jabatan::where('app_id', $app)->orderBy('name', 'asc')->get();
         $title = 'Master Karyawan';
         return view('master.karyawan.index', compact('items', 'title', 'jabatans'));
     }
@@ -46,7 +48,8 @@ class EmployeeController extends Controller
     {
         $action   = 'Tambah';
         $title    = 'Form Karyawan';
-        $jabatans = Jabatan::where('app_id', auth()->user()->app->id)->orderBy('name', 'asc')->get();
+        $app = auth()->user()->role == 1 ? auth()->user()->app : auth()->user()->employeeData?->app_id;
+        $jabatans = Jabatan::where('app_id', $app)->orderBy('name', 'asc')->get();
         return view('master.karyawan.form', compact('action', 'title', 'jabatans'));
     }
 
@@ -134,7 +137,8 @@ class EmployeeController extends Controller
         $action   = 'Edit';
         $title    = 'Form Karyawan';
         $items    = $karyawan;
-        $jabatans = Jabatan::where('app_id', auth()->user()->app->id)->orderBy('name', 'asc')->get();
+        $app = auth()->user()->role == 1 ? auth()->user()->app : auth()->user()->employeeData?->app_id;
+        $jabatans = Jabatan::where('app_id', $app)->orderBy('name', 'asc')->get();
         return view('master.karyawan.form', compact('action', 'title', 'items', 'jabatans'));
     }
 

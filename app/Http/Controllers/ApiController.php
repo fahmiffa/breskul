@@ -391,14 +391,12 @@ class ApiController extends Controller
                 $devices->ip_address = $request->input('ip', $request->input('ip_address', $request->ip()));
                 $devices->updated_at = now();
                 $devices->save();
-
-
-                // Log::channel('present')->info('Device berhasil diperbarui', [
-                //     'device_name' => $devices->device_name,
-                //     'status' => $devices->status,
-                //     'ip_address' => $devices->ip_address,
-                //     'updated_at' => $devices->updated_at,
-                // ]);
+                Log::channel('present')->info('Device berhasil diperbarui', [
+                    'device_name' => $devices->device_name,
+                    'status' => $devices->status,
+                    'ip_address' => $devices->ip_address,
+                    'updated_at' => $devices->updated_at,
+                ]);
             }
             else
             {
@@ -2033,17 +2031,17 @@ class ApiController extends Controller
                     ], 400);
                 }
 
-            if ($timeConfig->clock_out_start && $timeConfig->clock_out_end) {
-                $outStart = Carbon::createFromTimeString($timeConfig->clock_out_start);
-                $outEnd   = Carbon::createFromTimeString($timeConfig->clock_out_end);
-                if($now->lt($outStart)) {
-                    return response()->json([
-                        'success' => false,
-                        // 'message' => 'Waktu absensi pulang adalah ' . $timeConfig->clock_out_start . ' - ' . $timeConfig->clock_out_end . '.',
-                        'message' => 'Waktu absensi pulang dimulai ' . $timeConfig->clock_out_start,
-                    ], 400);
-                }
-            }
+            // if ($timeConfig->clock_out_start && $timeConfig->clock_out_end) {
+            //     $outStart = Carbon::createFromTimeString($timeConfig->clock_out_start);
+            //     $outEnd   = Carbon::createFromTimeString($timeConfig->clock_out_end);
+            //     if($now->lt($outStart)) {
+            //         return response()->json([
+            //             'success' => false,
+            //             // 'message' => 'Waktu absensi pulang adalah ' . $timeConfig->clock_out_start . ' - ' . $timeConfig->clock_out_end . '.',
+            //             'message' => 'Waktu absensi pulang dimulai ' . $timeConfig->clock_out_start,
+            //         ], 400);
+            //     }
+            // }
         }
 
         // Cek apakah sudah absensi hari ini untuk tipe status tersebut
