@@ -129,7 +129,7 @@
             <div class="mb-4">
                 <div class="flex items-center justify-between mb-3">
                     <h3 class="text-lg font-bold text-gray-800">Konfigurasi Waktu Per Hari</h3>
-                    <button type="button" onclick="addDayRow()" class="bg-green-500 hover:bg-green-700 text-white text-xs font-semibold py-2 px-3 rounded-lg focus:outline-none">
+                    <button type="button" onclick="addDayRow()" class="bg-green-500 hover:bg-green-700 text-white text-xs font-semibold py-2 px-3 rounded-lg focus:outline-none flex items-center gap-1">
                         + Tambah Hari
                     </button>
                 </div>
@@ -137,6 +137,13 @@
 
                 <div id="day_rows_container" class="space-y-4">
                     {{-- Rows akan di-generate via JS --}}
+                </div>
+
+                <div class="mt-4">
+                    <button type="button" onclick="addDayRow()" class="w-full py-2.5 border-2 border-dashed border-green-500 hover:border-green-600 hover:bg-green-50 text-green-700 font-semibold text-sm rounded-lg flex items-center justify-center gap-2 transition duration-150">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        + Tambah Hari
+                    </button>
                 </div>
             </div>
 
@@ -153,25 +160,99 @@
         const allDays = @json($dayList);
         let dayRowIndex = 0;
 
-        // Data yang sudah ada (edit mode)
-        const existingTimes = @json(isset($item) ? $item->times : []);
+        @php
+            $oldTimes = null;
+            if (old('days') && old('times')) {
+                $oldTimes = [];
+                foreach (old('days') as $k => $day) {
+                    if (isset(old('times')[$k])) {
+                        $t = old('times')[$k];
+                        $t['day'] = $day;
+                        $oldTimes[] = $t;
+                    }
+                }
+            }
+        @endphp
+
+        // Data yang sudah ada (old input atau edit mode)
+        const oldTimes = @json($oldTimes);
+        const existingTimes = oldTimes || @json(isset($item) ? $item->times : []);
 
         function addDayRow(dayData = null) {
+            if (dayData instanceof Event) {
+                dayData = null;
+            }
+
             const container = document.getElementById('day_rows_container');
+            const existingRows = container.querySelectorAll('.day-row');
             const idx = dayRowIndex++;
 
             const row = document.createElement('div');
             row.className = 'day-row border rounded-lg p-4 bg-gray-50 relative';
             row.setAttribute('data-index', idx);
 
-            const selectedDay = dayData ? dayData.day : '';
-            const clockInStart = dayData ? (dayData.clock_in_start || '').substring(0, 5) : '';
-            const clockInEnd = dayData ? (dayData.clock_in_end || '').substring(0, 5) : '';
-            const clockOutStart = dayData ? (dayData.clock_out_start || '').substring(0, 5) : '';
-            const clockOutEnd = dayData ? (dayData.clock_out_end || '').substring(0, 5) : '';
-            const lat = dayData ? (dayData.lat || '') : '';
-            const lng = dayData ? (dayData.lng || '') : '';
-            const radius = dayData ? (dayData.radius || 100) : 100;
+            let selectedDay = '';
+            let clockInStart = '';
+            let clockInEnd = '';
+            let clockOutStart = '';
+            let clockOutEnd = '';
+            let lat = '';
+            let lng = '';
+            let radius = 100;
+
+            if (dayData) {
+                selectedDay = dayData.day || '';
+                clockInStart = (dayData.clock_in_start || '').substring(0, 5);
+                clockInEnd = (dayData.clock_in_end || '').substring(0, 5);
+                clockOutStart = (dayData.clock_out_start || '').substring(0, 5);
+                clockOutEnd = (dayData.clock_out_end || '').substring(0, 5);
+                lat = dayData.lat !== undefined && dayData.lat !== null ? dayData.lat : '';
+                lng = dayData.lng !== undefined && dayData.lng !== null ? dayData.lng : '';
+                radius = dayData.radius !== undefined && dayData.radius !== null ? dayData.radius : 100;
+            } else if (existingRows.length > 0) {
+                // Copy dari baris di atasnya (last row)
+                const lastRow = existingRows[existingRows.length - 1];
+
+                const lastDaySelect = lastRow.querySelector('select[name^="days"]');
+                const lastClockInStart = lastRow.querySelector('input[name*="[clock_in_start]"]');
+                const lastClockInEnd = lastRow.querySelector('input[name*="[clock_in_end]"]');
+                const lastClockOutStart = lastRow.querySelector('input[name*="[clock_out_start]"]');
+                const lastClockOutEnd = lastRow.querySelector('input[name*="[clock_out_end]"]');
+                const lastLat = lastRow.querySelector('input[name*="[lat]"]');
+                const lastLng = lastRow.querySelector('input[name*="[lng]"]');
+                const lastRadius = lastRow.querySelector('input[name*="[radius]"]');
+
+                clockInStart = lastClockInStart ? lastClockInStart.value : '';
+                clockInEnd = lastClockInEnd ? lastClockInEnd.value : '';
+                clockOutStart = lastClockOutStart ? lastClockOutStart.value : '';
+                clockOutEnd = lastClockOutEnd ? lastClockOutEnd.value : '';
+                lat = lastLat ? lastLat.value : '';
+                lng = lastLng ? lastLng.value : '';
+                radius = (lastRadius && lastRadius.value !== '') ? lastRadius.value : 100;
+
+                // Tentukan hari berikutnya dari last row
+                const lastDay = lastDaySelect ? lastDaySelect.value : '';
+                const usedDays = Array.from(existingRows)
+                    .map(r => r.querySelector('select[name^="days"]')?.value)
+                    .filter(Boolean);
+
+                if (lastDay) {
+                    const lastDayIdx = allDays.indexOf(lastDay);
+                    if (lastDayIdx !== -1) {
+                        for (let i = 1; i <= allDays.length; i++) {
+                            const candidate = allDays[(lastDayIdx + i) % allDays.length];
+                            if (!usedDays.includes(candidate)) {
+                                selectedDay = candidate;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (!selectedDay) {
+                    selectedDay = allDays.find(d => !usedDays.includes(d)) || '';
+                }
+            }
 
             let dayOptions = `<option value="">-- Pilih Hari --</option>`;
             allDays.forEach(d => {

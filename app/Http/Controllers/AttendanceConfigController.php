@@ -122,18 +122,19 @@ class AttendanceConfigController extends Controller
 
         DB::beginTransaction();
         try {
+            $firstTime = is_array($request->times) ? (reset($request->times) ?: []) : [];
             $commonData = [
                 'app' => $appId,
                 'name' => $request->name,
                 'students' => $request->role_target == "karyawan" ? 0 : 1,
                 // Simpan data hari pertama sebagai default di tabel lama (backward compat)
-                'clock_in_start' => $request->times[0]['clock_in_start'] ?? null,
-                'clock_in_end' => $request->times[0]['clock_in_end'] ?? null,
-                'clock_out_start' => $request->times[0]['clock_out_start'] ?? null,
-                'clock_out_end' => $request->times[0]['clock_out_end'] ?? null,
-                'lat' => $request->times[0]['lat'] ?? null,
-                'lng' => $request->times[0]['lng'] ?? null,
-                'radius' => $request->times[0]['radius'] ?? 100,
+                'clock_in_start' => $firstTime['clock_in_start'] ?? null,
+                'clock_in_end' => $firstTime['clock_in_end'] ?? null,
+                'clock_out_start' => $firstTime['clock_out_start'] ?? null,
+                'clock_out_end' => $firstTime['clock_out_end'] ?? null,
+                'lat' => $firstTime['lat'] ?? null,
+                'lng' => $firstTime['lng'] ?? null,
+                'radius' => $firstTime['radius'] ?? 100,
             ];
 
             $createConfigWithTimes = function ($data) use ($request) {
@@ -236,17 +237,18 @@ class AttendanceConfigController extends Controller
         try {
             $item = AttendanceConfig::findOrFail($id);
 
+            $firstTime = is_array($request->times) ? (reset($request->times) ?: []) : [];
             $data = [
                 'name' => $request->name,
                 'students' => $request->role_target == "karyawan" ? 0 : 1,
                 // Backward compat: simpan data hari pertama
-                'clock_in_start' => $request->times[0]['clock_in_start'] ?? null,
-                'clock_in_end' => $request->times[0]['clock_in_end'] ?? null,
-                'clock_out_start' => $request->times[0]['clock_out_start'] ?? null,
-                'clock_out_end' => $request->times[0]['clock_out_end'] ?? null,
-                'lat' => $request->times[0]['lat'] ?? null,
-                'lng' => $request->times[0]['lng'] ?? null,
-                'radius' => $request->times[0]['radius'] ?? 100,
+                'clock_in_start' => $firstTime['clock_in_start'] ?? null,
+                'clock_in_end' => $firstTime['clock_in_end'] ?? null,
+                'clock_out_start' => $firstTime['clock_out_start'] ?? null,
+                'clock_out_end' => $firstTime['clock_out_end'] ?? null,
+                'lat' => $firstTime['lat'] ?? null,
+                'lng' => $firstTime['lng'] ?? null,
+                'radius' => $firstTime['radius'] ?? 100,
             ];
 
             if ($isRole0 && $request->filled('app')) {
