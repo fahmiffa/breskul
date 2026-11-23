@@ -23,18 +23,16 @@ class StudentsController extends Controller
 
     public function index()
     {
+        $app = auth()->user()->role == 1 ? auth()->user()->app : auth()->user()->employeeData?->app_id;
         $items = Students::with(['reg.kelas', 'reg.prodi'])
             ->latest()
-            ->when(auth()->user()->role == 1 && auth()->user()->app, function ($query) {
-                $query->where('app', auth()->user()->app->id);
-            })
+            ->where('app', $app)
             ->get();
+
 
         $title = "Master " . (config('app.school_mode') ? 'Murid' : 'Mahasiswa');
         $kelas = (config('app.school_mode') ? Classes::class : Prodi::class)::latest()
-            ->when(auth()->user()->role == 1 && auth()->user()->app, function ($query) {
-                $query->where('app', auth()->user()->app->id);
-            })
+            ->where('app', $app)
             ->get();
 
         return view('master.murid.index', compact('items', 'title', 'kelas'));
