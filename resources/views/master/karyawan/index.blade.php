@@ -149,7 +149,7 @@
                 <tbody>
                     <template x-for="(row, index) in paginatedData()" :key="row.id">
                         <tr class="border-t border-gray-300">
-                            <td class="px-4 py-2" x-text="((currentPage - 1) * perPage) + index + 1"></td>
+                            <td class="px-4 py-2" x-text="perPage === 'all' ? index + 1 : ((currentPage - 1) * parseInt(perPage)) + index + 1"></td>
                             <td class="px-4 py-2" x-text="row.name"></td>
                             <td class="px-4 py-2" x-text="row.jenis"></td>
                             <td class="px-4 py-2" x-text="row.user ? (row.user.nomor || '-') : '-'"></td>
