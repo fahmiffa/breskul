@@ -34,7 +34,7 @@ class EmployeeController extends Controller
             })
             ->get();
     
-        $app = auth()->user()->role == 1 ? auth()->user()->app : auth()->user()->employeeData?->app_id;
+        $app = auth()->user()->role == 1 ? auth()->user()->app->id : auth()->user()->employeeData?->app_id;
 
         $jabatans = Jabatan::where('app_id', $app)->orderBy('name', 'asc')->get();
         $title = 'Master Karyawan';
@@ -48,7 +48,7 @@ class EmployeeController extends Controller
     {
         $action   = 'Tambah';
         $title    = 'Form Karyawan';
-        $app = auth()->user()->role == 1 ? auth()->user()->app : auth()->user()->employeeData?->app_id;
+        $app = auth()->user()->role == 1 ? auth()->user()->app->id : auth()->user()->employeeData?->app_id;
         $jabatans = Jabatan::where('app_id', $app)->orderBy('name', 'asc')->get();
         return view('master.karyawan.form', compact('action', 'title', 'jabatans'));
     }

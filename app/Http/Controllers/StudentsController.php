@@ -23,7 +23,7 @@ class StudentsController extends Controller
 
     public function index()
     {
-        $app = auth()->user()->role == 1 ? auth()->user()->app : auth()->user()->employeeData?->app_id;
+        $app = auth()->user()->role == 1 ? auth()->user()->app->id : auth()->user()->employeeData?->app_id;
         $items = Students::with(['reg.kelas', 'reg.prodi'])
             ->latest()
             ->where('app', $app)
