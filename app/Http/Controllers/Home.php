@@ -552,7 +552,6 @@ class Home extends Controller
         // Data Grafik Tagihan (Belum Lunas)
         $unpaidBills = Bill::where('status', 0)
             ->whereYear('created_at', $year)
-            ->where('app', $app)
             ->with('payment')
             ->get()
             ->groupBy(function ($item) {
