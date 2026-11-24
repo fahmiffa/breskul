@@ -530,7 +530,6 @@ class Home extends Controller
     public function index(Request $request)
     {
         $year = $request->get('year', date('Y'));
-        $app = auth()->user()->role == 1 ? auth()->user()->app->id : auth()->user()->employeeData->app_id;
 
         // Data Grafik Pembayaran
         $bills = Bill::where('status', 1)
@@ -538,6 +537,11 @@ class Home extends Controller
             ->when(auth()->user()->role == 1 && auth()->user()->app, function ($query) {
                 $query->whereHas('head.murid', function ($q) {
                     $q->where('app', auth()->user()->app->id);
+                });
+            })
+            ->when(auth()->user()->role != 1, function ($query) {
+                $query->whereHas('head.murid', function ($q) {
+                    $q->where('app', auth()->user()->employeeData->app_id);
                 });
             })
             ->with('payment')
@@ -559,6 +563,11 @@ class Home extends Controller
             ->when(auth()->user()->role == 1 && auth()->user()->app, function ($query) {
                 $query->whereHas('head.murid', function ($q) {
                     $q->where('app', auth()->user()->app->id);
+                });
+            })
+            ->when(auth()->user()->role != 1, function ($query) {
+                $query->whereHas('head.murid', function ($q) {
+                    $q->where('app', auth()->user()->employeeData->app_id);
                 });
             })
             ->with('payment')
