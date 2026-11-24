@@ -102,13 +102,12 @@ class Home extends Controller
         $type  = $request->get('type');
 
         $role = auth()->user()->role;
+        $app = auth()->user()->role == 1 ? auth()->user()->app->id : auth()->user()->employeeData->app_id;
 
         $presents = Present::query()
             ->whereDate('waktu', '>=', $start)
             ->whereDate('waktu', '<=', $end)
-            ->when(auth()->check() && auth()->user()->role == 1 && auth()->user()->app, function ($query) {
-                $query->where('app', auth()->user()->app->id);
-            })
+            ->where('app',$app)
             ->when($type === 'murid', function ($query) {
                 $query->whereNotNull('student_id');
             })
