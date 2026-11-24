@@ -105,7 +105,7 @@ class AttendanceConfigController extends Controller
             'name' => 'required|string|max:255',
             'app' => $isRole0 ? 'required|exists:apps,id' : 'nullable',
             'role_target' => 'required|in:murid,karyawan',
-            'employee_ids' => 'required_if:role_target,karyawan|array',
+            'employee_ids' => 'required_if:role_target,karyawan|array|min:1',
             'days' => 'required|array|min:1',
             'days.*' => 'required|in:' . implode(',', $this->dayList),
             'times' => 'required|array',
@@ -122,7 +122,9 @@ class AttendanceConfigController extends Controller
 
         DB::beginTransaction();
         try {
-            $firstTime = is_array($request->times) ? (reset($request->times) ?: []) : [];
+            $times = $request->input('times', []);
+            $days = $request->input('days', []);
+            $firstTime = !empty($times) && is_array($times) ? (array_values($times)[0] ?? []) : [];
             $commonData = [
                 'app' => $appId,
                 'name' => $request->name,
@@ -137,15 +139,15 @@ class AttendanceConfigController extends Controller
                 'radius' => $firstTime['radius'] ?? 100,
             ];
 
-            $createConfigWithTimes = function ($data) use ($request) {
+            $createConfigWithTimes = function ($data) use ($times, $days) {
                 $config = AttendanceConfig::create($data);
 
                 // Simpan konfigurasi per hari
-                foreach ($request->times as $index => $timeData) {
-                    if (!isset($request->days[$index])) continue;
+                foreach ($times as $index => $timeData) {
+                    if (!isset($days[$index])) continue;
                     
                     $config->times()->create([
-                        'day' => $request->days[$index],
+                        'day' => $days[$index],
                         'clock_in_start' => $timeData['clock_in_start'],
                         'clock_in_end' => $timeData['clock_in_end'],
                         'clock_out_start' => $timeData['clock_out_start'],
@@ -237,10 +239,12 @@ class AttendanceConfigController extends Controller
         try {
             $item = AttendanceConfig::findOrFail($id);
 
-            $firstTime = is_array($request->times) ? (reset($request->times) ?: []) : [];
+            $times = $request->input('times', []);
+            $days = $request->input('days', []);
+            $firstTime = !empty($times) && is_array($times) ? (array_values($times)[0] ?? []) : [];
             $data = [
                 'name' => $request->name,
-                'students' => $request->role_target == "karyawan" ? 0 : 1,
+                'students' => $request->filled('role_target') ? ($request->role_target == "karyawan" ? 0 : 1) : $item->students,
                 // Backward compat: simpan data hari pertama
                 'clock_in_start' => $firstTime['clock_in_start'] ?? null,
                 'clock_in_end' => $firstTime['clock_in_end'] ?? null,
@@ -260,11 +264,11 @@ class AttendanceConfigController extends Controller
             // Hapus semua waktu lama, buat ulang
             $item->times()->delete();
 
-            foreach ($request->times as $index => $timeData) {
-                if (!isset($request->days[$index])) continue;
+            foreach ($times as $index => $timeData) {
+                if (!isset($days[$index])) continue;
 
                 $item->times()->create([
-                    'day' => $request->days[$index],
+                    'day' => $days[$index],
                     'clock_in_start' => $timeData['clock_in_start'],
                     'clock_in_end' => $timeData['clock_in_end'],
                     'clock_out_start' => $timeData['clock_out_start'],

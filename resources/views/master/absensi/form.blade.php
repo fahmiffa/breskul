@@ -63,6 +63,9 @@
                         <option value="karyawan" {{ old('role_target') == 'karyawan' || (isset($item) && $item->employee_id !== null) ? 'selected' : '' }}>Karyawan</option>
                         <option value="murid" {{ old('role_target') == 'murid' || (isset($item) && $item->employee_id === null) ? 'selected' : '' }}>Murid</option>
                     </select>
+                    @if(isset($item))
+                        <input type="hidden" name="role_target" value="{{ $item->employee_id !== null ? 'karyawan' : 'murid' }}">
+                    @endif
                     @error('role_target') <p class="text-red-500 text-xs italic">{{ $message }}</p> @enderror
                 </div>
 
