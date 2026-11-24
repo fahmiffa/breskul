@@ -582,7 +582,7 @@ class Home extends Controller
         $presents = Present::whereYear('created_at', date('Y'))
             ->whereMonth('created_at', date('m'))
             ->when(auth()->user()->role != 0, function ($query) use ($isApp) {
-                $q->where('app', $isApp);
+                $query->where('app', $isApp);
             })
             ->get()
             ->groupBy(function ($item) {
