@@ -530,6 +530,7 @@ class Home extends Controller
     public function index(Request $request)
     {
         $year = $request->get('year', date('Y'));
+        $app = auth()->user()->role == 1 ? auth()->user()->app->id : auth()->user()->employeeData->app_id;
 
         // Data Grafik Pembayaran
         $bills = Bill::where('status', 1)
