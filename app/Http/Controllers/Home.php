@@ -582,9 +582,7 @@ class Home extends Controller
         $presents = Present::whereYear('created_at', date('Y'))
             ->whereMonth('created_at', date('m'))
             ->when(auth()->user()->role != 0, function ($query) use ($isApp) {
-                $query->whereHas('head.murid', function ($q) use ($isApp) {
-                    $q->where('app', $isApp);
-                });
+                $q->where('app', $isApp);
             })
             ->get()
             ->groupBy(function ($item) {
