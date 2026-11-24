@@ -8,6 +8,7 @@ use App\Models\Present;
 use App\Models\Students;
 use App\Models\User;
 use App\Services\BillingCodeService;
+use App\Services\AppRole;
 use App\Services\Midtrans\Transaction;
 use Auth;
 use DB;
@@ -529,20 +530,16 @@ class Home extends Controller
 
     public function index(Request $request)
     {
+        $isApp = AppRole::isApp();
+
         $year = $request->get('year', date('Y'));
-        $app = auth()->user()->role == 1 ? auth()->user()->app->id : auth()->user()->employeeData->app_id;
 
         // Data Grafik Pembayaran
         $bills = Bill::where('status', 1)
             ->whereYear('updated_at', $year)
-            ->when(auth()->user()->role == 1 && auth()->user()->app, function ($query) {
-                $query->whereHas('head.murid', function ($q) {
-                    $q->where('app', auth()->user()->app->id);
-                });
-            })
-            ->when(auth()->user()->role != 1, function ($query) {
-                $query->whereHas('head.murid', function ($q) {
-                    $q->where('app', auth()->user()->employeeData->app_id);
+            ->when(auth()->user()->role != 0, function ($query) use ($isApp) {
+                $query->whereHas('head.murid', function ($q) use ($isApp) {
+                    $q->where('app', $isApp);
                 });
             })
             ->with('payment')
@@ -561,14 +558,9 @@ class Home extends Controller
         // Data Grafik Tagihan (Belum Lunas)
         $unpaidBills = Bill::where('status', 0)
             ->whereYear('created_at', $year)
-            ->when(auth()->user()->role == 1 && auth()->user()->app, function ($query) {
-                $query->whereHas('head.murid', function ($q) {
-                    $q->where('app', auth()->user()->app->id);
-                });
-            })
-            ->when(auth()->user()->role != 1, function ($query) {
-                $query->whereHas('head.murid', function ($q) {
-                    $q->where('app', auth()->user()->employeeData->app_id);
+            ->when(auth()->user()->role != 0, function ($query) use ($isApp) {
+                $query->whereHas('head.murid', function ($q) use ($isApp) {
+                    $q->where('app', $isApp);
                 });
             })
             ->with('payment')
@@ -589,7 +581,11 @@ class Home extends Controller
         // Data Grafik Absensi (Bulan Ini)
         $presents = Present::whereYear('created_at', date('Y'))
             ->whereMonth('created_at', date('m'))
-            ->where('app', $app)
+            ->when(auth()->user()->role != 0, function ($query) use ($isApp) {
+                $query->whereHas('head.murid', function ($q) use ($isApp) {
+                    $q->where('app', $isApp);
+                });
+            })
             ->get()
             ->groupBy(function ($item) {
                 return $item->created_at->format('j');
